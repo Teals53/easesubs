@@ -104,7 +104,7 @@ export function Products() {
 
   // Fetch categories from database with full details
   const { data: categoriesData, isLoading: categoriesLoading } =
-    trpc.admin.getCategories.useQuery();
+    trpc.product.getCategories.useQuery();
 
   // Fetch products from database
   const {
@@ -118,14 +118,14 @@ export function Products() {
   // Transform categories data to include full details
   const extendedCategories: ExtendedCategory[] = useMemo(() => {
     return categoriesData
-      ?.filter(cat => cat.isActive && cat.count > 0)
+      ?.filter(cat => cat.count > 0)
       .map(cat => ({
-        key: cat.slug,
-        label: cat.name,
+        key: cat.key,
+        label: cat.label,
         count: cat.count,
         color: cat.color || "#8B5CF6",
         icon: cat.icon || "Package",
-        description: cat.description || `Explore ${cat.name.toLowerCase()} products`
+        description: cat.description || `Explore ${cat.label.toLowerCase()} products`
       })) || [];
   }, [categoriesData]);
 

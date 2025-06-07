@@ -67,6 +67,9 @@ export const productRouter = createTRPCRouter({
         key: category.slug,
         label: category.name,
         count: category._count.products,
+        color: category.color,
+        icon: category.icon,
+        description: category.description,
       }));
   }),
 
