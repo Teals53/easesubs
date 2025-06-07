@@ -12,8 +12,9 @@
 ## 📊 Understanding Your Payment Flow
 
 ### Current Payment Process:
+
 1. **User Creates Order** → Status: `PENDING`
-2. **Payment Created** → Status: `PENDING` 
+2. **Payment Created** → Status: `PENDING`
 3. **User Pays via Cryptomus** → Real money transaction
 4. **Cryptomus Sends Webhook** → Your app receives notification
 5. **Webhook Validates** → Checks signature for security
@@ -22,6 +23,7 @@
 8. **Email Sent** → Confirmation to user
 
 ### What Our Testing Does:
+
 - **Simulates step 4-8** without real money
 - **Tests webhook security** validation
 - **Verifies database updates** work correctly
@@ -35,11 +37,13 @@
 ### Phase 1: Prepare Your Environment
 
 1. **Start Your Development Server**:
+
    ```bash
    npm run dev
    ```
 
 2. **Open Browser to Test Page**:
+
    ```
    http://localhost:3000/test/cryptomus
    ```
@@ -59,6 +63,7 @@
 ### Phase 3: Test Successful Payment Flow
 
 1. **On the test page**:
+
    - **Order ID**: Enter your order ID (or leave empty for auto-generated)
    - **Status**: Select "Paid ✅"
    - **Currency**: USDT
@@ -67,18 +72,20 @@
 2. **Click "Send Test Webhook"**
 
 3. **Watch what happens**:
+
    - Browser shows success message
    - Console shows webhook processing logs
    - Check your terminal/server logs
 
 4. **Verify Database Updates**:
+
    ```sql
    -- Check payment status
    SELECT id, status, completedAt FROM Payment WHERE id = 'your-payment-id';
-   
-   -- Check order status  
+
+   -- Check order status
    SELECT id, status, completedAt FROM Order WHERE orderNumber = 'your-order-id';
-   
+
    -- Check subscriptions created
    SELECT * FROM UserSubscription WHERE orderId = 'your-order-id';
    ```
@@ -88,12 +95,14 @@
 Test each of these statuses to ensure proper error handling:
 
 1. **Failed Payment**:
+
    - Status: "Failed ❌"
    - Should set order to `FAILED`
    - Should NOT create subscriptions
 
 2. **Wrong Amount**:
-   - Status: "Wrong Amount ⚠️"  
+
+   - Status: "Wrong Amount ⚠️"
    - Should set order to `FAILED`
    - Should record failure reason
 
@@ -104,6 +113,7 @@ Test each of these statuses to ensure proper error handling:
 ### Phase 5: Test Security Validation
 
 1. **Test Invalid Webhook** (Advanced):
+
    ```bash
    # This should fail with "Invalid signature"
    curl -X POST http://localhost:3000/api/webhooks/cryptomus \
@@ -121,7 +131,9 @@ Test each of these statuses to ensure proper error handling:
 ## 🔍 What To Monitor During Testing
 
 ### 1. Server Console Logs
+
 Look for these messages:
+
 ```
 ✅ Valid Cryptomus webhook received: { order_id: 'test-123', status: 'paid', uuid: 'abc' }
 Current payment status: { paymentId: '...', currentStatus: 'PENDING', newWebhookStatus: 'paid' }
@@ -132,13 +144,17 @@ Created 1 subscriptions for completed order
 ```
 
 ### 2. Browser Developer Console
+
 Check for:
+
 - Network requests (200 status codes)
 - Any JavaScript errors
 - Test webhook responses
 
 ### 3. Database Changes
+
 Verify these tables update correctly:
+
 - `Payment` table: status, completedAt, webhookData
 - `Order` table: status, completedAt
 - `UserSubscription` table: new records for completed orders
@@ -148,6 +164,7 @@ Verify these tables update correctly:
 ## 🛡️ Security Features Verified
 
 ### ✅ What's Secure:
+
 1. **Webhook Signature Validation** - Prevents fake webhooks
 2. **Rate Limiting** - Prevents spam attacks
 3. **Status Mapping** - Only valid statuses accepted
@@ -155,17 +172,20 @@ Verify these tables update correctly:
 5. **Environment Restrictions** - Test endpoints only work in development
 
 ### ❌ Security Bypass Prevention:
+
 1. **Cannot fake payment completion** without valid signature
 2. **Cannot replay old webhooks** (each has unique signature)
 3. **Cannot access test endpoints** in production
-4. **Cannot bypass payment validation** 
+4. **Cannot bypass payment validation**
 
 ---
 
 ## 🐛 Troubleshooting Common Issues
 
 ### Issue 1: "Cryptomus credentials not configured"
+
 **Solution**: Check your `.env` file has:
+
 ```env
 CRYPTOMUS_MERCHANT_ID=your-merchant-id
 CRYPTOMUS_PAYMENT_API_KEY=your-payment-api-key
@@ -173,22 +193,30 @@ CRYPTOMUS_SECRET_KEY=your-secret-key
 ```
 
 ### Issue 2: "Payment not found"
-**Solution**: 
+
+**Solution**:
+
 - Use a real order ID from your database, OR
 - Leave order ID empty for auto-generated test
 
 ### Issue 3: "Invalid signature"
+
 **Solution**: This is GOOD! It means security is working.
+
 - Only use the test interface, not direct curl commands
 
 ### Issue 4: Database not updating
+
 **Solution**:
+
 - Check server logs for errors
 - Verify database connection
 - Ensure order exists with the test order ID
 
 ### Issue 5: Test page not loading
+
 **Solution**:
+
 - Only works in development mode
 - Ensure `NODE_ENV` is not set to 'production'
 
@@ -197,18 +225,20 @@ CRYPTOMUS_SECRET_KEY=your-secret-key
 ## 📱 Real-World Testing Workflow
 
 ### For Each New Feature:
+
 1. **Create test order** → Check status is `PENDING`
 2. **Test successful payment** → Verify `COMPLETED` status
-3. **Test failed payment** → Verify `FAILED` status  
+3. **Test failed payment** → Verify `FAILED` status
 4. **Test cancelled payment** → Verify `CANCELLED` status
 5. **Check subscriptions** → Verify user gets access
 6. **Test email notifications** → Check inbox
 7. **Test edge cases** → Wrong amounts, duplicates, etc.
 
 ### Before Going Live:
+
 1. ✅ All payment statuses tested
 2. ✅ Database updates correctly
-3. ✅ Subscriptions created properly  
+3. ✅ Subscriptions created properly
 4. ✅ Email notifications work
 5. ✅ Security validation passes
 6. ✅ Error handling works
@@ -219,6 +249,7 @@ CRYPTOMUS_SECRET_KEY=your-secret-key
 ## 🔧 Advanced Testing Commands
 
 ### Test via Command Line:
+
 ```bash
 # Test successful payment
 node scripts/test-cryptomus-webhook.js --status=paid --order-id=your-order-123
@@ -231,6 +262,7 @@ node scripts/test-cryptomus-webhook.js --status=paid --currency=BTC --network=ET
 ```
 
 ### Database Queries for Verification:
+
 ```sql
 -- Check recent webhook activity
 SELECT p.id, p.status, p.completedAt, o.orderNumber, o.status as orderStatus
@@ -258,13 +290,15 @@ LIMIT 5;
 ## ✅ Testing Checklist
 
 ### Basic Flow Testing:
+
 - [ ] Test successful payment (`paid` status)
-- [ ] Test failed payment (`fail` status)  
+- [ ] Test failed payment (`fail` status)
 - [ ] Test cancelled payment (`cancel` status)
 - [ ] Test wrong amount (`wrong_amount` status)
 - [ ] Test overpayment (`paid_over` status)
 
 ### Database Verification:
+
 - [ ] Payment status updates correctly
 - [ ] Order status updates correctly
 - [ ] CompletedAt timestamps set
@@ -273,12 +307,14 @@ LIMIT 5;
 - [ ] Failure reasons recorded for failed payments
 
 ### Security Testing:
+
 - [ ] Invalid webhooks rejected
 - [ ] Signature validation working
 - [ ] Rate limiting active
 - [ ] Test endpoints disabled in production
 
 ### Integration Testing:
+
 - [ ] Email notifications sent
 - [ ] User can access purchased content
 - [ ] Subscription dates calculated correctly
@@ -289,10 +325,11 @@ LIMIT 5;
 ## 🎉 You're Ready!
 
 Once all tests pass, your Cryptomus payment integration is:
+
 - ✅ **Secure** - Protected against fake webhooks
-- ✅ **Reliable** - Handles all payment scenarios  
+- ✅ **Reliable** - Handles all payment scenarios
 - ✅ **Complete** - Updates all necessary data
 - ✅ **User-friendly** - Sends confirmations
 - ✅ **Robust** - Handles errors gracefully
 
-**Now you can accept real payments with confidence!** 🚀 
+**Now you can accept real payments with confidence!** 🚀

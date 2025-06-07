@@ -1,11 +1,11 @@
-'use client'
+"use client";
 
-import { useSession } from 'next-auth/react'
-import { redirect } from 'next/navigation'
-import { motion } from 'framer-motion'
-import Image from 'next/image'
-import { 
-  Package, 
+import { useSession } from "next-auth/react";
+import { redirect } from "next/navigation";
+import { motion } from "framer-motion";
+import Image from "next/image";
+import {
+  Package,
   Search,
   Plus,
   Edit,
@@ -14,64 +14,87 @@ import {
   Calendar,
   ToggleLeft,
   ToggleRight,
-  Filter
-} from 'lucide-react'
-import { useState, useMemo } from 'react'
-import { UserRole } from '@prisma/client'
-import { trpc } from '@/lib/trpc'
-import { ProductModal } from '@/components/product/product-modal'
+  Filter,
+} from "lucide-react";
+import { useState, useMemo } from "react";
+import { UserRole, ProductCategory } from "@prisma/client";
+import { trpc } from "@/lib/trpc";
+import { ProductModal } from "@/components/product/product-modal";
 
 interface ExtendedUser {
-  id: string
-  name?: string | null
-  email?: string | null
-  image?: string | null
-  role: UserRole
+  id: string;
+  name?: string | null;
+  email?: string | null;
+  image?: string | null;
+  role: UserRole;
 }
 
 export default function AdminProductsPage() {
-  const { data: session, status } = useSession()
-  const [searchTerm, setSearchTerm] = useState('')
-  const [selectedCategory, setSelectedCategory] = useState<string>('')
-  const [currentPage, setCurrentPage] = useState(1)
-  const [isProductModalOpen, setIsProductModalOpen] = useState(false)
+  const { data: session, status } = useSession();
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState<
+    ProductCategory | ""
+  >("" as ProductCategory | "");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [isProductModalOpen, setIsProductModalOpen] = useState(false);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [editingProduct, setEditingProduct] = useState<any>(null)
+  const [editingProduct, setEditingProduct] = useState<{
+    id: string;
+    name: string;
+    slug: string;
+    category: string;
+    logoUrl?: string | null;
+    logoName?: string | null;
+    borderColor?: string | null;
+    isActive: boolean;
+    isFeatured: boolean;
+    displayOrder?: number | null;
+    seoTitle?: string | null;
+    seoDescription?: string | null;
+    plans?: unknown;
+  } | null>(null);
 
   // Properly typed user with role
-  const user = session?.user as ExtendedUser | undefined
-  const isAdmin = user?.role === 'ADMIN'
+  const user = session?.user as ExtendedUser | undefined;
+  const isAdmin = user?.role === "ADMIN";
 
-  const { data: productsData, isLoading, refetch } = trpc.admin.getProducts.useQuery({
-    search: searchTerm || undefined,
-    category: selectedCategory || undefined,
-    page: currentPage,
-    limit: 12
-  }, {
-    enabled: isAdmin
-  })
+  const {
+    data: productsData,
+    isLoading,
+    refetch,
+  } = trpc.admin.getProducts.useQuery(
+    {
+      search: searchTerm || undefined,
+      category: selectedCategory || undefined,
+      page: currentPage,
+      limit: 12,
+    },
+    {
+      enabled: isAdmin,
+    },
+  );
 
   const { data: categories } = trpc.admin.getCategories.useQuery(undefined, {
-    enabled: isAdmin
-  })
+    enabled: isAdmin,
+  });
 
-  const toggleProductStatusMutation = trpc.admin.toggleProductStatus.useMutation({
-    onSuccess: () => {
-      refetch()
-    }
-  })
+  const toggleProductStatusMutation =
+    trpc.admin.toggleProductStatus.useMutation({
+      onSuccess: () => {
+        refetch();
+      },
+    });
 
   const deleteProductMutation = trpc.admin.deleteProduct.useMutation({
     onSuccess: () => {
-      refetch()
-    }
-  })
+      refetch();
+    },
+  });
 
   // Calculate stats from current page data
   const stats = useMemo(() => {
     if (!productsData?.products) {
-      return { total: 0, active: 0, inactive: 0, avgPrice: 0 }
+      return { total: 0, active: 0, inactive: 0, avgPrice: 0 };
     }
 
     // Use stats from API if available, otherwise fallback to current page calculation
@@ -80,81 +103,102 @@ export default function AdminProductsPage() {
         total: productsData.stats.total,
         active: productsData.stats.active,
         inactive: productsData.stats.inactive,
-        avgPrice: productsData.stats.avgPrice
-      }
+        avgPrice: productsData.stats.avgPrice,
+      };
     }
 
     // Fallback calculation (for backwards compatibility)
-    const products = productsData.products
-    const active = products.filter(p => p.isActive).length
-    const inactive = products.filter(p => !p.isActive).length
-    const avgPrice = products.length > 0 
-      ? products.reduce((sum, p) => sum + (Number(p.plans?.[0]?.price) || 0), 0) / products.length
-      : 0
+    const products = productsData.products;
+    const active = products.filter((p) => p.isActive).length;
+    const inactive = products.filter((p) => !p.isActive).length;
+    const avgPrice =
+      products.length > 0
+        ? products.reduce(
+            (sum, p) => sum + (Number(p.plans?.[0]?.price) || 0),
+            0,
+          ) / products.length
+        : 0;
 
     return {
       total: products.length,
       active,
       inactive,
-      avgPrice
-    }
-  }, [productsData])
+      avgPrice,
+    };
+  }, [productsData]);
 
-  if (status === 'loading') {
+  if (status === "loading") {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-purple-500"></div>
       </div>
-    )
+    );
   }
 
   if (!session || !isAdmin) {
-    redirect('/dashboard')
+    redirect("/dashboard");
   }
 
   const handleToggleStatus = async (productId: string) => {
     try {
-      await toggleProductStatusMutation.mutateAsync({ productId })
+      await toggleProductStatusMutation.mutateAsync({ productId });
     } catch (error) {
-      console.error('Error toggling product status:', error)
+      console.error("Error toggling product status:", error);
     }
-  }
+  };
 
   const handleDeleteProduct = async (productId: string) => {
-    if (confirm('Are you sure you want to delete this product? This action cannot be undone.')) {
+    if (
+      confirm(
+        "Are you sure you want to delete this product? This action cannot be undone.",
+      )
+    ) {
       try {
-        await deleteProductMutation.mutateAsync({ productId })
+        await deleteProductMutation.mutateAsync({ productId });
       } catch (error) {
-        console.error('Error deleting product:', error)
+        console.error("Error deleting product:", error);
       }
     }
-  }
+  };
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const handleEditProduct = (product: any) => {
-    setEditingProduct(product)
-    setIsProductModalOpen(true)
-  }
+  const handleEditProduct = (product: {
+    id: string;
+    name: string;
+    slug: string;
+    category: string;
+    logoUrl?: string | null;
+    logoName?: string | null;
+    borderColor?: string | null;
+    isActive: boolean;
+    isFeatured: boolean;
+    displayOrder?: number | null;
+    seoTitle?: string | null;
+    seoDescription?: string | null;
+    plans?: unknown;
+  }) => {
+    setEditingProduct(product);
+    setIsProductModalOpen(true);
+  };
 
   const handleCloseModal = () => {
-    setIsProductModalOpen(false)
-    setEditingProduct(null)
-  }
+    setIsProductModalOpen(false);
+    setEditingProduct(null);
+  };
 
   const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(price)
-  }
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+    }).format(price);
+  };
 
   const formatDate = (date: string | Date) => {
-    return new Date(date).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-    })
-  }
+    return new Date(date).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  };
 
   return (
     <div className="space-y-8">
@@ -172,7 +216,7 @@ export default function AdminProductsPage() {
             Manage your products, pricing, and availability
           </p>
         </div>
-        <button 
+        <button
           onClick={() => setIsProductModalOpen(true)}
           className="flex items-center px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg text-white transition-colors"
         >
@@ -191,7 +235,9 @@ export default function AdminProductsPage() {
         <div className="bg-gray-800/50 backdrop-blur-lg p-6 rounded-2xl border border-gray-700">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-400 text-sm font-medium">Total Products</p>
+              <p className="text-gray-400 text-sm font-medium">
+                Total Products
+              </p>
               <p className="text-2xl font-bold text-white">{stats.total}</p>
             </div>
             <div className="p-3 bg-purple-500/20 rounded-xl">
@@ -203,7 +249,9 @@ export default function AdminProductsPage() {
         <div className="bg-gray-800/50 backdrop-blur-lg p-6 rounded-2xl border border-gray-700">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-400 text-sm font-medium">Active Products</p>
+              <p className="text-gray-400 text-sm font-medium">
+                Active Products
+              </p>
               <p className="text-2xl font-bold text-white">{stats.active}</p>
             </div>
             <div className="p-3 bg-green-500/20 rounded-xl">
@@ -215,7 +263,9 @@ export default function AdminProductsPage() {
         <div className="bg-gray-800/50 backdrop-blur-lg p-6 rounded-2xl border border-gray-700">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-400 text-sm font-medium">Inactive Products</p>
+              <p className="text-gray-400 text-sm font-medium">
+                Inactive Products
+              </p>
               <p className="text-2xl font-bold text-white">{stats.inactive}</p>
             </div>
             <div className="p-3 bg-red-500/20 rounded-xl">
@@ -228,7 +278,9 @@ export default function AdminProductsPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-gray-400 text-sm font-medium">Avg. Price</p>
-              <p className="text-2xl font-bold text-white">{formatPrice(stats.avgPrice)}</p>
+              <p className="text-2xl font-bold text-white">
+                {formatPrice(stats.avgPrice)}
+              </p>
             </div>
             <div className="p-3 bg-blue-500/20 rounded-xl">
               <DollarSign className="h-6 w-6 text-blue-400" />
@@ -253,8 +305,8 @@ export default function AdminProductsPage() {
                 type="text"
                 value={searchTerm}
                 onChange={(e) => {
-                  setSearchTerm(e.target.value)
-                  setCurrentPage(1)
+                  setSearchTerm(e.target.value);
+                  setCurrentPage(1);
                 }}
                 placeholder="Search products..."
                 className="w-full pl-10 pr-4 py-3 bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
@@ -269,8 +321,8 @@ export default function AdminProductsPage() {
               <select
                 value={selectedCategory}
                 onChange={(e) => {
-                  setSelectedCategory(e.target.value)
-                  setCurrentPage(1)
+                  setSelectedCategory(e.target.value as ProductCategory | "");
+                  setCurrentPage(1);
                 }}
                 className="w-full pl-10 pr-4 py-3 bg-gray-700/50 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
               >
@@ -296,7 +348,10 @@ export default function AdminProductsPage() {
         {isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[...Array(6)].map((_, i) => (
-              <div key={i} className="bg-gray-800/50 backdrop-blur-lg p-6 rounded-2xl border border-gray-700 animate-pulse">
+              <div
+                key={i}
+                className="bg-gray-800/50 backdrop-blur-lg p-6 rounded-2xl border border-gray-700 animate-pulse"
+              >
                 <div className="h-32 bg-gray-700 rounded-lg mb-4"></div>
                 <div className="space-y-2">
                   <div className="h-4 bg-gray-700 rounded w-3/4"></div>
@@ -308,18 +363,21 @@ export default function AdminProductsPage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {productsData?.products?.map((product) => (
-              <div key={product.id} className="bg-gray-800/50 backdrop-blur-lg p-6 rounded-2xl border border-gray-700 hover:border-gray-600 transition-all duration-200">
+              <div
+                key={product.id}
+                className="bg-gray-800/50 backdrop-blur-lg p-6 rounded-2xl border border-gray-700 hover:border-gray-600 transition-all duration-200"
+              >
                 {/* Product Image */}
-                <div 
+                <div
                   className="h-32 bg-gradient-to-br from-purple-500/20 to-blue-500/20 rounded-lg mb-4 flex items-center justify-center border-2"
                   style={{
-                    borderColor: product.borderColor || '#6366f1',
-                    boxShadow: `0 0 10px ${product.borderColor || '#6366f1'}20`,
+                    borderColor: product.borderColor || "#6366f1",
+                    boxShadow: `0 0 10px ${product.borderColor || "#6366f1"}20`,
                   }}
                 >
                   {product.logoUrl ? (
-                    <Image 
-                      src={product.logoUrl} 
+                    <Image
+                      src={product.logoUrl}
                       alt={product.name}
                       width={64}
                       height={64}
@@ -327,32 +385,40 @@ export default function AdminProductsPage() {
                       unoptimized
                     />
                   ) : (
-                    <div 
+                    <div
                       className="h-16 w-16 rounded-lg flex items-center justify-center text-white font-bold text-xl"
-                      style={{ 
-                        backgroundColor: product.borderColor || '#9333EA'
+                      style={{
+                        backgroundColor: product.borderColor || "#9333EA",
                       }}
                     >
-                      {product.name?.[0] || <Package className="h-12 w-12 text-purple-400" />}
+                      {product.name?.[0] || (
+                        <Package className="h-12 w-12 text-purple-400" />
+                      )}
                     </div>
                   )}
                 </div>
 
                 {/* Product Info */}
                 <div className="space-y-2 mb-4">
-                  <h3 className="text-lg font-semibold text-white">{product.name}</h3>
+                  <h3 className="text-lg font-semibold text-white">
+                    {product.name}
+                  </h3>
                   <p className="text-gray-400 text-sm leading-relaxed min-h-[3rem] whitespace-pre-wrap break-words">
-                    {product.description || 'No description available'}
+                    {product.description || "No description available"}
                   </p>
                   <div className="flex items-center space-x-2">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      product.isActive 
-                        ? 'bg-green-900/30 text-green-400' 
-                        : 'bg-red-900/30 text-red-400'
-                    }`}>
-                      {product.isActive ? 'Active' : 'Inactive'}
+                    <span
+                      className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        product.isActive
+                          ? "bg-green-900/30 text-green-400"
+                          : "bg-red-900/30 text-red-400"
+                      }`}
+                    >
+                      {product.isActive ? "Active" : "Inactive"}
                     </span>
-                    <span className="text-gray-400 text-xs">{product.plans?.length || 0} plans</span>
+                    <span className="text-gray-400 text-xs">
+                      {product.plans?.length || 0} plans
+                    </span>
                   </div>
                 </div>
 
@@ -390,11 +456,11 @@ export default function AdminProductsPage() {
                       onClick={() => handleToggleStatus(product.id)}
                       disabled={toggleProductStatusMutation.isPending}
                       className={`p-2 rounded-lg transition-colors ${
-                        product.isActive 
-                          ? 'bg-red-600 hover:bg-red-700' 
-                          : 'bg-green-600 hover:bg-green-700'
+                        product.isActive
+                          ? "bg-red-600 hover:bg-red-700"
+                          : "bg-green-600 hover:bg-green-700"
                       }`}
-                      title={product.isActive ? 'Deactivate' : 'Activate'}
+                      title={product.isActive ? "Deactivate" : "Activate"}
                     >
                       {product.isActive ? (
                         <ToggleLeft className="h-4 w-4 text-white" />
@@ -413,7 +479,11 @@ export default function AdminProductsPage() {
                   </div>
                 </div>
               </div>
-            )) || <div className="col-span-full text-center py-12 text-gray-400">No products found</div>}
+            )) || (
+              <div className="col-span-full text-center py-12 text-gray-400">
+                No products found
+              </div>
+            )}
           </div>
         )}
       </motion.div>
@@ -427,13 +497,13 @@ export default function AdminProductsPage() {
           className="flex items-center justify-center space-x-2"
         >
           <button
-            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+            onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
             disabled={currentPage === 1}
             className="px-4 py-2 bg-gray-700 hover:bg-gray-600 disabled:bg-gray-700/50 rounded-lg text-white transition-colors"
           >
             Previous
           </button>
-          
+
           <div className="flex space-x-1">
             {[...Array(productsData.pages)].map((_, i) => (
               <button
@@ -441,8 +511,8 @@ export default function AdminProductsPage() {
                 onClick={() => setCurrentPage(i + 1)}
                 className={`w-10 h-10 rounded-lg transition-colors ${
                   currentPage === i + 1
-                    ? 'bg-purple-600 text-white'
-                    : 'bg-gray-700 hover:bg-gray-600 text-gray-300'
+                    ? "bg-purple-600 text-white"
+                    : "bg-gray-700 hover:bg-gray-600 text-gray-300"
                 }`}
               >
                 {i + 1}
@@ -451,7 +521,9 @@ export default function AdminProductsPage() {
           </div>
 
           <button
-            onClick={() => setCurrentPage(prev => Math.min(productsData.pages, prev + 1))}
+            onClick={() =>
+              setCurrentPage((prev) => Math.min(productsData.pages, prev + 1))
+            }
             disabled={currentPage === productsData.pages}
             className="px-4 py-2 bg-gray-700 hover:bg-gray-600 disabled:bg-gray-700/50 rounded-lg text-white transition-colors"
           >
@@ -465,11 +537,11 @@ export default function AdminProductsPage() {
         isOpen={isProductModalOpen}
         onClose={handleCloseModal}
         onSuccess={() => {
-          refetch()
-          handleCloseModal()
+          refetch();
+          handleCloseModal();
         }}
         product={editingProduct}
       />
     </div>
-  )
-} 
+  );
+}

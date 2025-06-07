@@ -1,266 +1,273 @@
-'use client'
+"use client";
 
-import { useState, useEffect } from 'react'
-import { useSession, signOut } from 'next-auth/react'
-import { redirect } from 'next/navigation'
-import { motion } from 'framer-motion'
-import { 
-  User, 
-  Bell, 
-  Shield, 
-  Key, 
+import { useState, useEffect } from "react";
+import { useSession, signOut } from "next-auth/react";
+import { redirect } from "next/navigation";
+import { motion } from "framer-motion";
+import {
+  User,
+  Bell,
+  Shield,
+  Key,
   Trash2,
   Save,
   Edit,
   Eye,
   EyeOff,
   Crown,
-  UserCheck
-} from 'lucide-react'
-import { toast } from 'sonner'
-import { trpc } from '@/lib/trpc'
+  UserCheck,
+} from "lucide-react";
+import { toast } from "sonner";
+import { trpc } from "@/lib/trpc";
 
 export default function ProfileSettingsPage() {
-  const { data: session, status, update } = useSession()
-  const [isEditing, setIsEditing] = useState(false)
-  const [showPasswordModal, setShowPasswordModal] = useState(false)
-  const [showDeleteModal, setShowDeleteModal] = useState(false)
-  const [deletePassword, setDeletePassword] = useState('')
-  const [deleteConfirmation, setDeleteConfirmation] = useState('')
-  const [deleteError, setDeleteError] = useState('')
+  const { data: session, status, update } = useSession();
+  const [isEditing, setIsEditing] = useState(false);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deletePassword, setDeletePassword] = useState("");
+  const [deleteConfirmation, setDeleteConfirmation] = useState("");
+  const [deleteError, setDeleteError] = useState("");
   const [passwordData, setPasswordData] = useState({
-    currentPassword: '',
-    newPassword: '',
-    confirmPassword: ''
-  })
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
   const [showPasswords, setShowPasswords] = useState({
     current: false,
     new: false,
-    confirm: false
-  })
+    confirm: false,
+  });
   const [formData, setFormData] = useState({
-    name: ''
-  })
+    name: "",
+  });
   const [notifications, setNotifications] = useState({
     email: true,
     push: false,
     sms: false,
-    marketing: true
-  })
+    marketing: true,
+  });
 
   // Fetch user profile
-  const { data: userProfile, isLoading: profileLoading } = trpc.user.getProfile.useQuery(undefined, {
-    enabled: !!session?.user?.id
-  })
+  const { data: userProfile, isLoading: profileLoading } =
+    trpc.user.getProfile.useQuery(undefined, {
+      enabled: !!session?.user?.id,
+    });
 
   // Update profile mutation
   const updateProfileMutation = trpc.user.updateProfile.useMutation({
     onSuccess: async () => {
-      toast.success('Profile updated successfully!')
-      setIsEditing(false)
-      
+      toast.success("Profile updated successfully!");
+      setIsEditing(false);
+
       // Update the session if name was changed
       if (formData.name !== session?.user?.name) {
         await update({
           ...session,
           user: {
             ...session?.user,
-            name: formData.name
-          }
-        })
+            name: formData.name,
+          },
+        });
       }
     },
     onError: (error) => {
-      toast.error(`Failed to update profile: ${error.message}`)
-    }
-  })
+      toast.error(`Failed to update profile: ${error.message}`);
+    },
+  });
 
   // Change password mutation
   const changePasswordMutation = trpc.auth.changePassword.useMutation({
     onSuccess: () => {
-      toast.success('Password changed successfully!')
-      setShowPasswordModal(false)
+      toast.success("Password changed successfully!");
+      setShowPasswordModal(false);
       setPasswordData({
-        currentPassword: '',
-        newPassword: '',
-        confirmPassword: ''
-      })
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      });
     },
     onError: (error) => {
-      toast.error(`Failed to change password: ${error.message}`)
-    }
-  })
+      toast.error(`Failed to change password: ${error.message}`);
+    },
+  });
 
   // Delete account mutation
   const deleteAccountMutation = trpc.user.deleteAccount.useMutation({
     onSuccess: () => {
-      signOut({ callbackUrl: '/' })
+      signOut({ callbackUrl: "/" });
     },
     onError: (error) => {
-      setDeleteError(error.message || 'Failed to delete account. Please try again.')
-    }
-  })
+      setDeleteError(
+        error.message || "Failed to delete account. Please try again.",
+      );
+    },
+  });
 
   // Initialize form data when profile loads
   useEffect(() => {
     if (userProfile) {
       setFormData({
-        name: userProfile.name || ''
-      })
+        name: userProfile.name || "",
+      });
     }
-  }, [userProfile])
+  }, [userProfile]);
 
-  if (status === 'loading' || profileLoading) {
+  if (status === "loading" || profileLoading) {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-purple-500"></div>
       </div>
-    )
+    );
   }
 
   if (!session) {
-    redirect('/auth/signin')
+    redirect("/auth/signin");
   }
 
   const handleSave = async () => {
     try {
-      await updateProfileMutation.mutateAsync(formData)
+      await updateProfileMutation.mutateAsync(formData);
     } catch (error) {
       // Error is handled by mutation onError
-      console.error('Profile update error:', error)
+      console.error("Profile update error:", error);
     }
-  }
+  };
 
   const handleCancel = () => {
     if (userProfile) {
       setFormData({
-        name: userProfile.name || ''
-      })
+        name: userProfile.name || "",
+      });
     }
-    setIsEditing(false)
-  }
+    setIsEditing(false);
+  };
 
   const handlePasswordChange = async () => {
     // Validation
-    if (!passwordData.currentPassword || !passwordData.newPassword || !passwordData.confirmPassword) {
-      toast.error('All password fields are required')
-      return
+    if (
+      !passwordData.currentPassword ||
+      !passwordData.newPassword ||
+      !passwordData.confirmPassword
+    ) {
+      toast.error("All password fields are required");
+      return;
     }
 
     if (passwordData.newPassword.length < 8) {
-      toast.error('New password must be at least 8 characters long')
-      return
+      toast.error("New password must be at least 8 characters long");
+      return;
     }
 
     if (passwordData.newPassword !== passwordData.confirmPassword) {
-      toast.error('New passwords do not match')
-      return
+      toast.error("New passwords do not match");
+      return;
     }
 
     try {
       await changePasswordMutation.mutateAsync({
         currentPassword: passwordData.currentPassword,
-        newPassword: passwordData.newPassword
-      })
+        newPassword: passwordData.newPassword,
+      });
     } catch (error) {
       // Error is handled by mutation onError
-      console.error('Password change error:', error)
+      console.error("Password change error:", error);
     }
-  }
+  };
 
   const closePasswordModal = () => {
-    setShowPasswordModal(false)
+    setShowPasswordModal(false);
     setPasswordData({
-      currentPassword: '',
-      newPassword: '',
-      confirmPassword: ''
-    })
+      currentPassword: "",
+      newPassword: "",
+      confirmPassword: "",
+    });
     setShowPasswords({
       current: false,
       new: false,
-      confirm: false
-    })
-  }
+      confirm: false,
+    });
+  };
 
   const closeDeleteModal = () => {
-    setShowDeleteModal(false)
-    setDeletePassword('')
-    setDeleteConfirmation('')
-    setDeleteError('')
-  }
+    setShowDeleteModal(false);
+    setDeletePassword("");
+    setDeleteConfirmation("");
+    setDeleteError("");
+  };
 
   const handleDeleteAccount = async () => {
     // Clear previous errors
-    setDeleteError('')
+    setDeleteError("");
 
     // Validation
     if (!deletePassword.trim()) {
-      setDeleteError('Please enter your password')
-      return
+      setDeleteError("Please enter your password");
+      return;
     }
 
-    if (deleteConfirmation !== 'DELETE MY ACCOUNT') {
-      setDeleteError('Please type "DELETE MY ACCOUNT" to confirm')
-      return
+    if (deleteConfirmation !== "DELETE MY ACCOUNT") {
+      setDeleteError('Please type "DELETE MY ACCOUNT" to confirm');
+      return;
     }
 
     try {
       await deleteAccountMutation.mutateAsync({
         password: deletePassword,
-        confirmation: 'DELETE MY ACCOUNT' as const
-      })
+        confirmation: "DELETE MY ACCOUNT" as const,
+      });
     } catch (error) {
       // Error is handled by mutation onError
-      console.error('Delete account error:', error)
+      console.error("Delete account error:", error);
     }
-  }
+  };
 
   const handleDeleteModalBackdropClick = (e: React.MouseEvent) => {
     if (e.target === e.currentTarget) {
-      closeDeleteModal()
+      closeDeleteModal();
     }
-  }
+  };
 
   const handlePasswordModalBackdropClick = (e: React.MouseEvent) => {
     if (e.target === e.currentTarget) {
-      closePasswordModal()
+      closePasswordModal();
     }
-  }
+  };
 
   const getRoleIcon = (role: string) => {
     switch (role) {
-      case 'ADMIN':
-        return <Crown className="h-4 w-4 text-red-400" />
-      case 'SUPPORT_AGENT':
-        return <UserCheck className="h-4 w-4 text-yellow-400" />
-      case 'MANAGER':
-        return <Shield className="h-4 w-4 text-blue-400" />
+      case "ADMIN":
+        return <Crown className="h-4 w-4 text-red-400" />;
+      case "SUPPORT_AGENT":
+        return <UserCheck className="h-4 w-4 text-yellow-400" />;
+      case "MANAGER":
+        return <Shield className="h-4 w-4 text-blue-400" />;
       default:
-        return <User className="h-4 w-4 text-gray-400" />
+        return <User className="h-4 w-4 text-gray-400" />;
     }
-  }
+  };
 
   const getRoleColor = (role: string) => {
     switch (role) {
-      case 'ADMIN':
-        return 'text-red-400'
-      case 'SUPPORT_AGENT':
-        return 'text-yellow-400'
-      case 'MANAGER':
-        return 'text-blue-400'
+      case "ADMIN":
+        return "text-red-400";
+      case "SUPPORT_AGENT":
+        return "text-yellow-400";
+      case "MANAGER":
+        return "text-blue-400";
       default:
-        return 'text-gray-400'
+        return "text-gray-400";
     }
-  }
+  };
 
   const formatRole = (role: string) => {
     switch (role) {
-      case 'SUPPORT_AGENT':
-        return 'Support Agent'
+      case "SUPPORT_AGENT":
+        return "Support Agent";
       default:
-        return role.charAt(0) + role.slice(1).toLowerCase()
+        return role.charAt(0) + role.slice(1).toLowerCase();
     }
-  }
+  };
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -271,7 +278,9 @@ export default function ProfileSettingsPage() {
         className="text-center mb-8"
       >
         <h1 className="text-3xl font-bold text-white mb-2">Profile Settings</h1>
-        <p className="text-gray-400">Manage your account settings and preferences</p>
+        <p className="text-gray-400">
+          Manage your account settings and preferences
+        </p>
       </motion.div>
 
       {/* Personal Information */}
@@ -308,7 +317,7 @@ export default function ProfileSettingsPage() {
                 className="flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-green-600/50 disabled:cursor-not-allowed rounded-lg text-white text-sm transition-colors"
               >
                 <Save className="w-4 h-4 mr-2" />
-                {updateProfileMutation.isPending ? 'Saving...' : 'Save'}
+                {updateProfileMutation.isPending ? "Saving..." : "Save"}
               </button>
             </div>
           )}
@@ -322,7 +331,9 @@ export default function ProfileSettingsPage() {
             <input
               type="text"
               value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, name: e.target.value })
+              }
               disabled={!isEditing}
               className="w-full px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
               placeholder="Enter your full name"
@@ -335,11 +346,13 @@ export default function ProfileSettingsPage() {
             </label>
             <input
               type="email"
-              value={session?.user?.email || ''}
+              value={session?.user?.email || ""}
               disabled
               className="w-full px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-lg text-gray-300 opacity-50 cursor-not-allowed"
             />
-            <p className="text-xs text-gray-500 mt-1">Email cannot be changed</p>
+            <p className="text-xs text-gray-500 mt-1">
+              Email cannot be changed
+            </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -348,9 +361,11 @@ export default function ProfileSettingsPage() {
                 Account Role
               </label>
               <div className="flex items-center space-x-2 w-full px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-lg">
-                {getRoleIcon(session?.user?.role || 'USER')}
-                <span className={`font-medium ${getRoleColor(session?.user?.role || 'USER')}`}>
-                  {formatRole(session?.user?.role || 'USER')}
+                {getRoleIcon(session?.user?.role || "USER")}
+                <span
+                  className={`font-medium ${getRoleColor(session?.user?.role || "USER")}`}
+                >
+                  {formatRole(session?.user?.role || "USER")}
                 </span>
               </div>
             </div>
@@ -381,24 +396,29 @@ export default function ProfileSettingsPage() {
         </h2>
         <div className="space-y-4">
           {Object.entries(notifications).map(([key, value]) => (
-            <div key={key} className="flex items-center justify-between p-4 bg-gray-700/50 rounded-lg">
+            <div
+              key={key}
+              className="flex items-center justify-between p-4 bg-gray-700/50 rounded-lg"
+            >
               <div>
                 <p className="text-white font-medium capitalize">
-                  {key.replace(/([A-Z])/g, ' $1').trim()} Notifications
+                  {key.replace(/([A-Z])/g, " $1").trim()} Notifications
                 </p>
                 <p className="text-gray-400 text-sm">
                   Receive {key} notifications
                 </p>
               </div>
               <button
-                onClick={() => setNotifications({ ...notifications, [key]: !value })}
+                onClick={() =>
+                  setNotifications({ ...notifications, [key]: !value })
+                }
                 className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                  value ? 'bg-purple-600' : 'bg-gray-600'
+                  value ? "bg-purple-600" : "bg-gray-600"
                 }`}
               >
                 <span
                   className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                    value ? 'translate-x-6' : 'translate-x-1'
+                    value ? "translate-x-6" : "translate-x-1"
                   }`}
                 />
               </button>
@@ -466,9 +486,11 @@ export default function ProfileSettingsPage() {
           <div className="flex items-center justify-between p-4 bg-red-900/30 rounded-lg">
             <div>
               <p className="text-white font-medium">Delete Account</p>
-              <p className="text-gray-400 text-sm">Permanently delete your account and all data</p>
+              <p className="text-gray-400 text-sm">
+                Permanently delete your account and all data
+              </p>
             </div>
-            <button 
+            <button
               onClick={() => setShowDeleteModal(true)}
               className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm transition-colors"
             >
@@ -480,7 +502,7 @@ export default function ProfileSettingsPage() {
 
       {/* Password Change Modal */}
       {showPasswordModal && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
           onClick={handlePasswordModalBackdropClick}
         >
@@ -491,7 +513,9 @@ export default function ProfileSettingsPage() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-semibold text-white">Change Password</h2>
+              <h2 className="text-xl font-semibold text-white">
+                Change Password
+              </h2>
               <button
                 onClick={closePasswordModal}
                 className="text-gray-400 hover:text-white transition-colors"
@@ -508,18 +532,32 @@ export default function ProfileSettingsPage() {
                 </label>
                 <div className="relative">
                   <input
-                    type={showPasswords.current ? 'text' : 'password'}
+                    type={showPasswords.current ? "text" : "password"}
                     value={passwordData.currentPassword}
-                    onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
+                    onChange={(e) =>
+                      setPasswordData({
+                        ...passwordData,
+                        currentPassword: e.target.value,
+                      })
+                    }
                     className="w-full px-4 py-3 pr-12 bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                     placeholder="Enter your current password"
                   />
                   <button
                     type="button"
-                    onClick={() => setShowPasswords({ ...showPasswords, current: !showPasswords.current })}
+                    onClick={() =>
+                      setShowPasswords({
+                        ...showPasswords,
+                        current: !showPasswords.current,
+                      })
+                    }
                     className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
                   >
-                    {showPasswords.current ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    {showPasswords.current ? (
+                      <EyeOff className="w-5 h-5" />
+                    ) : (
+                      <Eye className="w-5 h-5" />
+                    )}
                   </button>
                 </div>
               </div>
@@ -531,19 +569,33 @@ export default function ProfileSettingsPage() {
                 </label>
                 <div className="relative">
                   <input
-                    type={showPasswords.new ? 'text' : 'password'}
+                    type={showPasswords.new ? "text" : "password"}
                     value={passwordData.newPassword}
-                    onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+                    onChange={(e) =>
+                      setPasswordData({
+                        ...passwordData,
+                        newPassword: e.target.value,
+                      })
+                    }
                     className="w-full px-4 py-3 pr-12 bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                     placeholder="Enter your new password"
                     minLength={8}
                   />
                   <button
                     type="button"
-                    onClick={() => setShowPasswords({ ...showPasswords, new: !showPasswords.new })}
+                    onClick={() =>
+                      setShowPasswords({
+                        ...showPasswords,
+                        new: !showPasswords.new,
+                      })
+                    }
                     className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
                   >
-                    {showPasswords.new ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    {showPasswords.new ? (
+                      <EyeOff className="w-5 h-5" />
+                    ) : (
+                      <Eye className="w-5 h-5" />
+                    )}
                   </button>
                 </div>
                 <p className="text-xs text-gray-500 mt-1">
@@ -558,18 +610,32 @@ export default function ProfileSettingsPage() {
                 </label>
                 <div className="relative">
                   <input
-                    type={showPasswords.confirm ? 'text' : 'password'}
+                    type={showPasswords.confirm ? "text" : "password"}
                     value={passwordData.confirmPassword}
-                    onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
+                    onChange={(e) =>
+                      setPasswordData({
+                        ...passwordData,
+                        confirmPassword: e.target.value,
+                      })
+                    }
                     className="w-full px-4 py-3 pr-12 bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                     placeholder="Confirm your new password"
                   />
                   <button
                     type="button"
-                    onClick={() => setShowPasswords({ ...showPasswords, confirm: !showPasswords.confirm })}
+                    onClick={() =>
+                      setShowPasswords({
+                        ...showPasswords,
+                        confirm: !showPasswords.confirm,
+                      })
+                    }
                     className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
                   >
-                    {showPasswords.confirm ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    {showPasswords.confirm ? (
+                      <EyeOff className="w-5 h-5" />
+                    ) : (
+                      <Eye className="w-5 h-5" />
+                    )}
                   </button>
                 </div>
               </div>
@@ -588,7 +654,9 @@ export default function ProfileSettingsPage() {
                 disabled={changePasswordMutation.isPending}
                 className="flex-1 px-4 py-3 bg-purple-600 hover:bg-purple-700 disabled:bg-purple-600/50 disabled:cursor-not-allowed text-white rounded-lg transition-colors"
               >
-                {changePasswordMutation.isPending ? 'Changing...' : 'Change Password'}
+                {changePasswordMutation.isPending
+                  ? "Changing..."
+                  : "Change Password"}
               </button>
             </div>
           </motion.div>
@@ -597,7 +665,7 @@ export default function ProfileSettingsPage() {
 
       {/* Delete Account Modal */}
       {showDeleteModal && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
           onClick={handleDeleteModalBackdropClick}
         >
@@ -608,7 +676,9 @@ export default function ProfileSettingsPage() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-semibold text-white">Delete Account</h2>
+              <h2 className="text-xl font-semibold text-white">
+                Delete Account
+              </h2>
               <button
                 onClick={closeDeleteModal}
                 className="text-gray-400 hover:text-white transition-colors"
@@ -619,15 +689,19 @@ export default function ProfileSettingsPage() {
 
             <div className="space-y-4">
               <p className="text-white font-medium">
-                Are you absolutely sure you want to delete your account? This action cannot be undone and all your data will be permanently lost.
+                Are you absolutely sure you want to delete your account? This
+                action cannot be undone and all your data will be permanently
+                lost.
               </p>
 
               {deleteError && (
                 <div className="p-3 bg-red-500/20 border border-red-500/30 rounded-lg">
-                  <p className="text-red-400 text-sm font-medium">{deleteError}</p>
+                  <p className="text-red-400 text-sm font-medium">
+                    {deleteError}
+                  </p>
                 </div>
               )}
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-400 mb-2">
                   Enter your password to confirm
@@ -636,14 +710,14 @@ export default function ProfileSettingsPage() {
                   type="password"
                   value={deletePassword}
                   onChange={(e) => {
-                    setDeletePassword(e.target.value)
-                    if (deleteError) setDeleteError('')
+                    setDeletePassword(e.target.value);
+                    if (deleteError) setDeleteError("");
                   }}
                   className="w-full px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
                   placeholder="Enter your password"
                 />
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-400 mb-2">
                   Type &quot;DELETE MY ACCOUNT&quot; to confirm
@@ -652,8 +726,8 @@ export default function ProfileSettingsPage() {
                   type="text"
                   value={deleteConfirmation}
                   onChange={(e) => {
-                    setDeleteConfirmation(e.target.value)
-                    if (deleteError) setDeleteError('')
+                    setDeleteConfirmation(e.target.value);
+                    if (deleteError) setDeleteError("");
                   }}
                   className="w-full px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
                   placeholder="DELETE MY ACCOUNT"
@@ -674,12 +748,14 @@ export default function ProfileSettingsPage() {
                 disabled={deleteAccountMutation.isPending}
                 className="flex-1 px-4 py-3 bg-red-600 hover:bg-red-700 disabled:bg-red-600/50 text-white rounded-lg transition-colors"
               >
-                {deleteAccountMutation.isPending ? 'Deleting...' : 'Delete Account'}
+                {deleteAccountMutation.isPending
+                  ? "Deleting..."
+                  : "Delete Account"}
               </button>
             </div>
           </motion.div>
         </div>
       )}
     </div>
-  )
-} 
+  );
+}

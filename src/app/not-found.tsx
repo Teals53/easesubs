@@ -1,12 +1,12 @@
-'use client'
+"use client";
 
-import { motion } from 'framer-motion'
-import { Search, Home, ArrowLeft } from 'lucide-react'
-import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { motion } from "framer-motion";
+import { Search, Home, ArrowLeft } from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export default function NotFound() {
-  const router = useRouter()
+  const router = useRouter();
 
   return (
     <div className="min-h-screen bg-gray-950 flex items-center justify-center px-4">
@@ -30,10 +30,8 @@ export default function NotFound() {
           </div>
         </motion.div>
 
-        <h2 className="text-2xl font-bold text-white mb-4">
-          Page Not Found
-        </h2>
-        
+        <h2 className="text-2xl font-bold text-white mb-4">Page Not Found</h2>
+
         <p className="text-gray-400 mb-8">
           The page you&apos;re looking for doesn&apos;t exist or has been moved.
         </p>
@@ -49,10 +47,7 @@ export default function NotFound() {
             Go back
           </motion.button>
 
-          <motion.div
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
+          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
             <Link
               href="/"
               className="bg-purple-600 hover:bg-purple-700 text-white font-medium px-6 py-3 rounded-lg transition-colors duration-200 flex items-center justify-center gap-2"
@@ -92,5 +87,5 @@ export default function NotFound() {
         </div>
       </motion.div>
     </div>
-  )
-} 
+  );
+}

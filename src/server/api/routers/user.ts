@@ -32,13 +32,19 @@ export const userRouter = createTRPCRouter({
   updateProfile: protectedProcedure
     .input(
       z.object({
-        name: z.string().min(2, "Name must be at least 2 characters").optional(),
-        bio: z.string().max(500, "Bio must be 500 characters or less").optional(),
+        name: z
+          .string()
+          .min(2, "Name must be at least 2 characters")
+          .optional(),
+        bio: z
+          .string()
+          .max(500, "Bio must be 500 characters or less")
+          .optional(),
         country: z.string().optional(),
         phone: z.string().optional(),
         timezone: z.string().optional(),
         language: z.string().default("en").optional(),
-      })
+      }),
     )
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.session.user.id;
@@ -271,7 +277,7 @@ export const userRouter = createTRPCRouter({
     // Get notification settings from profile if they exist
     // For now, return default settings
     // In future, you could extend the UserProfile model to include notification preferences
-    
+
     // Return default settings
     return {
       emailNotifications: true,
@@ -279,7 +285,7 @@ export const userRouter = createTRPCRouter({
       supportUpdates: true,
       marketingEmails: false,
       subscriptionReminders: true,
-    }
+    };
   }),
 
   updateNotificationSettings: protectedProcedure
@@ -290,10 +296,10 @@ export const userRouter = createTRPCRouter({
         supportUpdates: z.boolean().optional(),
         marketingEmails: z.boolean().optional(),
         subscriptionReminders: z.boolean().optional(),
-      })
+      }),
     )
     .mutation(async ({ ctx }) => {
-      const userId = ctx.session.user.id
+      const userId = ctx.session.user.id;
 
       try {
         // For now, we'll just ensure the profile exists
@@ -305,20 +311,20 @@ export const userRouter = createTRPCRouter({
           },
           create: {
             userId,
-            language: 'en',
+            language: "en",
           },
-        })
+        });
 
         return {
           success: true,
-          message: 'Notification settings updated successfully',
-        }
+          message: "Notification settings updated successfully",
+        };
       } catch (error) {
-        console.error('Notification settings update error:', error)
+        console.error("Notification settings update error:", error);
         throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to update notification settings',
-        })
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to update notification settings",
+        });
       }
     }),
 
@@ -327,7 +333,7 @@ export const userRouter = createTRPCRouter({
       z.object({
         password: z.string().min(1, "Password is required"),
         confirmation: z.literal("DELETE MY ACCOUNT"),
-      })
+      }),
     )
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.session.user.id;
@@ -346,7 +352,10 @@ export const userRouter = createTRPCRouter({
 
       // Verify password
       const bcrypt = await import("bcryptjs");
-      const isPasswordValid = await bcrypt.compare(input.password, user.password);
+      const isPasswordValid = await bcrypt.compare(
+        input.password,
+        user.password,
+      );
       if (!isPasswordValid) {
         throw new TRPCError({
           code: "UNAUTHORIZED",
@@ -377,4 +386,4 @@ export const userRouter = createTRPCRouter({
         });
       }
     }),
-}); 
+});

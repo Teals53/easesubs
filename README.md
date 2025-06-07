@@ -16,6 +16,7 @@ A modern, secure e-commerce platform for subscription services built with Next.j
 ## 🏗️ Architecture
 
 ### Frontend
+
 - **Framework**: Next.js 15 with App Router
 - **UI Library**: Tailwind CSS + Radix UI components
 - **State Management**: tRPC with React Query
@@ -23,6 +24,7 @@ A modern, secure e-commerce platform for subscription services built with Next.j
 - **Animations**: Framer Motion
 
 ### Backend
+
 - **API**: tRPC with TypeScript
 - **Database**: PostgreSQL (AWS RDS)
 - **ORM**: Prisma
@@ -30,6 +32,7 @@ A modern, secure e-commerce platform for subscription services built with Next.j
 - **File Storage**: AWS S3 (configured)
 
 ### Infrastructure
+
 - **Hosting**: AWS EC2
 - **Database**: AWS RDS PostgreSQL
 - **CDN**: AWS CloudFront (configured)
@@ -38,47 +41,53 @@ A modern, secure e-commerce platform for subscription services built with Next.j
 ## 🔧 Installation
 
 ### Prerequisites
-- Node.js 18+ 
+
+- Node.js 18+
 - PostgreSQL database
 - AWS account (for production)
 
 ### Local Development
 
 1. **Clone the repository**
+
    ```bash
    git clone <repository-url>
    cd easesubs
    ```
 
 2. **Install dependencies**
+
    ```bash
    npm install
    ```
 
 3. **Environment Setup**
+
    ```bash
    cp .env.example .env.local
    ```
-   
+
    Update `.env.local` with your configuration:
+
    ```env
    # Database
    DATABASE_URL="postgresql://username:password@localhost:5432/easesubs"
-   
+
    # Authentication
    AUTH_SECRET="your-32-char-secret"
    NEXTAUTH_URL="http://localhost:3000"
-   
+
    # Google OAuth
    GOOGLE_CLIENT_ID="your-google-client-id"
    GOOGLE_CLIENT_SECRET="your-google-client-secret"
-   
+
    # Payment Providers
    CRYPTOMUS_API_KEY="your-cryptomus-api-key"
    CRYPTOMUS_SECRET="your-cryptomus-secret"
    ```
 
 4. **Database Setup**
+
    ```bash
    npx prisma generate
    npx prisma db push
@@ -95,28 +104,30 @@ A modern, secure e-commerce platform for subscription services built with Next.j
 ### AWS EC2 Deployment
 
 1. **Server Setup**
+
    ```bash
    # Update system
    sudo apt update && sudo apt upgrade -y
-   
+
    # Install Node.js 18+
    curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
    sudo apt-get install -y nodejs
-   
+
    # Install PM2 for process management
    sudo npm install -g pm2
    ```
 
 2. **Application Deployment**
+
    ```bash
    # Clone and setup
    git clone <repository-url>
    cd easesubs
    npm ci --production
-   
+
    # Build application
    npm run build
-   
+
    # Start with PM2
    pm2 start npm --name "easesubs" -- start
    pm2 save
@@ -124,11 +135,12 @@ A modern, secure e-commerce platform for subscription services built with Next.j
    ```
 
 3. **Nginx Configuration**
+
    ```nginx
    server {
        listen 80;
        server_name yourdomain.com;
-       
+
        location / {
            proxy_pass http://localhost:3000;
            proxy_http_version 1.1;
@@ -185,22 +197,26 @@ AWS_S3_BUCKET="easesubs-assets"
 ### Implemented Security Measures
 
 1. **Rate Limiting**
+
    - API endpoints: 100 requests/15 minutes
    - Auth endpoints: 5 requests/15 minutes
    - Payment endpoints: 10 requests/hour
 
 2. **Security Headers**
+
    - Content Security Policy (CSP)
    - X-Frame-Options: DENY
    - X-Content-Type-Options: nosniff
    - Strict-Transport-Security (HSTS)
 
 3. **Webhook Security**
+
    - Signature validation for all payment providers
    - Timestamp validation for replay attack prevention
    - Rate limiting on webhook endpoints
 
 4. **Authentication Security**
+
    - JWT sessions with secure configuration
    - Password hashing with bcrypt (12 rounds)
    - OAuth integration with Google
@@ -226,11 +242,13 @@ AWS_S3_BUCKET="easesubs-assets"
 ### Production Monitoring
 
 1. **Application Logs**
+
    - Structured JSON logging in production
    - Error tracking with context
    - Security event logging
 
 2. **Performance Monitoring**
+
    - Database query performance
    - API response times
    - Payment processing metrics

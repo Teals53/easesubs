@@ -1,69 +1,77 @@
-'use client'
+"use client";
 
-import { motion } from 'framer-motion'
-import Link from 'next/link'
-import { ArrowLeft, CreditCard, Clock, CheckCircle, XCircle, Calendar, Mail } from 'lucide-react'
-import { Header } from '@/components/layout/header'
-import { Footer } from '@/components/layout/footer'
+import { motion } from "framer-motion";
+import Link from "next/link";
+import {
+  ArrowLeft,
+  CreditCard,
+  Clock,
+  CheckCircle,
+  XCircle,
+  Calendar,
+  Mail,
+} from "lucide-react";
+import { Header } from "@/components/layout/header";
+import { Footer } from "@/components/layout/footer";
 
 export default function RefundPolicyPage() {
   const policies = [
     {
-      title: 'Digital Products & Subscriptions',
+      title: "Digital Products & Subscriptions",
       icon: CreditCard,
-      timeframe: '14 days',
+      timeframe: "14 days",
       content: [
-        'Full refund available within 14 days of purchase for digital products',
-        'Subscription refunds are prorated based on unused time',
-        'Refunds are processed to the original payment method within 5-10 business days',
-        'Monthly subscriptions can be cancelled at any time with no penalty'
+        "Full refund available within 14 days of purchase for digital products",
+        "Subscription refunds are prorated based on unused time",
+        "Refunds are processed to the original payment method within 5-10 business days",
+        "Monthly subscriptions can be cancelled at any time with no penalty",
       ],
-      color: 'text-purple-400',
-      bgColor: 'bg-purple-500/10',
-      borderColor: 'border-purple-500/20'
+      color: "text-purple-400",
+      bgColor: "bg-purple-500/10",
+      borderColor: "border-purple-500/20",
     },
     {
-      title: 'Auto-Renewal Cancellations',
+      title: "Auto-Renewal Cancellations",
       icon: Calendar,
-      timeframe: 'Anytime',
+      timeframe: "Anytime",
       content: [
-        'Cancel auto-renewal at any time before the next billing cycle',
-        'Access continues until the end of the current billing period',
-        'No refund for the current billing period after 14 days',
-        'Easy cancellation through your account dashboard'
+        "Cancel auto-renewal at any time before the next billing cycle",
+        "Access continues until the end of the current billing period",
+        "No refund for the current billing period after 14 days",
+        "Easy cancellation through your account dashboard",
       ],
-      color: 'text-blue-400',
-      bgColor: 'bg-blue-500/10',
-      borderColor: 'border-blue-500/20'
+      color: "text-blue-400",
+      bgColor: "bg-blue-500/10",
+      borderColor: "border-blue-500/20",
     },
     {
-      title: 'Special Circumstances',
+      title: "Special Circumstances",
       icon: CheckCircle,
-      timeframe: 'Case by case',
+      timeframe: "Case by case",
       content: [
-        'Medical emergencies or extraordinary circumstances will be considered',
-        'Technical issues preventing service use may qualify for refunds',
-        'Duplicate charges will be refunded immediately upon verification',
-        'Fraudulent charges will be investigated and refunded if confirmed'
+        "Medical emergencies or extraordinary circumstances will be considered",
+        "Technical issues preventing service use may qualify for refunds",
+        "Duplicate charges will be refunded immediately upon verification",
+        "Fraudulent charges will be investigated and refunded if confirmed",
       ],
-      color: 'text-green-400',
-      bgColor: 'bg-green-500/10',
-      borderColor: 'border-green-500/20'
-    }
-  ]
+      color: "text-green-400",
+      bgColor: "bg-green-500/10",
+      borderColor: "border-green-500/20",
+    },
+  ];
 
   const nonRefundable = [
-    'Services already rendered or consumed',
-    'Downloadable content that has been accessed',
-    'Custom or personalized services',
-    'Promotional or discounted purchases (unless legally required)',
-    'Purchases made using promotional codes or credits'
-  ]
+    "Services already rendered or consumed",
+    "Downloadable content that has been accessed",
+    "Custom or personalized services",
+    "Promotional or discounted purchases (unless legally required)",
+    "Purchases made using promotional codes or credits",
+  ];
 
   return (
     <div className="min-h-screen bg-gray-950">
       <Header />
-      
+
       <div className="pt-20 pb-16">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Back Button */}
@@ -94,10 +102,11 @@ export default function RefundPolicyPage() {
               </h1>
             </div>
             <p className="text-xl text-gray-400">
-              Last updated: {new Date().toLocaleDateString('en-US', { 
-                year: 'numeric', 
-                month: 'long', 
-                day: 'numeric' 
+              Last updated:{" "}
+              {new Date().toLocaleDateString("en-US", {
+                year: "numeric",
+                month: "long",
+                day: "numeric",
               })}
             </p>
           </motion.div>
@@ -109,11 +118,14 @@ export default function RefundPolicyPage() {
             transition={{ delay: 0.1 }}
             className="bg-gray-800/50 backdrop-blur-lg rounded-2xl border border-gray-700 p-8 mb-8"
           >
-            <h2 className="text-2xl font-semibold text-white mb-4">Our Commitment to Customer Satisfaction</h2>
+            <h2 className="text-2xl font-semibold text-white mb-4">
+              Our Commitment to Customer Satisfaction
+            </h2>
             <p className="text-gray-300 leading-relaxed">
-              We stand behind our products and services. This refund policy outlines the circumstances under which 
-              refunds may be requested and the process for obtaining them. We aim to be fair and transparent 
-              in all our refund decisions.
+              We stand behind our products and services. This refund policy
+              outlines the circumstances under which refunds may be requested
+              and the process for obtaining them. We aim to be fair and
+              transparent in all our refund decisions.
             </p>
           </motion.div>
 
@@ -129,22 +141,33 @@ export default function RefundPolicyPage() {
               >
                 <div className="flex items-center justify-between mb-6">
                   <div className="flex items-center">
-                    <div className={`p-3 rounded-lg ${policy.bgColor} border ${policy.borderColor} mr-4`}>
+                    <div
+                      className={`p-3 rounded-lg ${policy.bgColor} border ${policy.borderColor} mr-4`}
+                    >
                       <policy.icon className={`h-6 w-6 ${policy.color}`} />
                     </div>
-                    <h2 className="text-2xl font-semibold text-white">{policy.title}</h2>
+                    <h2 className="text-2xl font-semibold text-white">
+                      {policy.title}
+                    </h2>
                   </div>
-                  <div className={`px-3 py-1 rounded-full ${policy.bgColor} ${policy.borderColor} border`}>
+                  <div
+                    className={`px-3 py-1 rounded-full ${policy.bgColor} ${policy.borderColor} border`}
+                  >
                     <span className={`text-sm font-medium ${policy.color}`}>
                       {policy.timeframe}
                     </span>
                   </div>
                 </div>
-                
+
                 <ul className="space-y-3">
                   {policy.content.map((item, itemIndex) => (
-                    <li key={itemIndex} className="flex items-start text-gray-300">
-                      <div className={`w-2 h-2 ${policy.color.replace('text-', 'bg-')} rounded-full mt-2 mr-3 flex-shrink-0`} />
+                    <li
+                      key={itemIndex}
+                      className="flex items-start text-gray-300"
+                    >
+                      <div
+                        className={`w-2 h-2 ${policy.color.replace("text-", "bg-")} rounded-full mt-2 mr-3 flex-shrink-0`}
+                      />
                       <span className="leading-relaxed">{item}</span>
                     </li>
                   ))}
@@ -167,7 +190,8 @@ export default function RefundPolicyPage() {
               Non-Refundable Items
             </h2>
             <p className="text-gray-300 mb-6">
-              The following items and services are generally not eligible for refunds:
+              The following items and services are generally not eligible for
+              refunds:
             </p>
             <ul className="space-y-3">
               {nonRefundable.map((item, index) => (
@@ -194,36 +218,49 @@ export default function RefundPolicyPage() {
             </h2>
             <div className="grid md:grid-cols-2 gap-8">
               <div>
-                <h3 className="text-lg font-semibold text-white mb-4">Step-by-Step Process:</h3>
+                <h3 className="text-lg font-semibold text-white mb-4">
+                  Step-by-Step Process:
+                </h3>
                 <ol className="space-y-3">
                   <li className="flex items-start text-gray-300">
                     <span className="inline-flex items-center justify-center w-6 h-6 bg-blue-600 text-white text-sm font-bold rounded-full mr-3 mt-0.5 flex-shrink-0">
                       1
                     </span>
-                    <span>Contact our support team through the support portal</span>
+                    <span>
+                      Contact our support team through the support portal
+                    </span>
                   </li>
                   <li className="flex items-start text-gray-300">
                     <span className="inline-flex items-center justify-center w-6 h-6 bg-blue-600 text-white text-sm font-bold rounded-full mr-3 mt-0.5 flex-shrink-0">
                       2
                     </span>
-                    <span>Provide your order details and reason for refund</span>
+                    <span>
+                      Provide your order details and reason for refund
+                    </span>
                   </li>
                   <li className="flex items-start text-gray-300">
                     <span className="inline-flex items-center justify-center w-6 h-6 bg-blue-600 text-white text-sm font-bold rounded-full mr-3 mt-0.5 flex-shrink-0">
                       3
                     </span>
-                    <span>We will review your request within 1-2 business days</span>
+                    <span>
+                      We will review your request within 1-2 business days
+                    </span>
                   </li>
                   <li className="flex items-start text-gray-300">
                     <span className="inline-flex items-center justify-center w-6 h-6 bg-blue-600 text-white text-sm font-bold rounded-full mr-3 mt-0.5 flex-shrink-0">
                       4
                     </span>
-                    <span>If approved, refund will be processed within 5-10 business days</span>
+                    <span>
+                      If approved, refund will be processed within 5-10 business
+                      days
+                    </span>
                   </li>
                 </ol>
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-white mb-4">Required Information:</h3>
+                <h3 className="text-lg font-semibold text-white mb-4">
+                  Required Information:
+                </h3>
                 <ul className="space-y-2 text-gray-300">
                   <li>• Order number or transaction ID</li>
                   <li>• Date of purchase</li>
@@ -244,10 +281,13 @@ export default function RefundPolicyPage() {
           >
             <div className="flex items-center justify-center mb-4">
               <Mail className="h-8 w-8 text-purple-400 mr-3" />
-              <h2 className="text-2xl font-semibold text-white">Need to Request a Refund?</h2>
+              <h2 className="text-2xl font-semibold text-white">
+                Need to Request a Refund?
+              </h2>
             </div>
             <p className="text-gray-400 mb-6">
-              Our support team is here to help with your refund request. We typically respond within 24 hours.
+              Our support team is here to help with your refund request. We
+              typically respond within 24 hours.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link
@@ -269,5 +309,5 @@ export default function RefundPolicyPage() {
 
       <Footer />
     </div>
-  )
-} 
+  );
+}

@@ -1,74 +1,82 @@
-'use client'
+"use client";
 
-import { motion } from 'framer-motion'
-import Link from 'next/link'
-import { ArrowLeft, ScrollText, Users, CreditCard, Shield, AlertTriangle, Mail } from 'lucide-react'
-import { Header } from '@/components/layout/header'
-import { Footer } from '@/components/layout/footer'
+import { motion } from "framer-motion";
+import Link from "next/link";
+import {
+  ArrowLeft,
+  ScrollText,
+  Users,
+  CreditCard,
+  Shield,
+  AlertTriangle,
+  Mail,
+} from "lucide-react";
+import { Header } from "@/components/layout/header";
+import { Footer } from "@/components/layout/footer";
 
 export default function TermsOfServicePage() {
   const sections = [
     {
-      title: 'Acceptance of Terms',
+      title: "Acceptance of Terms",
       icon: ScrollText,
       content: [
-        'By accessing and using our services, you accept and agree to be bound by these Terms of Service',
-        'If you do not agree to these terms, you may not use our services',
-        'We reserve the right to update these terms at any time',
-        'Your continued use of our services constitutes acceptance of any changes'
-      ]
+        "By accessing and using our services, you accept and agree to be bound by these Terms of Service",
+        "If you do not agree to these terms, you may not use our services",
+        "We reserve the right to update these terms at any time",
+        "Your continued use of our services constitutes acceptance of any changes",
+      ],
     },
     {
-      title: 'User Accounts',
+      title: "User Accounts",
       icon: Users,
       content: [
-        'You must provide accurate and complete information when creating an account',
-        'You are responsible for maintaining the security of your account credentials',
-        'You must notify us immediately of any unauthorized use of your account',
-        'One person or entity may not maintain multiple accounts',
-        'We reserve the right to suspend or terminate accounts that violate our &quot;Terms&quot; at our discretion'
-      ]
+        "You must provide accurate and complete information when creating an account",
+        "You are responsible for maintaining the security of your account credentials",
+        "You must notify us immediately of any unauthorized use of your account",
+        "One person or entity may not maintain multiple accounts",
+        "We reserve the right to suspend or terminate accounts that violate our &quot;Terms&quot; at our discretion",
+      ],
     },
     {
-      title: 'Billing and Payments',
+      title: "Billing and Payments",
       icon: CreditCard,
       content: [
-        'Subscription fees are billed in advance and are non-refundable except as required by law',
-        'You authorize us to charge your chosen payment method for the subscription fees',
-        'You are responsible for providing current and accurate billing information',
-        'We reserve the right to change our pricing with 30 days notice',
-        'Failure to pay may result in suspension or termination of your account'
-      ]
+        "Subscription fees are billed in advance and are non-refundable except as required by law",
+        "You authorize us to charge your chosen payment method for the subscription fees",
+        "You are responsible for providing current and accurate billing information",
+        "We reserve the right to change our pricing with 30 days notice",
+        "Failure to pay may result in suspension or termination of your account",
+      ],
     },
     {
-      title: 'Acceptable Use',
+      title: "Acceptable Use",
       icon: Shield,
       content: [
-        'You may not use our services for any illegal or unauthorized purpose',
-        'You may not violate any laws in your jurisdiction',
-        'You may not transmit any harmful or malicious code',
-        'You may not attempt to gain unauthorized access to our systems',
-        'You may not interfere with or disrupt our services'
-      ]
+        "You may not use our services for any illegal or unauthorized purpose",
+        "You may not violate any laws in your jurisdiction",
+        "You may not transmit any harmful or malicious code",
+        "You may not attempt to gain unauthorized access to our systems",
+        "You may not interfere with or disrupt our services",
+      ],
     },
     {
-      title: 'Intellectual Property',
+      title: "Intellectual Property",
       icon: AlertTriangle,
       content: [
-        'Our services and content are protected by intellectual property laws',
-        'You may not copy, modify, or distribute our content without permission',
-        'All trademarks and service marks are property of their respective owners',
-        'You retain ownership of content you create using our services',
-        'We grant you a limited license to use our services for their intended purpose',
-        'All content, including but not limited to text, graphics, logos, and software, is our property or our licensors&apos; property'
-      ]
-    }
-  ]
+        "Our services and content are protected by intellectual property laws",
+        "You may not copy, modify, or distribute our content without permission",
+        "All trademarks and service marks are property of their respective owners",
+        "You retain ownership of content you create using our services",
+        "We grant you a limited license to use our services for their intended purpose",
+        "All content, including but not limited to text, graphics, logos, and software, is our property or our licensors&apos; property",
+      ],
+    },
+  ];
 
   return (
     <div className="min-h-screen bg-gray-950">
       <Header />
-      
+
       <div className="pt-20 pb-16">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Back Button */}
@@ -99,10 +107,11 @@ export default function TermsOfServicePage() {
               </h1>
             </div>
             <p className="text-xl text-gray-400">
-              Last updated: {new Date().toLocaleDateString('en-US', { 
-                year: 'numeric', 
-                month: 'long', 
-                day: 'numeric' 
+              Last updated:{" "}
+              {new Date().toLocaleDateString("en-US", {
+                year: "numeric",
+                month: "long",
+                day: "numeric",
               })}
             </p>
           </motion.div>
@@ -114,10 +123,14 @@ export default function TermsOfServicePage() {
             transition={{ delay: 0.1 }}
             className="bg-gray-800/50 backdrop-blur-lg rounded-2xl border border-gray-700 p-8 mb-8"
           >
-            <h2 className="text-2xl font-semibold text-white mb-4">Agreement to Terms</h2>
+            <h2 className="text-2xl font-semibold text-white mb-4">
+              Agreement to Terms
+            </h2>
             <p className="text-gray-300 leading-relaxed">
-              These Terms of Service (&ldquo;Terms&rdquo;) govern your use of our website and services. Please read these terms carefully 
-              before using our services. By using our services, you agree to be bound by these terms.
+              These Terms of Service (&ldquo;Terms&rdquo;) govern your use of
+              our website and services. Please read these terms carefully before
+              using our services. By using our services, you agree to be bound
+              by these terms.
             </p>
           </motion.div>
 
@@ -135,12 +148,17 @@ export default function TermsOfServicePage() {
                   <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/20 mr-4">
                     <section.icon className="h-6 w-6 text-green-400" />
                   </div>
-                  <h2 className="text-2xl font-semibold text-white">{section.title}</h2>
+                  <h2 className="text-2xl font-semibold text-white">
+                    {section.title}
+                  </h2>
                 </div>
-                
+
                 <ul className="space-y-3">
                   {section.content.map((item, itemIndex) => (
-                    <li key={itemIndex} className="flex items-start text-gray-300">
+                    <li
+                      key={itemIndex}
+                      className="flex items-start text-gray-300"
+                    >
                       <div className="w-2 h-2 bg-green-400 rounded-full mt-2 mr-3 flex-shrink-0" />
                       <span className="leading-relaxed">{item}</span>
                     </li>
@@ -157,20 +175,28 @@ export default function TermsOfServicePage() {
             transition={{ delay: 0.8 }}
             className="bg-gray-800/50 backdrop-blur-lg rounded-2xl border border-gray-700 p-8 mt-8"
           >
-            <h2 className="text-2xl font-semibold text-white mb-6">Service Availability</h2>
+            <h2 className="text-2xl font-semibold text-white mb-6">
+              Service Availability
+            </h2>
             <div className="grid md:grid-cols-2 gap-6">
               <div>
-                <h3 className="text-lg font-semibold text-white mb-3">Service Uptime:</h3>
+                <h3 className="text-lg font-semibold text-white mb-3">
+                  Service Uptime:
+                </h3>
                 <p className="text-gray-300 mb-4">
-                  We strive to maintain high service availability but cannot guarantee 100% uptime. 
-                  Planned maintenance will be announced in advance when possible.
+                  We strive to maintain high service availability but cannot
+                  guarantee 100% uptime. Planned maintenance will be announced
+                  in advance when possible.
                 </p>
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-white mb-3">Modifications:</h3>
+                <h3 className="text-lg font-semibold text-white mb-3">
+                  Modifications:
+                </h3>
                 <p className="text-gray-300">
-                  We reserve the right to modify or discontinue our services at any time, 
-                  with or without notice, though we&apos;ll provide reasonable advance notice when possible.
+                  We reserve the right to modify or discontinue our services at
+                  any time, with or without notice, though we&apos;ll provide
+                  reasonable advance notice when possible.
                 </p>
               </div>
             </div>
@@ -190,9 +216,11 @@ export default function TermsOfServicePage() {
               Limitation of Liability
             </h2>
             <p className="text-gray-300 leading-relaxed">
-              To the maximum extent permitted by law, we shall not be liable for any indirect, incidental, 
-              special, consequential, or punitive damages, or any loss of profits or revenues, whether incurred 
-              directly or indirectly, or any loss of data, use, goodwill, or other intangible losses.
+              To the maximum extent permitted by law, we shall not be liable for
+              any indirect, incidental, special, consequential, or punitive
+              damages, or any loss of profits or revenues, whether incurred
+              directly or indirectly, or any loss of data, use, goodwill, or
+              other intangible losses.
             </p>
           </motion.div>
 
@@ -203,10 +231,13 @@ export default function TermsOfServicePage() {
             transition={{ delay: 1.0 }}
             className="bg-gray-800/50 backdrop-blur-lg rounded-2xl border border-gray-700 p-8 mt-8"
           >
-            <h2 className="text-2xl font-semibold text-white mb-4">Governing Law</h2>
+            <h2 className="text-2xl font-semibold text-white mb-4">
+              Governing Law
+            </h2>
             <p className="text-gray-300 leading-relaxed">
-              These Terms shall be governed by and construed in accordance with the laws of the jurisdiction 
-              in which our company is incorporated, without regard to its conflict of law principles.
+              These Terms shall be governed by and construed in accordance with
+              the laws of the jurisdiction in which our company is incorporated,
+              without regard to its conflict of law principles.
             </p>
           </motion.div>
 
@@ -219,10 +250,13 @@ export default function TermsOfServicePage() {
           >
             <div className="flex items-center justify-center mb-4">
               <Mail className="h-8 w-8 text-purple-400 mr-3" />
-              <h2 className="text-2xl font-semibold text-white">Questions About These Terms?</h2>
+              <h2 className="text-2xl font-semibold text-white">
+                Questions About These Terms?
+              </h2>
             </div>
             <p className="text-gray-400 mb-6">
-              If you have any questions about these Terms of Service, please don&apos;t hesitate to contact us.
+              If you have any questions about these Terms of Service, please
+              don&apos;t hesitate to contact us.
             </p>
             <Link
               href="/dashboard/support"
@@ -236,5 +270,5 @@ export default function TermsOfServicePage() {
 
       <Footer />
     </div>
-  )
-} 
+  );
+}

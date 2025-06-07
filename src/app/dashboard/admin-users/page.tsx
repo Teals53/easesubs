@@ -1,10 +1,10 @@
-'use client'
+"use client";
 
-import { useSession } from 'next-auth/react'
-import { redirect } from 'next/navigation'
-import { motion } from 'framer-motion'
-import { 
-  Users, 
+import { useSession } from "next-auth/react";
+import { redirect } from "next/navigation";
+import { motion } from "framer-motion";
+import {
+  Users,
   Search,
   X,
   Shield,
@@ -15,183 +15,197 @@ import {
   UserCheck,
   Crown,
   Edit,
-  Trash2
-} from 'lucide-react'
-import { trpc, invalidatePatterns } from '@/lib/trpc'
-import { useState } from 'react'
-import { UserRole } from '@prisma/client'
+  Trash2,
+} from "lucide-react";
+import { trpc, invalidatePatterns } from "@/lib/trpc";
+import { useState } from "react";
+import { UserRole } from "@prisma/client";
 
 interface ExtendedUser {
-  id: string
-  name?: string | null
-  email?: string | null
-  image?: string | null
-  role: UserRole
+  id: string;
+  name?: string | null;
+  email?: string | null;
+  image?: string | null;
+  role: UserRole;
 }
 
 export default function AdminUsersPage() {
-  const { data: session, status } = useSession()
-  const [searchTerm, setSearchTerm] = useState('')
-  const [page, setPage] = useState(1)
-  const [editingUser, setEditingUser] = useState<(ExtendedUser & { isActive: boolean; createdAt: string | Date }) | null>(null)
+  const { data: session, status } = useSession();
+  const [searchTerm, setSearchTerm] = useState("");
+  const [page, setPage] = useState(1);
+  const [editingUser, setEditingUser] = useState<
+    (ExtendedUser & { isActive: boolean; createdAt: string | Date }) | null
+  >(null);
   const [editForm, setEditForm] = useState({
-    name: '',
-    email: '',
-    role: 'USER' as UserRole,
-    isActive: true
-  })
-  const itemsPerPage = 10
+    name: "",
+    email: "",
+    role: "USER" as UserRole,
+    isActive: true,
+  });
+  const itemsPerPage = 10;
 
   // Properly typed user with role
-  const user = session?.user as ExtendedUser | undefined
-  const isAdmin = user?.role === 'ADMIN'
+  const user = session?.user as ExtendedUser | undefined;
+  const isAdmin = user?.role === "ADMIN";
 
   // Get tRPC utils for cache invalidation
-  const utils = trpc.useUtils()
+  const utils = trpc.useUtils();
 
-  const { 
-    data: usersData, 
-    isLoading, 
-    refetch 
-  } = trpc.admin.getUsers.useQuery({
-    search: searchTerm,
-    page,
-    limit: itemsPerPage
-  }, {
-    enabled: isAdmin,
-    // Refetch every 60 seconds for real-time updates
-    refetchInterval: 60000,
-  })
+  const {
+    data: usersData,
+    isLoading,
+    refetch,
+  } = trpc.admin.getUsers.useQuery(
+    {
+      search: searchTerm,
+      page,
+      limit: itemsPerPage,
+    },
+    {
+      enabled: isAdmin,
+      // Refetch every 60 seconds for real-time updates
+      refetchInterval: 60000,
+    },
+  );
 
   const updateUserRoleMutation = trpc.admin.updateUserRole.useMutation({
     onSuccess: () => {
       // Invalidate all user-related queries
-      invalidatePatterns.users(utils)
-      invalidatePatterns.dashboard(utils)
-      refetch()
+      invalidatePatterns.users(utils);
+      invalidatePatterns.dashboard(utils);
+      refetch();
     },
     onError: (error) => {
-      console.error('Failed to update user role:', error)
-      alert('Failed to update user role. Please try again.')
-    }
-  })
+      console.error("Failed to update user role:", error);
+      alert("Failed to update user role. Please try again.");
+    },
+  });
 
   const updateUserMutation = trpc.admin.updateUser.useMutation({
     onSuccess: () => {
       // Invalidate all user-related queries
-      invalidatePatterns.users(utils)
-      invalidatePatterns.dashboard(utils)
-      refetch()
-      setEditingUser(null)
+      invalidatePatterns.users(utils);
+      invalidatePatterns.dashboard(utils);
+      refetch();
+      setEditingUser(null);
     },
     onError: (error) => {
-      console.error('Failed to update user:', error)
-      alert('Failed to update user. Please try again.')
-    }
-  })
+      console.error("Failed to update user:", error);
+      alert("Failed to update user. Please try again.");
+    },
+  });
 
   const deleteUserMutation = trpc.admin.deleteUser.useMutation({
     onSuccess: () => {
       // Invalidate all user-related queries
-      invalidatePatterns.users(utils)
-      invalidatePatterns.dashboard(utils)
-      refetch()
+      invalidatePatterns.users(utils);
+      invalidatePatterns.dashboard(utils);
+      refetch();
     },
     onError: (error) => {
-      console.error('Failed to delete user:', error)
-      alert('Failed to delete user. Please try again.')
-    }
-  })
+      console.error("Failed to delete user:", error);
+      alert("Failed to delete user. Please try again.");
+    },
+  });
 
-  if (status === 'loading') {
+  if (status === "loading") {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-purple-500"></div>
       </div>
-    )
+    );
   }
 
   if (!session || !isAdmin) {
-    redirect('/dashboard')
+    redirect("/dashboard");
   }
 
   const handleRoleChange = async (userId: string, newRole: string) => {
     try {
       await updateUserRoleMutation.mutateAsync({
         userId,
-        role: newRole as 'USER' | 'ADMIN' | 'SUPPORT_AGENT' | 'MANAGER'
-      })
+        role: newRole as "USER" | "ADMIN" | "SUPPORT_AGENT" | "MANAGER",
+      });
     } catch (error) {
-      console.error('Error updating user role:', error)
+      console.error("Error updating user role:", error);
     }
-  }
+  };
 
-  const handleEditUser = (user: ExtendedUser & { isActive: boolean; createdAt: string | Date }) => {
-    setEditingUser(user)
+  const handleEditUser = (
+    user: ExtendedUser & { isActive: boolean; createdAt: string | Date },
+  ) => {
+    setEditingUser(user);
     setEditForm({
-      name: user.name || '',
-      email: user.email || '',
+      name: user.name || "",
+      email: user.email || "",
       role: user.role,
-      isActive: user.isActive
-    })
-  }
+      isActive: user.isActive,
+    });
+  };
 
   const handleUpdateUser = async () => {
-    if (!editingUser) return
-    
+    if (!editingUser) return;
+
     try {
       await updateUserMutation.mutateAsync({
         userId: editingUser.id,
         name: editForm.name || undefined,
         email: editForm.email || undefined,
         role: editForm.role,
-        isActive: editForm.isActive
-      })
+        isActive: editForm.isActive,
+      });
     } catch (error) {
-      console.error('Error updating user:', error)
+      console.error("Error updating user:", error);
     }
-  }
+  };
 
   const handleDeleteUser = async (userId: string) => {
-    if (confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
+    if (
+      confirm(
+        "Are you sure you want to delete this user? This action cannot be undone.",
+      )
+    ) {
       try {
-        await deleteUserMutation.mutateAsync({ userId })
+        await deleteUserMutation.mutateAsync({ userId });
       } catch (error) {
-        console.error('Error deleting user:', error)
+        console.error("Error deleting user:", error);
       }
     }
-  }
+  };
 
   const formatDate = (date: string | Date) => {
-    return new Date(date).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-    })
-  }
+    return new Date(date).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  };
 
   const getRoleIcon = (role: string) => {
     switch (role) {
-      case 'ADMIN':
-        return <Crown className="h-4 w-4 text-red-400" />
-      case 'SUPPORT_AGENT':
-        return <UserCheck className="h-4 w-4 text-yellow-400" />
-      case 'MANAGER':
-        return <Shield className="h-4 w-4 text-blue-400" />
+      case "ADMIN":
+        return <Crown className="h-4 w-4 text-red-400" />;
+      case "SUPPORT_AGENT":
+        return <UserCheck className="h-4 w-4 text-yellow-400" />;
+      case "MANAGER":
+        return <Shield className="h-4 w-4 text-blue-400" />;
       default:
-        return <User className="h-4 w-4 text-gray-400" />
+        return <User className="h-4 w-4 text-gray-400" />;
     }
-  }
+  };
 
-  const totalPages = usersData ? Math.ceil(usersData.total / itemsPerPage) : 0
+  const totalPages = usersData ? Math.ceil(usersData.total / itemsPerPage) : 0;
 
   // Calculate stats from the users data
-  const stats = usersData?.users ? {
-    total: usersData.total,
-    admins: usersData.users.filter(u => u.role === 'ADMIN').length,
-    supportAgents: usersData.users.filter(u => u.role === 'SUPPORT_AGENT').length,
-    users: usersData.users.filter(u => u.role === 'USER').length,
-  } : { total: 0, admins: 0, supportAgents: 0, users: 0 }
+  const stats = usersData?.users
+    ? {
+        total: usersData.total,
+        admins: usersData.users.filter((u) => u.role === "ADMIN").length,
+        supportAgents: usersData.users.filter((u) => u.role === "SUPPORT_AGENT")
+          .length,
+        users: usersData.users.filter((u) => u.role === "USER").length,
+      }
+    : { total: 0, admins: 0, supportAgents: 0, users: 0 };
 
   return (
     <div className="space-y-8">
@@ -245,8 +259,12 @@ export default function AdminUsersPage() {
         <div className="bg-gray-800/50 backdrop-blur-lg p-6 rounded-2xl border border-gray-700">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-400 text-sm font-medium">Support Agents</p>
-              <p className="text-2xl font-bold text-white">{stats.supportAgents}</p>
+              <p className="text-gray-400 text-sm font-medium">
+                Support Agents
+              </p>
+              <p className="text-2xl font-bold text-white">
+                {stats.supportAgents}
+              </p>
             </div>
             <div className="p-3 bg-yellow-500/20 rounded-xl">
               <UserCheck className="h-6 w-6 text-yellow-400" />
@@ -286,7 +304,7 @@ export default function AdminUsersPage() {
             />
             {searchTerm && (
               <button
-                onClick={() => setSearchTerm('')}
+                onClick={() => setSearchTerm("")}
                 className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white"
               >
                 <X className="h-5 w-5" />
@@ -308,112 +326,135 @@ export default function AdminUsersPage() {
           <table className="w-full">
             <thead className="bg-gray-700/50">
               <tr>
-                <th className="text-left py-4 px-6 text-gray-400 font-medium">User</th>
-                <th className="text-left py-4 px-6 text-gray-400 font-medium">Role</th>
-                <th className="text-left py-4 px-6 text-gray-400 font-medium">Joined</th>
-                <th className="text-left py-4 px-6 text-gray-400 font-medium">Status</th>
-                <th className="text-left py-4 px-6 text-gray-400 font-medium">Actions</th>
+                <th className="text-left py-4 px-6 text-gray-400 font-medium">
+                  User
+                </th>
+                <th className="text-left py-4 px-6 text-gray-400 font-medium">
+                  Role
+                </th>
+                <th className="text-left py-4 px-6 text-gray-400 font-medium">
+                  Joined
+                </th>
+                <th className="text-left py-4 px-6 text-gray-400 font-medium">
+                  Status
+                </th>
+                <th className="text-left py-4 px-6 text-gray-400 font-medium">
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody>
-              {isLoading ? (
-                Array.from({ length: 5 }).map((_, i) => (
-                  <tr key={i} className="border-b border-gray-700">
-                    <td className="py-4 px-6">
-                      <div className="animate-pulse flex items-center space-x-3">
-                        <div className="w-10 h-10 bg-gray-700 rounded-full"></div>
-                        <div className="space-y-2">
-                          <div className="h-4 bg-gray-700 rounded w-32"></div>
-                          <div className="h-3 bg-gray-700 rounded w-24"></div>
+              {isLoading
+                ? Array.from({ length: 5 }).map((_, i) => (
+                    <tr key={i} className="border-b border-gray-700">
+                      <td className="py-4 px-6">
+                        <div className="animate-pulse flex items-center space-x-3">
+                          <div className="w-10 h-10 bg-gray-700 rounded-full"></div>
+                          <div className="space-y-2">
+                            <div className="h-4 bg-gray-700 rounded w-32"></div>
+                            <div className="h-3 bg-gray-700 rounded w-24"></div>
+                          </div>
                         </div>
-                      </div>
-                    </td>
-                    <td className="py-4 px-6">
-                      <div className="h-6 bg-gray-700 rounded w-20"></div>
-                    </td>
-                    <td className="py-4 px-6">
-                      <div className="h-4 bg-gray-700 rounded w-24"></div>
-                    </td>
-                    <td className="py-4 px-6">
-                      <div className="h-6 bg-gray-700 rounded w-16"></div>
-                    </td>
-                    <td className="py-4 px-6">
-                      <div className="flex space-x-2">
-                        <div className="h-8 w-8 bg-gray-700 rounded"></div>
-                        <div className="h-8 w-8 bg-gray-700 rounded"></div>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                usersData?.users?.map((user) => (
-                  <tr key={user.id} className="border-b border-gray-700 hover:bg-gray-700/30 transition-colors">
-                    <td className="py-4 px-6">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full flex items-center justify-center">
-                          <span className="text-white font-bold text-sm">
-                            {user.name?.[0]?.toUpperCase() || user.email?.[0]?.toUpperCase() || 'U'}
+                      </td>
+                      <td className="py-4 px-6">
+                        <div className="h-6 bg-gray-700 rounded w-20"></div>
+                      </td>
+                      <td className="py-4 px-6">
+                        <div className="h-4 bg-gray-700 rounded w-24"></div>
+                      </td>
+                      <td className="py-4 px-6">
+                        <div className="h-6 bg-gray-700 rounded w-16"></div>
+                      </td>
+                      <td className="py-4 px-6">
+                        <div className="flex space-x-2">
+                          <div className="h-8 w-8 bg-gray-700 rounded"></div>
+                          <div className="h-8 w-8 bg-gray-700 rounded"></div>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                : usersData?.users?.map((user) => (
+                    <tr
+                      key={user.id}
+                      className="border-b border-gray-700 hover:bg-gray-700/30 transition-colors"
+                    >
+                      <td className="py-4 px-6">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full flex items-center justify-center">
+                            <span className="text-white font-bold text-sm">
+                              {user.name?.[0]?.toUpperCase() ||
+                                user.email?.[0]?.toUpperCase() ||
+                                "U"}
+                            </span>
+                          </div>
+                          <div>
+                            <p className="text-white font-medium">
+                              {user.name || "Anonymous"}
+                            </p>
+                            <p className="text-gray-400 text-sm">
+                              {user.email}
+                            </p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="py-4 px-6">
+                        <div className="flex items-center space-x-2">
+                          {getRoleIcon(user.role)}
+                          <select
+                            value={user.role}
+                            onChange={(e) =>
+                              handleRoleChange(user.id, e.target.value)
+                            }
+                            disabled={updateUserRoleMutation.isPending}
+                            className="bg-gray-700 border border-gray-600 rounded px-2 py-1 text-white text-sm"
+                          >
+                            <option value="USER">User</option>
+                            <option value="ADMIN">Admin</option>
+                            <option value="SUPPORT_AGENT">Support Agent</option>
+                            <option value="MANAGER">Manager</option>
+                          </select>
+                        </div>
+                      </td>
+                      <td className="py-4 px-6">
+                        <div className="flex items-center text-gray-400">
+                          <Calendar className="h-4 w-4 mr-2" />
+                          <span className="text-sm">
+                            {formatDate(user.createdAt)}
                           </span>
                         </div>
-                        <div>
-                          <p className="text-white font-medium">{user.name || 'Anonymous'}</p>
-                          <p className="text-gray-400 text-sm">{user.email}</p>
+                      </td>
+                      <td className="py-4 px-6">
+                        <span
+                          className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
+                            user.isActive
+                              ? "bg-green-900/30 text-green-400"
+                              : "bg-red-900/30 text-red-400"
+                          }`}
+                        >
+                          {user.isActive ? "Active" : "Inactive"}
+                        </span>
+                      </td>
+                      <td className="py-4 px-6">
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={() => handleEditUser(user)}
+                            className="p-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
+                            title="Edit User"
+                          >
+                            <Edit className="h-4 w-4 text-white" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteUser(user.id)}
+                            disabled={deleteUserMutation.isPending}
+                            className="p-2 bg-red-600 hover:bg-red-700 disabled:bg-red-600/50 rounded-lg transition-colors"
+                            title="Delete User"
+                          >
+                            <Trash2 className="h-4 w-4 text-white" />
+                          </button>
                         </div>
-                      </div>
-                    </td>
-                    <td className="py-4 px-6">
-                      <div className="flex items-center space-x-2">
-                        {getRoleIcon(user.role)}
-                        <select
-                          value={user.role}
-                          onChange={(e) => handleRoleChange(user.id, e.target.value)}
-                          disabled={updateUserRoleMutation.isPending}
-                          className="bg-gray-700 border border-gray-600 rounded px-2 py-1 text-white text-sm"
-                        >
-                          <option value="USER">User</option>
-                          <option value="ADMIN">Admin</option>
-                          <option value="SUPPORT_AGENT">Support Agent</option>
-                          <option value="MANAGER">Manager</option>
-                        </select>
-                      </div>
-                    </td>
-                    <td className="py-4 px-6">
-                      <div className="flex items-center text-gray-400">
-                        <Calendar className="h-4 w-4 mr-2" />
-                        <span className="text-sm">{formatDate(user.createdAt)}</span>
-                      </div>
-                    </td>
-                    <td className="py-4 px-6">
-                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
-                        user.isActive 
-                          ? 'bg-green-900/30 text-green-400' 
-                          : 'bg-red-900/30 text-red-400'
-                      }`}>
-                        {user.isActive ? 'Active' : 'Inactive'}
-                      </span>
-                    </td>
-                    <td className="py-4 px-6">
-                      <div className="flex space-x-2">
-                        <button
-                          onClick={() => handleEditUser(user)}
-                          className="p-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
-                          title="Edit User"
-                        >
-                          <Edit className="h-4 w-4 text-white" />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteUser(user.id)}
-                          disabled={deleteUserMutation.isPending}
-                          className="p-2 bg-red-600 hover:bg-red-700 disabled:bg-red-600/50 rounded-lg transition-colors"
-                          title="Delete User"
-                        >
-                          <Trash2 className="h-4 w-4 text-white" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
+                      </td>
+                    </tr>
+                  ))}
             </tbody>
           </table>
         </div>
@@ -423,7 +464,10 @@ export default function AdminUsersPage() {
           {isLoading ? (
             <div className="space-y-4">
               {Array.from({ length: 5 }).map((_, i) => (
-                <div key={i} className="bg-gray-700/30 rounded-xl p-4 animate-pulse">
+                <div
+                  key={i}
+                  className="bg-gray-700/30 rounded-xl p-4 animate-pulse"
+                >
                   <div className="flex items-center space-x-3 mb-4">
                     <div className="w-10 h-10 bg-gray-700 rounded-full"></div>
                     <div className="space-y-2 flex-1">
@@ -442,24 +486,35 @@ export default function AdminUsersPage() {
           ) : (
             <div className="space-y-4">
               {usersData?.users?.map((user) => (
-                <div key={user.id} className="bg-gray-700/30 rounded-xl p-4 space-y-4">
+                <div
+                  key={user.id}
+                  className="bg-gray-700/30 rounded-xl p-4 space-y-4"
+                >
                   {/* User Info */}
                   <div className="flex items-center space-x-3">
                     <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
                       <span className="text-white font-bold text-sm">
-                        {user.name?.[0]?.toUpperCase() || user.email?.[0]?.toUpperCase() || 'U'}
+                        {user.name?.[0]?.toUpperCase() ||
+                          user.email?.[0]?.toUpperCase() ||
+                          "U"}
                       </span>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-white font-medium truncate">{user.name || 'Anonymous'}</p>
-                      <p className="text-gray-400 text-sm truncate">{user.email}</p>
+                      <p className="text-white font-medium truncate">
+                        {user.name || "Anonymous"}
+                      </p>
+                      <p className="text-gray-400 text-sm truncate">
+                        {user.email}
+                      </p>
                     </div>
-                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                      user.isActive 
-                        ? 'bg-green-900/30 text-green-400' 
-                        : 'bg-red-900/30 text-red-400'
-                    }`}>
-                      {user.isActive ? 'Active' : 'Inactive'}
+                    <span
+                      className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                        user.isActive
+                          ? "bg-green-900/30 text-green-400"
+                          : "bg-red-900/30 text-red-400"
+                      }`}
+                    >
+                      {user.isActive ? "Active" : "Inactive"}
                     </span>
                   </div>
 
@@ -471,7 +526,9 @@ export default function AdminUsersPage() {
                     </div>
                     <select
                       value={user.role}
-                      onChange={(e) => handleRoleChange(user.id, e.target.value)}
+                      onChange={(e) =>
+                        handleRoleChange(user.id, e.target.value)
+                      }
                       disabled={updateUserRoleMutation.isPending}
                       className="bg-gray-700 border border-gray-600 rounded px-3 py-1 text-white text-sm"
                     >
@@ -516,7 +573,9 @@ export default function AdminUsersPage() {
         {usersData && totalPages > 1 && (
           <div className="px-4 lg:px-6 py-4 border-t border-gray-700 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="text-sm text-gray-400 text-center sm:text-left">
-              Showing {(page - 1) * itemsPerPage + 1} to {Math.min(page * itemsPerPage, usersData.total)} of {usersData.total} users
+              Showing {(page - 1) * itemsPerPage + 1} to{" "}
+              {Math.min(page * itemsPerPage, usersData.total)} of{" "}
+              {usersData.total} users
             </div>
             <div className="flex items-center justify-center space-x-2">
               <button
@@ -550,33 +609,48 @@ export default function AdminUsersPage() {
             className="bg-gray-800 rounded-2xl border border-gray-700 p-6 w-full max-w-md"
           >
             <h3 className="text-xl font-bold text-white mb-4">Edit User</h3>
-            
+
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Name</label>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Name
+                </label>
                 <input
                   type="text"
                   value={editForm.name}
-                  onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, name: e.target.value })
+                  }
                   className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white"
                 />
               </div>
-              
+
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Email</label>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Email
+                </label>
                 <input
                   type="email"
                   value={editForm.email}
-                  onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, email: e.target.value })
+                  }
                   className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white"
                 />
               </div>
-              
+
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Role</label>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Role
+                </label>
                 <select
                   value={editForm.role}
-                  onChange={(e) => setEditForm({ ...editForm, role: e.target.value as UserRole })}
+                  onChange={(e) =>
+                    setEditForm({
+                      ...editForm,
+                      role: e.target.value as UserRole,
+                    })
+                  }
                   className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white"
                 >
                   <option value="USER">User</option>
@@ -585,26 +659,30 @@ export default function AdminUsersPage() {
                   <option value="MANAGER">Manager</option>
                 </select>
               </div>
-              
+
               <div className="flex items-center">
                 <input
                   type="checkbox"
                   id="isActive"
                   checked={editForm.isActive}
-                  onChange={(e) => setEditForm({ ...editForm, isActive: e.target.checked })}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, isActive: e.target.checked })
+                  }
                   className="mr-2"
                 />
-                <label htmlFor="isActive" className="text-sm text-gray-300">Active</label>
+                <label htmlFor="isActive" className="text-sm text-gray-300">
+                  Active
+                </label>
               </div>
             </div>
-            
+
             <div className="flex space-x-3 mt-6">
               <button
                 onClick={handleUpdateUser}
                 disabled={updateUserMutation.isPending}
                 className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-600/50 text-white font-medium py-2 px-4 rounded-lg transition-colors"
               >
-                {updateUserMutation.isPending ? 'Updating...' : 'Update User'}
+                {updateUserMutation.isPending ? "Updating..." : "Update User"}
               </button>
               <button
                 onClick={() => setEditingUser(null)}
@@ -617,5 +695,5 @@ export default function AdminUsersPage() {
         </div>
       )}
     </div>
-  )
-} 
+  );
+}

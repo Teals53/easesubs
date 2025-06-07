@@ -1,7 +1,7 @@
-'use client'
+"use client";
 
-import React from 'react'
-import { MessageSquare } from 'lucide-react'
+import React from "react";
+import { MessageSquare } from "lucide-react";
 
 export function DiscordCTA() {
   return (
@@ -14,10 +14,10 @@ export function DiscordCTA() {
           <div className="flex flex-col md:flex-row items-center gap-8">
             <div className="w-full md:w-3/5">
               <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-                Join Our{' '}
+                Join Our{" "}
                 <span className="bg-gradient-to-r from-purple-400 to-purple-600 bg-clip-text text-transparent">
                   Discord
-                </span>{' '}
+                </span>{" "}
                 Community
               </h2>
 
@@ -29,10 +29,10 @@ export function DiscordCTA() {
 
               <ul className="space-y-3 mb-8">
                 {[
-                  'Browse all available subscriptions',
-                  'Receive instant support from our team',
-                  'Join a community of smart shoppers',
-                  'Stay updated with new deals and offers',
+                  "Browse all available subscriptions",
+                  "Receive instant support from our team",
+                  "Join a community of smart shoppers",
+                  "Stay updated with new deals and offers",
                 ].map((item, index) => (
                   <li key={index} className="flex items-start">
                     <span className="bg-purple-500/20 rounded-full p-1 mr-3 mt-0.5">
@@ -96,5 +96,5 @@ export function DiscordCTA() {
         </div>
       </div>
     </section>
-  )
-} 
+  );
+}

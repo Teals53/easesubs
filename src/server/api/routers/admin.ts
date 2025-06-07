@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
 import { TRPCError } from "@trpc/server";
+import type { Prisma } from "@prisma/client";
 
 export const adminRouter = createTRPCRouter({
   getDashboardStats: protectedProcedure.query(async ({ ctx }) => {
@@ -176,10 +177,11 @@ export const adminRouter = createTRPCRouter({
   getUsers: protectedProcedure
     .input(
       z.object({
-        page: z.number().min(1).default(1),
-        limit: z.number().min(1).max(100).default(10),
         search: z.string().optional(),
-      })
+        role: z.enum(["ADMIN", "USER"]).optional(),
+        page: z.number().min(1).default(1),
+        limit: z.number().min(1).max(100).default(20),
+      }),
     )
     .query(async ({ ctx, input }) => {
       // Check if user is admin
@@ -190,17 +192,21 @@ export const adminRouter = createTRPCRouter({
         });
       }
 
-      const { page, limit, search } = input;
+      const { page, limit, search, role } = input;
       const skip = (page - 1) * limit;
 
-      const where = search
-        ? {
-            OR: [
-              { name: { contains: search, mode: "insensitive" as const } },
-              { email: { contains: search, mode: "insensitive" as const } },
-            ],
-          }
-        : {};
+      const where: Prisma.UserWhereInput = {};
+
+      if (search) {
+        where.OR = [
+          { name: { contains: search, mode: "insensitive" } },
+          { email: { contains: search, mode: "insensitive" } },
+        ];
+      }
+
+      if (role) {
+        where.role = role;
+      }
 
       const [users, total] = await Promise.all([
         ctx.db.user.findMany({
@@ -241,7 +247,7 @@ export const adminRouter = createTRPCRouter({
       z.object({
         userId: z.string(),
         role: z.enum(["USER", "ADMIN", "SUPPORT_AGENT", "MANAGER"]),
-      })
+      }),
     )
     .mutation(async ({ ctx, input }) => {
       // Check if user is admin
@@ -268,7 +274,7 @@ export const adminRouter = createTRPCRouter({
         email: z.string().email("Invalid email").optional(),
         role: z.enum(["USER", "ADMIN", "SUPPORT_AGENT", "MANAGER"]).optional(),
         isActive: z.boolean().optional(),
-      })
+      }),
     )
     .mutation(async ({ ctx, input }) => {
       // Check if user is admin
@@ -369,19 +375,19 @@ export const adminRouter = createTRPCRouter({
 
         // Delete support ticket messages
         await tx.supportTicketMessage.deleteMany({
-          where: { 
+          where: {
             ticket: {
-              userId: input.userId
-            }
+              userId: input.userId,
+            },
           },
         });
 
         // Delete support ticket attachments
         await tx.supportTicketAttachment.deleteMany({
-          where: { 
+          where: {
             ticket: {
-              userId: input.userId
-            }
+              userId: input.userId,
+            },
           },
         });
 
@@ -407,7 +413,7 @@ export const adminRouter = createTRPCRouter({
         });
 
         if (userOrders.length > 0) {
-          const orderIds = userOrders.map(order => order.id);
+          const orderIds = userOrders.map((order) => order.id);
 
           // Delete payments for these orders
           await tx.payment.deleteMany({
@@ -453,10 +459,21 @@ export const adminRouter = createTRPCRouter({
     .input(
       z.object({
         search: z.string().optional(),
-        category: z.string().optional(),
+        category: z
+          .enum([
+            "STREAMING_MEDIA",
+            "PRODUCTIVITY_TOOLS",
+            "CREATIVE_DESIGN",
+            "LEARNING_EDUCATION",
+            "SOCIAL_COMMUNICATION",
+            "GAMING",
+            "BUSINESS_FINANCE",
+            "HEALTH_FITNESS",
+          ])
+          .optional(),
         page: z.number().min(1).default(1),
-        limit: z.number().min(1).max(100).default(10),
-      })
+        limit: z.number().min(1).max(100).default(20),
+      }),
     )
     .query(async ({ ctx, input }) => {
       // Check if user is admin
@@ -470,9 +487,8 @@ export const adminRouter = createTRPCRouter({
       const { page, limit, search, category } = input;
       const skip = (page - 1) * limit;
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const where: any = {};
-      
+      const where: Prisma.ProductWhereInput = {};
+
       if (search) {
         where.OR = [
           { name: { contains: search, mode: "insensitive" as const } },
@@ -504,15 +520,17 @@ export const adminRouter = createTRPCRouter({
           ctx.db.product.count({ where: { isActive: true } }), // active products
           ctx.db.product.count({ where: { isActive: false } }), // inactive products
           // Calculate average price across all plans
-          ctx.db.productPlan.aggregate({
-            _avg: { price: true }
-          }).then(result => Number(result._avg.price) || 0)
+          ctx.db.productPlan
+            .aggregate({
+              _avg: { price: true },
+            })
+            .then((result) => Number(result._avg.price) || 0),
         ]).then(([total, active, inactive, avgPrice]) => ({
           total,
-          active, 
+          active,
           inactive,
-          avgPrice
-        }))
+          avgPrice,
+        })),
       ]);
 
       return {
@@ -532,13 +550,13 @@ export const adminRouter = createTRPCRouter({
         description: z.string().optional(),
         category: z.enum([
           "STREAMING_MEDIA",
-          "PRODUCTIVITY_TOOLS", 
+          "PRODUCTIVITY_TOOLS",
           "CREATIVE_DESIGN",
           "LEARNING_EDUCATION",
           "SOCIAL_COMMUNICATION",
           "GAMING",
           "BUSINESS_FINANCE",
-          "HEALTH_FITNESS"
+          "HEALTH_FITNESS",
         ]),
         logoUrl: z.string().optional(),
         logoName: z.string().optional(),
@@ -548,22 +566,29 @@ export const adminRouter = createTRPCRouter({
         displayOrder: z.number().optional(),
         seoTitle: z.string().optional(),
         seoDescription: z.string().optional(),
-        plans: z.array(
-          z.object({
-            name: z.string().min(1, "Plan name is required"),
-            planType: z.string().min(1, "Plan type is required"),
-            price: z.number().min(0, "Price must be positive"),
-            originalPrice: z.number().optional(),
-            billingPeriod: z.enum(["MONTHLY", "YEARLY", "LIFETIME", "CUSTOM"]),
-            duration: z.number().min(1, "Duration must be positive"),
-            features: z.array(z.string()).optional(),
-            isPopular: z.boolean().default(false),
-            isAvailable: z.boolean().default(true),
-            stockQuantity: z.number().nullable().optional(),
-            maxSubscriptions: z.number().optional(),
-          })
-        ).min(1, "At least one plan is required"),
-      })
+        plans: z
+          .array(
+            z.object({
+              name: z.string().min(1, "Plan name is required"),
+              planType: z.string().min(1, "Plan type is required"),
+              price: z.number().min(0, "Price must be positive"),
+              originalPrice: z.number().optional(),
+              billingPeriod: z.enum([
+                "MONTHLY",
+                "YEARLY",
+                "LIFETIME",
+                "CUSTOM",
+              ]),
+              duration: z.number().min(1, "Duration must be positive"),
+              features: z.array(z.string()).optional(),
+              isPopular: z.boolean().default(false),
+              isAvailable: z.boolean().default(true),
+              stockQuantity: z.number().nullable().optional(),
+              maxSubscriptions: z.number().optional(),
+            }),
+          )
+          .min(1, "At least one plan is required"),
+      }),
     )
     .mutation(async ({ ctx, input }) => {
       // Check if user is admin
@@ -613,16 +638,18 @@ export const adminRouter = createTRPCRouter({
         name: z.string().min(1, "Product name is required").optional(),
         slug: z.string().min(1, "Slug is required").optional(),
         description: z.string().optional(),
-        category: z.enum([
-          "STREAMING_MEDIA",
-          "PRODUCTIVITY_TOOLS", 
-          "CREATIVE_DESIGN",
-          "LEARNING_EDUCATION",
-          "SOCIAL_COMMUNICATION",
-          "GAMING",
-          "BUSINESS_FINANCE",
-          "HEALTH_FITNESS"
-        ]).optional(),
+        category: z
+          .enum([
+            "STREAMING_MEDIA",
+            "PRODUCTIVITY_TOOLS",
+            "CREATIVE_DESIGN",
+            "LEARNING_EDUCATION",
+            "SOCIAL_COMMUNICATION",
+            "GAMING",
+            "BUSINESS_FINANCE",
+            "HEALTH_FITNESS",
+          ])
+          .optional(),
         logoUrl: z.string().optional(),
         logoName: z.string().optional(),
         borderColor: z.string().optional(),
@@ -631,23 +658,30 @@ export const adminRouter = createTRPCRouter({
         displayOrder: z.number().optional(),
         seoTitle: z.string().optional(),
         seoDescription: z.string().optional(),
-        plans: z.array(
-          z.object({
-            id: z.string().optional(), // For existing plans
-            name: z.string().min(1, "Plan name is required"),
-            planType: z.string().min(1, "Plan type is required"),
-            price: z.number().min(0, "Price must be positive"),
-            originalPrice: z.number().optional(),
-            billingPeriod: z.enum(["MONTHLY", "YEARLY", "LIFETIME", "CUSTOM"]),
-            duration: z.number().min(1, "Duration must be positive"),
-            features: z.array(z.string()).optional(),
-            isPopular: z.boolean().default(false),
-            isAvailable: z.boolean().default(true),
-            stockQuantity: z.number().nullable().optional(),
-            maxSubscriptions: z.number().optional(),
-          })
-        ).optional(),
-      })
+        plans: z
+          .array(
+            z.object({
+              id: z.string().optional(), // For existing plans
+              name: z.string().min(1, "Plan name is required"),
+              planType: z.string().min(1, "Plan type is required"),
+              price: z.number().min(0, "Price must be positive"),
+              originalPrice: z.number().optional(),
+              billingPeriod: z.enum([
+                "MONTHLY",
+                "YEARLY",
+                "LIFETIME",
+                "CUSTOM",
+              ]),
+              duration: z.number().min(1, "Duration must be positive"),
+              features: z.array(z.string()).optional(),
+              isPopular: z.boolean().default(false),
+              isAvailable: z.boolean().default(true),
+              stockQuantity: z.number().nullable().optional(),
+              maxSubscriptions: z.number().optional(),
+            }),
+          )
+          .optional(),
+      }),
     )
     .mutation(async ({ ctx, input }) => {
       // Check if user is admin
@@ -701,11 +735,13 @@ export const adminRouter = createTRPCRouter({
         // Handle plans if provided
         if (plans) {
           // Get existing plan IDs
-          const existingPlanIds = existingProduct.plans.map(p => p.id);
-          const updatedPlanIds = plans.filter(p => p.id).map(p => p.id!);
-          
+          const existingPlanIds = existingProduct.plans.map((p) => p.id);
+          const updatedPlanIds = plans.filter((p) => p.id).map((p) => p.id!);
+
           // Delete plans that are no longer included
-          const plansToDelete = existingPlanIds.filter(id => !updatedPlanIds.includes(id));
+          const plansToDelete = existingPlanIds.filter(
+            (id) => !updatedPlanIds.includes(id),
+          );
           if (plansToDelete.length > 0) {
             await tx.productPlan.deleteMany({
               where: {
@@ -831,7 +867,8 @@ export const adminRouter = createTRPCRouter({
 
     return categories.map((category) => ({
       ...category,
-      count: categoryCounts.find((c) => c.category === category.key)?._count.id || 0,
+      count:
+        categoryCounts.find((c) => c.category === category.key)?._count.id || 0,
     }));
   }),
 
@@ -927,11 +964,13 @@ export const adminRouter = createTRPCRouter({
   getOrders: protectedProcedure
     .input(
       z.object({
-        page: z.number().min(1).default(1),
-        limit: z.number().min(1).max(100).default(10),
         search: z.string().optional(),
-        status: z.enum(["PENDING", "PROCESSING", "COMPLETED", "CANCELLED"]).optional(),
-      })
+        status: z
+          .enum(["PENDING", "PROCESSING", "COMPLETED", "CANCELLED", "FAILED"])
+          .optional(),
+        page: z.number().min(1).default(1),
+        limit: z.number().min(1).max(100).default(20),
+      }),
     )
     .query(async ({ ctx, input }) => {
       // Check if user is admin
@@ -945,9 +984,8 @@ export const adminRouter = createTRPCRouter({
       const { page, limit, search, status } = input;
       const skip = (page - 1) * limit;
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const where: any = {};
-      
+      const where: Prisma.OrderWhereInput = {};
+
       if (search) {
         where.OR = [
           { orderNumber: { contains: search, mode: "insensitive" } },
@@ -955,7 +993,7 @@ export const adminRouter = createTRPCRouter({
           { user: { email: { contains: search, mode: "insensitive" } } },
         ];
       }
-      
+
       if (status) {
         where.status = status;
       }
@@ -995,7 +1033,7 @@ export const adminRouter = createTRPCRouter({
         status: z.enum(["OPEN", "IN_PROGRESS", "CLOSED"]).optional(),
         page: z.number().min(1).default(1),
         limit: z.number().min(1).max(100).default(20),
-      })
+      }),
     )
     .query(async ({ ctx, input }) => {
       // Check if user is admin
@@ -1009,9 +1047,8 @@ export const adminRouter = createTRPCRouter({
       const { page, limit, search, status } = input;
       const skip = (page - 1) * limit;
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const where: any = {};
-      
+      const where: Prisma.SupportTicketWhereInput = {};
+
       if (search) {
         where.OR = [
           { title: { contains: search, mode: "insensitive" } },
@@ -1020,7 +1057,7 @@ export const adminRouter = createTRPCRouter({
           { user: { email: { contains: search, mode: "insensitive" } } },
         ];
       }
-      
+
       if (status) {
         where.status = status;
       }
@@ -1051,7 +1088,7 @@ export const adminRouter = createTRPCRouter({
       z.object({
         ticketId: z.string(),
         status: z.enum(["OPEN", "IN_PROGRESS", "CLOSED"]),
-      })
+      }),
     )
     .mutation(async ({ ctx, input }) => {
       // Check if user is admin
@@ -1064,10 +1101,10 @@ export const adminRouter = createTRPCRouter({
 
       const ticket = await ctx.db.supportTicket.update({
         where: { id: input.ticketId },
-        data: { 
+        data: {
           status: input.status,
           lastActivityAt: new Date(),
-          closedAt: input.status === 'CLOSED' ? new Date() : undefined,
+          closedAt: input.status === "CLOSED" ? new Date() : undefined,
         },
       });
 
@@ -1078,8 +1115,14 @@ export const adminRouter = createTRPCRouter({
     .input(
       z.object({
         orderId: z.string(),
-        status: z.enum(["PENDING", "PROCESSING", "COMPLETED", "CANCELLED", "FAILED"]),
-      })
+        status: z.enum([
+          "PENDING",
+          "PROCESSING",
+          "COMPLETED",
+          "CANCELLED",
+          "FAILED",
+        ]),
+      }),
     )
     .mutation(async ({ ctx, input }) => {
       // Check if user is admin
@@ -1092,9 +1135,9 @@ export const adminRouter = createTRPCRouter({
 
       const order = await ctx.db.order.update({
         where: { id: input.orderId },
-        data: { 
+        data: {
           status: input.status,
-          completedAt: input.status === 'COMPLETED' ? new Date() : undefined,
+          completedAt: input.status === "COMPLETED" ? new Date() : undefined,
         },
       });
 
@@ -1133,7 +1176,7 @@ export const adminRouter = createTRPCRouter({
           },
           messages: {
             orderBy: {
-              createdAt: 'asc',
+              createdAt: "asc",
             },
             include: {
               user: {
@@ -1152,8 +1195,8 @@ export const adminRouter = createTRPCRouter({
 
       if (!ticket) {
         throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Ticket not found',
+          code: "NOT_FOUND",
+          message: "Ticket not found",
         });
       }
 
@@ -1164,9 +1207,9 @@ export const adminRouter = createTRPCRouter({
     .input(
       z.object({
         ticketId: z.string(),
-        message: z.string().min(1, 'Message cannot be empty'),
+        message: z.string().min(1, "Message cannot be empty"),
         isInternal: z.boolean().default(false),
-      })
+      }),
     )
     .mutation(async ({ ctx, input }) => {
       // Check if user is admin
@@ -1186,8 +1229,8 @@ export const adminRouter = createTRPCRouter({
 
       if (!ticket) {
         throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Ticket not found',
+          code: "NOT_FOUND",
+          message: "Ticket not found",
         });
       }
 
@@ -1216,7 +1259,7 @@ export const adminRouter = createTRPCRouter({
         where: { id: input.ticketId },
         data: {
           lastActivityAt: new Date(),
-          status: ticket.status === 'OPEN' ? 'IN_PROGRESS' : ticket.status,
+          status: ticket.status === "OPEN" ? "IN_PROGRESS" : ticket.status,
         },
       });
 
@@ -1289,7 +1332,7 @@ export const adminRouter = createTRPCRouter({
           },
           payments: {
             orderBy: {
-              createdAt: 'desc',
+              createdAt: "desc",
             },
           },
           subscriptions: {
@@ -1306,11 +1349,11 @@ export const adminRouter = createTRPCRouter({
 
       if (!order) {
         throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Order not found',
+          code: "NOT_FOUND",
+          message: "Order not found",
         });
       }
 
       return order;
     }),
-}); 
+});

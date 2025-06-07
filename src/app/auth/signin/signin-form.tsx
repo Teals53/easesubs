@@ -1,64 +1,64 @@
-'use client'
+"use client";
 
-import { useState, Suspense } from 'react'
-import { signIn, getSession } from 'next-auth/react'
-import { useRouter, useSearchParams } from 'next/navigation'
-import { motion } from 'framer-motion'
-import { Eye, EyeOff, Mail, Lock, LogIn } from 'lucide-react'
-import Link from 'next/link'
+import { useState, Suspense } from "react";
+import { signIn, getSession } from "next-auth/react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { motion } from "framer-motion";
+import { Eye, EyeOff, Mail, Lock, LogIn } from "lucide-react";
+import Link from "next/link";
 
 function SignInFormContent() {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [showPassword, setShowPassword] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const router = useRouter()
-  const searchParams = useSearchParams()
-  const callbackUrl = searchParams.get('callbackUrl') || '/dashboard'
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
-    setError(null)
+    e.preventDefault();
+    setIsLoading(true);
+    setError(null);
 
     try {
-      const result = await signIn('credentials', {
+      const result = await signIn("credentials", {
         redirect: false,
         email,
         password,
-      })
+      });
 
       if (result?.error) {
-        setError('Invalid email or password')
-        setIsLoading(false)
-        return
+        setError("Invalid email or password");
+        setIsLoading(false);
+        return;
       }
 
       // Check if session is established
-      const session = await getSession()
+      const session = await getSession();
       if (session) {
-        router.push(callbackUrl)
+        router.push(callbackUrl);
       } else {
-        setError('Failed to establish session')
-        setIsLoading(false)
+        setError("Failed to establish session");
+        setIsLoading(false);
       }
     } catch {
-      setError('An unexpected error occurred')
-      setIsLoading(false)
+      setError("An unexpected error occurred");
+      setIsLoading(false);
     }
-  }
+  };
 
   const handleGoogleSignIn = async () => {
-    setIsLoading(true)
+    setIsLoading(true);
     try {
-      await signIn('google', { callbackUrl })
+      await signIn("google", { callbackUrl });
     } catch {
-      setError('Failed to sign in with Google')
-      setIsLoading(false)
+      setError("Failed to sign in with Google");
+      setIsLoading(false);
     }
-  }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-950 to-gray-900 flex items-center justify-center px-4">
@@ -97,7 +97,10 @@ function SignInFormContent() {
           {/* Sign In Form */}
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-2">
+              <label
+                htmlFor="email"
+                className="block text-sm font-medium text-gray-300 mb-2"
+              >
                 Email Address
               </label>
               <div className="relative">
@@ -115,14 +118,17 @@ function SignInFormContent() {
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-2">
+              <label
+                htmlFor="password"
+                className="block text-sm font-medium text-gray-300 mb-2"
+              >
                 Password
               </label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
                   id="password"
-                  type={showPassword ? 'text' : 'password'}
+                  type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full pl-10 pr-12 py-3 bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
@@ -134,13 +140,17 @@ function SignInFormContent() {
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-300"
                 >
-                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  {showPassword ? (
+                    <EyeOff className="w-5 h-5" />
+                  ) : (
+                    <Eye className="w-5 h-5" />
+                  )}
                 </button>
               </div>
               {/* Forgot Password Link */}
               <div className="text-right mt-2">
-                <Link 
-                  href="/auth/forgot-password" 
+                <Link
+                  href="/auth/forgot-password"
                   className="text-sm text-purple-500 hover:text-purple-400 transition-colors"
                 >
                   Forgot password?
@@ -153,7 +163,7 @@ function SignInFormContent() {
               disabled={isLoading}
               className="w-full bg-purple-600 hover:bg-purple-700 disabled:bg-purple-600/50 text-white font-medium py-3 px-4 rounded-lg transition-colors duration-200 disabled:cursor-not-allowed"
             >
-              {isLoading ? 'Signing In...' : 'Sign In'}
+              {isLoading ? "Signing In..." : "Sign In"}
             </button>
           </form>
 
@@ -182,8 +192,11 @@ function SignInFormContent() {
           {/* Sign Up Link */}
           <div className="mt-6 text-center">
             <p className="text-gray-400 text-sm">
-              Don&apos;t have an account?{' '}
-              <Link href="/auth/signup" className="text-purple-500 hover:text-purple-400 font-medium">
+              Don&apos;t have an account?{" "}
+              <Link
+                href="/auth/signup"
+                className="text-purple-500 hover:text-purple-400 font-medium"
+              >
                 Sign up
               </Link>
             </p>
@@ -191,7 +204,7 @@ function SignInFormContent() {
         </div>
       </motion.div>
     </div>
-  )
+  );
 }
 
 export function SignInForm() {
@@ -199,5 +212,5 @@ export function SignInForm() {
     <Suspense fallback={<div>Loading...</div>}>
       <SignInFormContent />
     </Suspense>
-  )
-} 
+  );
+}

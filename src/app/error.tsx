@@ -1,23 +1,23 @@
-'use client'
+"use client";
 
-import { useEffect } from 'react'
-import { motion } from 'framer-motion'
-import { AlertTriangle, RefreshCw, Home } from 'lucide-react'
-import Link from 'next/link'
+import { useEffect } from "react";
+import { motion } from "framer-motion";
+import { AlertTriangle, RefreshCw, Home } from "lucide-react";
+import Link from "next/link";
 
 export default function Error({
   error,
   reset,
 }: {
-  error: Error & { digest?: string }
-  reset: () => void
+  error: Error & { digest?: string };
+  reset: () => void;
 }) {
   useEffect(() => {
     // Log the error to an error reporting service
-    if (process.env.NODE_ENV === 'production') {
-      console.error('Application error:', error)
+    if (process.env.NODE_ENV === "production") {
+      console.error("Application error:", error);
     }
-  }, [error])
+  }, [error]);
 
   return (
     <div className="min-h-screen bg-gray-950 flex items-center justify-center px-4">
@@ -39,7 +39,7 @@ export default function Error({
         <h1 className="text-2xl font-bold text-white mb-4">
           Something went wrong!
         </h1>
-        
+
         <p className="text-gray-400 mb-8">
           We apologize for the inconvenience. An unexpected error has occurred.
         </p>
@@ -55,10 +55,7 @@ export default function Error({
             Try again
           </motion.button>
 
-          <motion.div
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
+          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
             <Link
               href="/"
               className="bg-gray-700 hover:bg-gray-600 text-white font-medium px-6 py-3 rounded-lg transition-colors duration-200 flex items-center justify-center gap-2"
@@ -69,7 +66,7 @@ export default function Error({
           </motion.div>
         </div>
 
-        {process.env.NODE_ENV === 'development' && (
+        {process.env.NODE_ENV === "development" && (
           <details className="mt-8 text-left">
             <summary className="text-gray-400 cursor-pointer hover:text-gray-300">
               Error details (development only)
@@ -81,5 +78,5 @@ export default function Error({
         )}
       </motion.div>
     </div>
-  )
-} 
+  );
+}

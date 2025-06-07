@@ -1,38 +1,38 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import { motion } from 'framer-motion'
-import { ArrowLeft, Mail, AlertCircle, CheckCircle } from 'lucide-react'
-import Link from 'next/link'
-import { trpc } from '@/lib/trpc'
+import { useState } from "react";
+import { motion } from "framer-motion";
+import { ArrowLeft, Mail, AlertCircle, CheckCircle } from "lucide-react";
+import Link from "next/link";
+import { trpc } from "@/lib/trpc";
 
 export default function ForgotPasswordPage() {
-  const [email, setEmail] = useState('')
-  const [isSubmitted, setIsSubmitted] = useState(false)
-  const [error, setError] = useState('')
+  const [email, setEmail] = useState("");
+  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [error, setError] = useState("");
 
   const requestReset = trpc.auth.requestPasswordReset.useMutation({
     onSuccess: () => {
-      setIsSubmitted(true)
-      setError('')
+      setIsSubmitted(true);
+      setError("");
     },
     onError: (error) => {
-      setError(error.message)
-      setIsSubmitted(false)
-    }
-  })
+      setError(error.message);
+      setIsSubmitted(false);
+    },
+  });
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError('')
-    
+    e.preventDefault();
+    setError("");
+
     if (!email) {
-      setError('Email is required')
-      return
+      setError("Email is required");
+      return;
     }
 
-    await requestReset.mutateAsync({ email })
-  }
+    await requestReset.mutateAsync({ email });
+  };
 
   if (isSubmitted) {
     return (
@@ -52,20 +52,22 @@ export default function ForgotPasswordPage() {
               >
                 <CheckCircle className="w-8 h-8 text-white" />
               </motion.div>
-              
+
               <h1 className="text-2xl font-bold text-white mb-4">
                 Check Your Email
               </h1>
-              
+
               <p className="text-gray-400 mb-6">
-                If an account with email <strong className="text-white">{email}</strong> exists, 
-                you will receive a password reset link shortly.
+                If an account with email{" "}
+                <strong className="text-white">{email}</strong> exists, you will
+                receive a password reset link shortly.
               </p>
-              
+
               <p className="text-sm text-gray-500 mb-8">
-                Didn&apos;t receive an email? Check your spam folder or try again in a few minutes.
+                Didn&apos;t receive an email? Check your spam folder or try
+                again in a few minutes.
               </p>
-              
+
               <Link
                 href="/auth/signin"
                 className="inline-flex items-center text-purple-400 hover:text-purple-300 transition-colors"
@@ -77,7 +79,7 @@ export default function ForgotPasswordPage() {
           </div>
         </motion.div>
       </div>
-    )
+    );
   }
 
   return (
@@ -97,13 +99,14 @@ export default function ForgotPasswordPage() {
             >
               <Mail className="w-8 h-8 text-white" />
             </motion.div>
-            
+
             <h1 className="text-2xl font-bold text-white mb-2">
               Forgot Password?
             </h1>
-            
+
             <p className="text-gray-400">
-              Enter your email address and we&apos;ll send you a link to reset your password.
+              Enter your email address and we&apos;ll send you a link to reset
+              your password.
             </p>
           </div>
 
@@ -120,7 +123,10 @@ export default function ForgotPasswordPage() {
             )}
 
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-2">
+              <label
+                htmlFor="email"
+                className="block text-sm font-medium text-gray-300 mb-2"
+              >
                 Email Address
               </label>
               <input
@@ -147,7 +153,7 @@ export default function ForgotPasswordPage() {
                   Sending...
                 </div>
               ) : (
-                'Send Reset Link'
+                "Send Reset Link"
               )}
             </motion.button>
           </form>
@@ -164,5 +170,5 @@ export default function ForgotPasswordPage() {
         </div>
       </motion.div>
     </div>
-  )
-} 
+  );
+}

@@ -1,10 +1,10 @@
-'use client'
+"use client";
 
-import { useSession } from 'next-auth/react'
-import { redirect } from 'next/navigation'
-import { motion } from 'framer-motion'
-import { 
-  MessageCircle, 
+import { useSession } from "next-auth/react";
+import { redirect } from "next/navigation";
+import { motion } from "framer-motion";
+import {
+  MessageCircle,
   Search,
   Clock,
   AlertCircle,
@@ -12,135 +12,146 @@ import {
   ChevronLeft,
   ChevronRight,
   Trash2,
-  Eye
-} from 'lucide-react'
-import { trpc, invalidatePatterns } from '@/lib/trpc'
-import { useState } from 'react'
-import { UserRole } from '@prisma/client'
-import Link from 'next/link'
+  Eye,
+} from "lucide-react";
+import { trpc, invalidatePatterns } from "@/lib/trpc";
+import { useState } from "react";
+import { UserRole } from "@prisma/client";
+import Link from "next/link";
 
 interface ExtendedUser {
-  id: string
-  name?: string | null
-  email?: string | null
-  image?: string | null
-  role: UserRole
+  id: string;
+  name?: string | null;
+  email?: string | null;
+  image?: string | null;
+  role: UserRole;
 }
 
 export default function AdminSupportPage() {
-  const { data: session, status } = useSession()
-  const [searchTerm, setSearchTerm] = useState('')
-  const [statusFilter, setStatusFilter] = useState('')
-  const [page, setPage] = useState(1)
-  const itemsPerPage = 10
+  const { data: session, status } = useSession();
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [page, setPage] = useState(1);
+  const itemsPerPage = 10;
 
   // Properly typed user with role
-  const user = session?.user as ExtendedUser | undefined
-  const isAdmin = user?.role === 'ADMIN'
+  const user = session?.user as ExtendedUser | undefined;
+  const isAdmin = user?.role === "ADMIN";
 
   // Get tRPC utils for cache invalidation
-  const utils = trpc.useUtils()
+  const utils = trpc.useUtils();
 
-  const { 
-    data: ticketsData, 
+  const {
+    data: ticketsData,
     isLoading,
-    refetch
-  } = trpc.admin.getSupportTickets.useQuery({
-    search: searchTerm,
-    status: statusFilter ? statusFilter as "OPEN" | "IN_PROGRESS" | "CLOSED" : undefined,
-    page,
-    limit: itemsPerPage
-  }, {
-    enabled: isAdmin,
-    // Refetch every 30 seconds for real-time updates
-    refetchInterval: 30000,
-  })
+    refetch,
+  } = trpc.admin.getSupportTickets.useQuery(
+    {
+      search: searchTerm,
+      status: statusFilter
+        ? (statusFilter as "OPEN" | "IN_PROGRESS" | "CLOSED")
+        : undefined,
+      page,
+      limit: itemsPerPage,
+    },
+    {
+      enabled: isAdmin,
+      // Refetch every 30 seconds for real-time updates
+      refetchInterval: 30000,
+    },
+  );
 
   // Delete ticket mutation
   const deleteTicketMutation = trpc.admin.deleteTicket.useMutation({
     onSuccess: () => {
       // Invalidate all ticket-related queries for immediate update
-      invalidatePatterns.tickets(utils)
-      invalidatePatterns.dashboard(utils)
+      invalidatePatterns.tickets(utils);
+      invalidatePatterns.dashboard(utils);
       // Refetch the tickets data to update the UI
-      refetch()
+      refetch();
     },
     onError: (error) => {
-      console.error('Failed to delete ticket:', error)
-      alert('Failed to delete ticket. Please try again.')
-    }
-  })
+      console.error("Failed to delete ticket:", error);
+      alert("Failed to delete ticket. Please try again.");
+    },
+  });
 
-  if (status === 'loading') {
+  if (status === "loading") {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-purple-500"></div>
       </div>
-    )
+    );
   }
 
   if (!session || !isAdmin) {
-    redirect('/dashboard')
+    redirect("/dashboard");
   }
 
   const formatDate = (date: string | Date) => {
-    return new Date(date).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    })
-  }
+    return new Date(date).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'IN_PROGRESS':
-        return <Clock className="h-4 w-4 text-blue-400" />
-      case 'OPEN':
-        return <AlertCircle className="h-4 w-4 text-yellow-400" />
-      case 'CLOSED':
-        return <CheckCircle className="h-4 w-4 text-green-400" />
+      case "IN_PROGRESS":
+        return <Clock className="h-4 w-4 text-blue-400" />;
+      case "OPEN":
+        return <AlertCircle className="h-4 w-4 text-yellow-400" />;
+      case "CLOSED":
+        return <CheckCircle className="h-4 w-4 text-green-400" />;
       default:
-        return <MessageCircle className="h-4 w-4 text-purple-400" />
+        return <MessageCircle className="h-4 w-4 text-purple-400" />;
     }
-  }
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'IN_PROGRESS':
-        return 'bg-blue-900/30 text-blue-400 border-blue-500/30'
-      case 'OPEN':
-        return 'bg-yellow-900/30 text-yellow-400 border-yellow-500/30'
-      case 'CLOSED':
-        return 'bg-green-900/30 text-green-400 border-green-500/30'
+      case "IN_PROGRESS":
+        return "bg-blue-900/30 text-blue-400 border-blue-500/30";
+      case "OPEN":
+        return "bg-yellow-900/30 text-yellow-400 border-yellow-500/30";
+      case "CLOSED":
+        return "bg-green-900/30 text-green-400 border-green-500/30";
       default:
-        return 'bg-purple-900/30 text-purple-400 border-purple-500/30'
+        return "bg-purple-900/30 text-purple-400 border-purple-500/30";
     }
-  }
+  };
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case 'URGENT':
-        return 'bg-red-900/30 text-red-400 border-red-500/30'
-      case 'HIGH':
-        return 'bg-orange-900/30 text-orange-400 border-orange-500/30'
-      case 'MEDIUM':
-        return 'bg-yellow-900/30 text-yellow-400 border-yellow-500/30'
-      case 'LOW':
-        return 'bg-green-900/30 text-green-400 border-green-500/30'
+      case "URGENT":
+        return "bg-red-900/30 text-red-400 border-red-500/30";
+      case "HIGH":
+        return "bg-orange-900/30 text-orange-400 border-orange-500/30";
+      case "MEDIUM":
+        return "bg-yellow-900/30 text-yellow-400 border-yellow-500/30";
+      case "LOW":
+        return "bg-green-900/30 text-green-400 border-green-500/30";
       default:
-        return 'bg-gray-900/30 text-gray-400 border-gray-500/30'
+        return "bg-gray-900/30 text-gray-400 border-gray-500/30";
     }
-  }
+  };
 
   const handleDeleteTicket = async (ticketId: string) => {
-    if (confirm('Are you sure you want to delete this ticket? This action cannot be undone.')) {
-      await deleteTicketMutation.mutateAsync({ ticketId })
+    if (
+      confirm(
+        "Are you sure you want to delete this ticket? This action cannot be undone.",
+      )
+    ) {
+      await deleteTicketMutation.mutateAsync({ ticketId });
     }
-  }
+  };
 
-  const totalPages = ticketsData ? Math.ceil(ticketsData.total / itemsPerPage) : 0
+  const totalPages = ticketsData
+    ? Math.ceil(ticketsData.total / itemsPerPage)
+    : 0;
 
   return (
     <div className="space-y-8">
@@ -169,44 +180,53 @@ export default function AdminSupportPage() {
         <div className="bg-gradient-to-br from-yellow-500/10 to-yellow-600/10 border border-yellow-500/20 p-6 rounded-2xl">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-yellow-400 text-sm font-medium">Open Tickets</p>
+              <p className="text-yellow-400 text-sm font-medium">
+                Open Tickets
+              </p>
               <p className="text-2xl font-bold text-white">
-                {ticketsData?.tickets?.filter(t => t.status === 'OPEN').length || 0}
+                {ticketsData?.tickets?.filter((t) => t.status === "OPEN")
+                  .length || 0}
               </p>
             </div>
             <AlertCircle className="h-8 w-8 text-yellow-400" />
           </div>
         </div>
-        
+
         <div className="bg-gradient-to-br from-blue-500/10 to-blue-600/10 border border-blue-500/20 p-6 rounded-2xl">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-blue-400 text-sm font-medium">In Progress</p>
               <p className="text-2xl font-bold text-white">
-                {ticketsData?.tickets?.filter(t => t.status === 'IN_PROGRESS').length || 0}
+                {ticketsData?.tickets?.filter((t) => t.status === "IN_PROGRESS")
+                  .length || 0}
               </p>
             </div>
             <Clock className="h-8 w-8 text-blue-400" />
           </div>
         </div>
-        
+
         <div className="bg-gradient-to-br from-green-500/10 to-green-600/10 border border-green-500/20 p-6 rounded-2xl">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-green-400 text-sm font-medium">Closed</p>
               <p className="text-2xl font-bold text-white">
-                {ticketsData?.tickets?.filter(t => t.status === 'CLOSED').length || 0}
+                {ticketsData?.tickets?.filter((t) => t.status === "CLOSED")
+                  .length || 0}
               </p>
             </div>
             <CheckCircle className="h-8 w-8 text-green-400" />
           </div>
         </div>
-        
+
         <div className="bg-gradient-to-br from-purple-500/10 to-purple-600/10 border border-purple-500/20 p-6 rounded-2xl">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-purple-400 text-sm font-medium">Total Tickets</p>
-              <p className="text-2xl font-bold text-white">{ticketsData?.total || 0}</p>
+              <p className="text-purple-400 text-sm font-medium">
+                Total Tickets
+              </p>
+              <p className="text-2xl font-bold text-white">
+                {ticketsData?.total || 0}
+              </p>
             </div>
             <MessageCircle className="h-8 w-8 text-purple-400" />
           </div>
@@ -261,12 +281,13 @@ export default function AdminSupportPage() {
         ) : !ticketsData?.tickets || ticketsData.tickets.length === 0 ? (
           <div className="p-12 text-center">
             <MessageCircle className="h-16 w-16 text-gray-600 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-white mb-2">No tickets found</h3>
+            <h3 className="text-xl font-semibold text-white mb-2">
+              No tickets found
+            </h3>
             <p className="text-gray-400">
-              {searchTerm || statusFilter 
-                ? "Try adjusting your search or filter criteria" 
-                : "No support tickets have been created yet"
-              }
+              {searchTerm || statusFilter
+                ? "Try adjusting your search or filter criteria"
+                : "No support tickets have been created yet"}
             </p>
           </div>
         ) : (
@@ -276,23 +297,42 @@ export default function AdminSupportPage() {
               <table className="w-full">
                 <thead className="bg-gray-700/50">
                   <tr>
-                    <th className="text-left py-4 px-6 text-gray-400 font-medium">Ticket</th>
-                    <th className="text-left py-4 px-6 text-gray-400 font-medium">Customer</th>
-                    <th className="text-left py-4 px-6 text-gray-400 font-medium">Priority</th>
-                    <th className="text-left py-4 px-6 text-gray-400 font-medium">Status</th>
-                    <th className="text-left py-4 px-6 text-gray-400 font-medium">Created</th>
-                    <th className="text-left py-4 px-6 text-gray-400 font-medium">Actions</th>
+                    <th className="text-left py-4 px-6 text-gray-400 font-medium">
+                      Ticket
+                    </th>
+                    <th className="text-left py-4 px-6 text-gray-400 font-medium">
+                      Customer
+                    </th>
+                    <th className="text-left py-4 px-6 text-gray-400 font-medium">
+                      Priority
+                    </th>
+                    <th className="text-left py-4 px-6 text-gray-400 font-medium">
+                      Status
+                    </th>
+                    <th className="text-left py-4 px-6 text-gray-400 font-medium">
+                      Created
+                    </th>
+                    <th className="text-left py-4 px-6 text-gray-400 font-medium">
+                      Actions
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
                   {ticketsData.tickets.map((ticket) => (
-                    <tr key={ticket.id} className="border-b border-gray-700 hover:bg-gray-700/30 transition-colors">
+                    <tr
+                      key={ticket.id}
+                      className="border-b border-gray-700 hover:bg-gray-700/30 transition-colors"
+                    >
                       <td className="py-4 px-6">
                         <div className="flex items-center space-x-3">
                           <MessageCircle className="h-5 w-5 text-purple-400 flex-shrink-0" />
                           <div className="min-w-0">
-                            <p className="text-white font-medium truncate">{ticket.title}</p>
-                            <p className="text-gray-400 text-sm">#{ticket.id.slice(-8)}</p>
+                            <p className="text-white font-medium truncate">
+                              {ticket.title}
+                            </p>
+                            <p className="text-gray-400 text-sm">
+                              #{ticket.id.slice(-8)}
+                            </p>
                           </div>
                         </div>
                       </td>
@@ -300,24 +340,34 @@ export default function AdminSupportPage() {
                         <div className="flex items-center space-x-3">
                           <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
                             <span className="text-white font-bold text-xs">
-                              {ticket.user?.name?.[0]?.toUpperCase() || ticket.user?.email?.[0]?.toUpperCase() || 'U'}
+                              {ticket.user?.name?.[0]?.toUpperCase() ||
+                                ticket.user?.email?.[0]?.toUpperCase() ||
+                                "U"}
                             </span>
                           </div>
                           <div className="min-w-0">
-                            <p className="text-white font-medium truncate">{ticket.user?.name || 'Anonymous'}</p>
-                            <p className="text-gray-400 text-sm truncate">{ticket.user?.email}</p>
+                            <p className="text-white font-medium truncate">
+                              {ticket.user?.name || "Anonymous"}
+                            </p>
+                            <p className="text-gray-400 text-sm truncate">
+                              {ticket.user?.email}
+                            </p>
                           </div>
                         </div>
                       </td>
                       <td className="py-4 px-6">
-                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${getPriorityColor(ticket.priority)}`}>
+                        <span
+                          className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${getPriorityColor(ticket.priority)}`}
+                        >
                           {ticket.priority}
                         </span>
                       </td>
                       <td className="py-4 px-6">
-                        <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(ticket.status)}`}>
+                        <span
+                          className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(ticket.status)}`}
+                        >
                           {getStatusIcon(ticket.status)}
-                          {ticket.status.replace('_', ' ')}
+                          {ticket.status.replace("_", " ")}
                         </span>
                       </td>
                       <td className="py-4 px-6">
@@ -353,14 +403,21 @@ export default function AdminSupportPage() {
             {/* Mobile Card View */}
             <div className="lg:hidden space-y-4 p-4">
               {ticketsData.tickets.map((ticket) => (
-                <div key={ticket.id} className="bg-gray-700/30 rounded-xl p-4 space-y-3">
+                <div
+                  key={ticket.id}
+                  className="bg-gray-700/30 rounded-xl p-4 space-y-3"
+                >
                   {/* Header */}
                   <div className="flex items-start justify-between">
                     <div className="flex items-center space-x-3 flex-1 min-w-0">
                       <MessageCircle className="h-5 w-5 text-purple-400 flex-shrink-0" />
                       <div className="min-w-0 flex-1">
-                        <p className="text-white font-medium truncate">{ticket.title}</p>
-                        <p className="text-gray-400 text-sm">#{ticket.id.slice(-8)}</p>
+                        <p className="text-white font-medium truncate">
+                          {ticket.title}
+                        </p>
+                        <p className="text-gray-400 text-sm">
+                          #{ticket.id.slice(-8)}
+                        </p>
                       </div>
                     </div>
                     <div className="flex items-center space-x-2 ml-2">
@@ -386,24 +443,34 @@ export default function AdminSupportPage() {
                   <div className="flex items-center space-x-3">
                     <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
                       <span className="text-white font-bold text-xs">
-                        {ticket.user?.name?.[0]?.toUpperCase() || ticket.user?.email?.[0]?.toUpperCase() || 'U'}
+                        {ticket.user?.name?.[0]?.toUpperCase() ||
+                          ticket.user?.email?.[0]?.toUpperCase() ||
+                          "U"}
                       </span>
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="text-white font-medium truncate">{ticket.user?.name || 'Anonymous'}</p>
-                      <p className="text-gray-400 text-sm truncate">{ticket.user?.email}</p>
+                      <p className="text-white font-medium truncate">
+                        {ticket.user?.name || "Anonymous"}
+                      </p>
+                      <p className="text-gray-400 text-sm truncate">
+                        {ticket.user?.email}
+                      </p>
                     </div>
                   </div>
 
                   {/* Status and Priority */}
                   <div className="flex items-center justify-between gap-4">
                     <div className="flex items-center gap-2">
-                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getPriorityColor(ticket.priority)}`}>
+                      <span
+                        className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getPriorityColor(ticket.priority)}`}
+                      >
                         {ticket.priority}
                       </span>
-                      <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(ticket.status)}`}>
+                      <span
+                        className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(ticket.status)}`}
+                      >
                         {getStatusIcon(ticket.status)}
-                        {ticket.status.replace('_', ' ')}
+                        {ticket.status.replace("_", " ")}
                       </span>
                     </div>
                     <div className="text-gray-400 text-sm">
@@ -418,7 +485,9 @@ export default function AdminSupportPage() {
             {totalPages > 1 && (
               <div className="flex items-center justify-between px-6 py-4 border-t border-gray-700">
                 <div className="text-sm text-gray-400">
-                  Showing {((page - 1) * itemsPerPage) + 1} to {Math.min(page * itemsPerPage, ticketsData.total)} of {ticketsData.total} tickets
+                  Showing {(page - 1) * itemsPerPage + 1} to{" "}
+                  {Math.min(page * itemsPerPage, ticketsData.total)} of{" "}
+                  {ticketsData.total} tickets
                 </div>
                 <div className="flex items-center space-x-2">
                   <button
@@ -445,5 +514,5 @@ export default function AdminSupportPage() {
         )}
       </motion.div>
     </div>
-  )
-} 
+  );
+}

@@ -1,34 +1,34 @@
-'use client'
+"use client";
 
-import { Fragment } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { X, Plus, Minus, ShoppingBag, Trash2 } from 'lucide-react'
-import { useCartStore } from '@/components/cart/cart-provider'
-import { useCart } from '@/components/cart/use-cart'
-import Link from 'next/link'
-import Image from 'next/image'
+import { Fragment } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { X, Plus, Minus, ShoppingBag, Trash2 } from "lucide-react";
+import { useCartStore } from "@/components/cart/cart-provider";
+import { useCart } from "@/components/cart/use-cart";
+import Link from "next/link";
+import Image from "next/image";
 
 export function CartSidebar() {
-  const { isOpen, toggleCart } = useCartStore()
-  const { 
-    items, 
+  const { isOpen, toggleCart } = useCartStore();
+  const {
+    items,
     totalItems,
     totalPrice,
-    removeItem, 
-    updateQuantity, 
+    removeItem,
+    updateQuantity,
     clearCart,
     isUpdating,
     isRemoving,
-    isClearing
-  } = useCart()
+    isClearing,
+  } = useCart();
 
   const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
       minimumFractionDigits: 2,
-    }).format(price)
-  }
+    }).format(price);
+  };
 
   return (
     <AnimatePresence>
@@ -45,10 +45,10 @@ export function CartSidebar() {
 
           {/* Cart Sidebar */}
           <motion.div
-            initial={{ x: '100%' }}
+            initial={{ x: "100%" }}
             animate={{ x: 0 }}
-            exit={{ x: '100%' }}
-            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+            exit={{ x: "100%" }}
+            transition={{ type: "spring", damping: 25, stiffness: 200 }}
             className="fixed right-0 top-0 h-full w-full max-w-md bg-gray-900 border-l border-gray-700 z-50 flex flex-col"
           >
             {/* Header */}
@@ -70,8 +70,12 @@ export function CartSidebar() {
               {items.length === 0 ? (
                 <div className="text-center py-12">
                   <ShoppingBag className="h-16 w-16 mx-auto text-gray-600 mb-4" />
-                  <h3 className="text-lg font-medium text-gray-400 mb-2">Your cart is empty</h3>
-                  <p className="text-gray-500 mb-6">Add some products to get started!</p>
+                  <h3 className="text-lg font-medium text-gray-400 mb-2">
+                    Your cart is empty
+                  </h3>
+                  <p className="text-gray-500 mb-6">
+                    Add some products to get started!
+                  </p>
                   <button
                     onClick={toggleCart}
                     className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-lg transition-colors"
@@ -95,8 +99,8 @@ export function CartSidebar() {
                           {/* Product Logo/Icon */}
                           <div className="w-12 h-12 flex-shrink-0">
                             {item.logoUrl ? (
-                              <Image 
-                                src={item.logoUrl} 
+                              <Image
+                                src={item.logoUrl}
                                 alt={item.productName}
                                 width={48}
                                 height={48}
@@ -104,29 +108,35 @@ export function CartSidebar() {
                                 unoptimized
                               />
                             ) : (
-                              <div 
+                              <div
                                 className="w-12 h-12 rounded-lg flex items-center justify-center text-white font-bold text-lg"
-                                style={{ 
-                                  backgroundColor: item.borderColor || '#9333EA'
+                                style={{
+                                  backgroundColor:
+                                    item.borderColor || "#9333EA",
                                 }}
                               >
                                 {item.productName[0]}
                               </div>
                             )}
                           </div>
-                          
+
                           <div className="flex-1 min-w-0">
-                            <h3 className="font-medium text-white truncate">{item.productName}</h3>
-                            <p className="text-sm text-gray-400">{item.planType}</p>
+                            <h3 className="font-medium text-white truncate">
+                              {item.productName}
+                            </h3>
+                            <p className="text-sm text-gray-400">
+                              {item.planType}
+                            </p>
                             <div className="flex items-center gap-2 mt-1">
                               <span className="text-lg font-bold text-white">
                                 {formatPrice(item.price)}
                               </span>
-                              {item.originalPrice && item.originalPrice > item.price && (
-                                <span className="text-sm text-gray-500 line-through">
-                                  {formatPrice(item.originalPrice)}
-                                </span>
-                              )}
+                              {item.originalPrice &&
+                                item.originalPrice > item.price && (
+                                  <span className="text-sm text-gray-500 line-through">
+                                    {formatPrice(item.originalPrice)}
+                                  </span>
+                                )}
                             </div>
                           </div>
                         </div>
@@ -143,7 +153,9 @@ export function CartSidebar() {
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <button
-                            onClick={() => updateQuantity(item.planId, item.quantity - 1)}
+                            onClick={() =>
+                              updateQuantity(item.planId, item.quantity - 1)
+                            }
                             disabled={item.quantity <= 1 || isUpdating}
                             className="p-1 hover:bg-gray-700 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                           >
@@ -153,7 +165,9 @@ export function CartSidebar() {
                             {item.quantity}
                           </span>
                           <button
-                            onClick={() => updateQuantity(item.planId, item.quantity + 1)}
+                            onClick={() =>
+                              updateQuantity(item.planId, item.quantity + 1)
+                            }
                             disabled={isUpdating}
                             className="p-1 hover:bg-gray-700 rounded transition-colors disabled:opacity-50"
                           >
@@ -174,7 +188,7 @@ export function CartSidebar() {
                       disabled={isClearing}
                       className="w-full text-center text-sm text-gray-400 hover:text-gray-300 py-2 border border-gray-700 rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50"
                     >
-                      {isClearing ? 'Clearing...' : 'Clear Cart'}
+                      {isClearing ? "Clearing..." : "Clear Cart"}
                     </button>
                   )}
                 </div>
@@ -206,5 +220,5 @@ export function CartSidebar() {
         </Fragment>
       )}
     </AnimatePresence>
-  )
-} 
+  );
+}

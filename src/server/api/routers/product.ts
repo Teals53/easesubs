@@ -1,5 +1,5 @@
-import { z } from 'zod'
-import { createTRPCRouter, publicProcedure } from '@/server/api/trpc'
+import { z } from "zod";
+import { createTRPCRouter, publicProcedure } from "@/server/api/trpc";
 
 export const productRouter = createTRPCRouter({
   getAll: publicProcedure
@@ -8,7 +8,7 @@ export const productRouter = createTRPCRouter({
         category: z.string().optional(),
         featured: z.boolean().optional(),
         limit: z.number().min(1).max(100).default(50),
-      })
+      }),
     )
     .query(async ({ ctx, input }) => {
       const products = await ctx.db.product.findMany({
@@ -22,55 +22,55 @@ export const productRouter = createTRPCRouter({
               isAvailable: true,
             },
             orderBy: {
-              price: 'asc',
+              price: "asc",
             },
           },
         },
-        orderBy: [
-          { displayOrder: 'asc' },
-          { createdAt: 'desc' },
-        ],
+        orderBy: [{ displayOrder: "asc" }, { createdAt: "desc" }],
         take: input.limit,
-      })
+      });
 
       return {
         products,
-      }
+      };
     }),
 
   getCategories: publicProcedure.query(async ({ ctx }) => {
     // Define category labels
     const categoryLabels = {
-      'STREAMING_MEDIA': 'Streaming & Media',
-      'PRODUCTIVITY_TOOLS': 'Productivity & Tools',
-      'CREATIVE_DESIGN': 'Creative & Design',
-      'LEARNING_EDUCATION': 'Learning & Education',
-      'SOCIAL_COMMUNICATION': 'Social & Communication',
-      'GAMING': 'Gaming',
-      'BUSINESS_FINANCE': 'Business & Finance',
-      'HEALTH_FITNESS': 'Health & Fitness',
-    }
+      STREAMING_MEDIA: "Streaming & Media",
+      PRODUCTIVITY_TOOLS: "Productivity & Tools",
+      CREATIVE_DESIGN: "Creative & Design",
+      LEARNING_EDUCATION: "Learning & Education",
+      SOCIAL_COMMUNICATION: "Social & Communication",
+      GAMING: "Gaming",
+      BUSINESS_FINANCE: "Business & Finance",
+      HEALTH_FITNESS: "Health & Fitness",
+    };
 
     // Get product counts per category for active products only
     const categoryCounts = await ctx.db.product.groupBy({
-      by: ['category'],
+      by: ["category"],
       where: {
         isActive: true,
       },
       _count: {
         id: true,
       },
-    })
+    });
 
     // Filter to only include categories that have products
     return categoryCounts
-      .filter(categoryCount => categoryCount._count.id > 0)
-      .map(categoryCount => ({
+      .filter((categoryCount) => categoryCount._count.id > 0)
+      .map((categoryCount) => ({
         key: categoryCount.category,
-        label: categoryLabels[categoryCount.category as keyof typeof categoryLabels] || categoryCount.category,
+        label:
+          categoryLabels[
+            categoryCount.category as keyof typeof categoryLabels
+          ] || categoryCount.category,
         count: categoryCount._count.id,
       }))
-      .sort((a, b) => a.label.localeCompare(b.label))
+      .sort((a, b) => a.label.localeCompare(b.label));
   }),
 
   getById: publicProcedure
@@ -87,11 +87,11 @@ export const productRouter = createTRPCRouter({
               isAvailable: true,
             },
             orderBy: {
-              price: 'asc',
+              price: "asc",
             },
           },
         },
-      })
+      });
     }),
 
   getBySlug: publicProcedure
@@ -108,10 +108,10 @@ export const productRouter = createTRPCRouter({
               isAvailable: true,
             },
             orderBy: {
-              price: 'asc',
+              price: "asc",
             },
           },
         },
-      })
+      });
     }),
-}) 
+});

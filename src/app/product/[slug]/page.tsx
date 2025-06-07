@@ -1,53 +1,60 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import { useParams } from 'next/navigation'
-import { motion } from 'framer-motion'
-import Head from 'next/head'
-import Image from 'next/image'
-import { 
+import { useState } from "react";
+import { useParams } from "next/navigation";
+import { motion } from "framer-motion";
+import Head from "next/head";
+import Image from "next/image";
+import {
   ArrowLeft,
   Clock,
   Users,
   Star,
   Check,
   Package,
-  ShoppingCart
-} from 'lucide-react'
-import Link from 'next/link'
-import { trpc } from '@/lib/trpc'
-import { useCart } from '@/components/cart/use-cart'
-import { toast } from 'sonner'
-import { Header } from '@/components/layout/header'
-import { Footer } from '@/components/layout/footer'
+  ShoppingCart,
+} from "lucide-react";
+import Link from "next/link";
+import { trpc } from "@/lib/trpc";
+import { useCart } from "@/components/cart/use-cart";
+import { toast } from "sonner";
+import { Header } from "@/components/layout/header";
+import { Footer } from "@/components/layout/footer";
 
 export default function ProductPage() {
-  const params = useParams()
+  const params = useParams();
   // Handle slug properly - it could be a string or array when translated
-  const slug = Array.isArray(params?.slug) ? params.slug[0] : params?.slug as string
-  const [selectedPlanId, setSelectedPlanId] = useState<string>('')
-  const [quantity, setQuantity] = useState(1)
-  const [addToCartSuccess, setAddToCartSuccess] = useState(false)
-  const { addItem, isAdding } = useCart()
+  const slug = Array.isArray(params?.slug)
+    ? params.slug[0]
+    : (params?.slug as string);
+  const [selectedPlanId, setSelectedPlanId] = useState<string>("");
+  const [quantity, setQuantity] = useState(1);
+  const [addToCartSuccess, setAddToCartSuccess] = useState(false);
+  const { addItem, isAdding } = useCart();
 
   const { data: product, isLoading } = trpc.product.getBySlug.useQuery(
-    { slug }, 
-    { 
+    { slug },
+    {
       enabled: !!slug,
       retry: (failureCount) => {
         // Don't retry if slug is invalid
-        if (!slug) return false
-        return failureCount < 2
-      }
-    }
-  )
+        if (!slug) return false;
+        return failureCount < 2;
+      },
+    },
+  );
 
   // Fetch product reviews (we'll add this to the schema later)
 
   // Generate SEO data
-  const seoTitle = product?.seoTitle || `${product?.name} - Premium Subscription Plans | EaseSubs`
-  const seoDescription = product?.seoDescription || product?.description || `Get premium ${product?.name} subscription plans at discounted prices. Multiple plan options available with excellent features and reliability.`
-  const seoImage = product?.logoUrl || '/images/easesubs-logo.png'
+  const seoTitle =
+    product?.seoTitle ||
+    `${product?.name} - Premium Subscription Plans | EaseSubs`;
+  const seoDescription =
+    product?.seoDescription ||
+    product?.description ||
+    `Get premium ${product?.name} subscription plans at discounted prices. Multiple plan options available with excellent features and reliability.`;
+  const seoImage = product?.logoUrl || "/images/easesubs-logo.png";
 
   // Early return if no slug is found
   if (!slug) {
@@ -60,8 +67,10 @@ export default function ProductPage() {
         <Header />
         <div className="min-h-screen bg-gray-900 flex items-center justify-center pt-20">
           <div className="text-center">
-            <h1 className="text-2xl font-bold text-white mb-4">Invalid Product URL</h1>
-            <Link 
+            <h1 className="text-2xl font-bold text-white mb-4">
+              Invalid Product URL
+            </h1>
+            <Link
               href="/"
               className="text-purple-400 hover:text-purple-300 transition-colors"
             >
@@ -71,7 +80,7 @@ export default function ProductPage() {
         </div>
         <Footer />
       </>
-    )
+    );
   }
 
   if (isLoading) {
@@ -87,7 +96,7 @@ export default function ProductPage() {
         </div>
         <Footer />
       </>
-    )
+    );
   }
 
   if (!product) {
@@ -95,13 +104,18 @@ export default function ProductPage() {
       <>
         <Head>
           <title>Product Not Found | EaseSubs</title>
-          <meta name="description" content="The requested product could not be found." />
+          <meta
+            name="description"
+            content="The requested product could not be found."
+          />
         </Head>
         <Header />
         <div className="min-h-screen bg-gray-900 flex items-center justify-center pt-20">
           <div className="text-center">
-            <h1 className="text-2xl font-bold text-white mb-4">Product Not Found</h1>
-            <Link 
+            <h1 className="text-2xl font-bold text-white mb-4">
+              Product Not Found
+            </h1>
+            <Link
               href="/"
               className="text-purple-400 hover:text-purple-300 transition-colors"
             >
@@ -111,20 +125,22 @@ export default function ProductPage() {
         </div>
         <Footer />
       </>
-    )
+    );
   }
 
-  const selectedPlan = product.plans.find(plan => plan.id === selectedPlanId) || product.plans[0]
+  const selectedPlan =
+    product.plans.find((plan) => plan.id === selectedPlanId) ||
+    product.plans[0];
 
   const handleAddToCart = async () => {
     if (!selectedPlan) {
-      toast.error('Please select a plan')
-      return
+      toast.error("Please select a plan");
+      return;
     }
 
     if (!product?.id) {
-      toast.error('Product information is not available')
-      return
+      toast.error("Product information is not available");
+      return;
     }
 
     const cartItem = {
@@ -134,65 +150,81 @@ export default function ProductPage() {
       planName: selectedPlan.name,
       planType: selectedPlan.planType,
       price: Number(selectedPlan.price),
-      originalPrice: selectedPlan.originalPrice ? Number(selectedPlan.originalPrice) : undefined,
+      originalPrice: selectedPlan.originalPrice
+        ? Number(selectedPlan.originalPrice)
+        : undefined,
       billingPeriod: selectedPlan.billingPeriod,
       borderColor: product.borderColor || undefined,
       logoUrl: product.logoUrl || undefined,
-    }
-    
+    };
+
     try {
-      await addItem(cartItem, quantity)
-      setAddToCartSuccess(true)
-      setTimeout(() => setAddToCartSuccess(false), 2000)
+      await addItem(cartItem, quantity);
+      setAddToCartSuccess(true);
+      setTimeout(() => setAddToCartSuccess(false), 2000);
     } catch (error) {
-      console.error('Error adding to cart:', error)
-      toast.error('Failed to add item to cart. Please try again.')
+      console.error("Error adding to cart:", error);
+      toast.error("Failed to add item to cart. Please try again.");
     }
-  }
+  };
 
   const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(price)
-  }
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+    }).format(price);
+  };
 
   const getBillingPeriodLabel = (period: string) => {
     switch (period) {
-      case 'MONTHLY': return 'per month'
-      case 'YEARLY': return 'per year'
-      case 'LIFETIME': return 'one-time'
-      case 'CUSTOM': return 'custom'
-      default: return period.toLowerCase()
+      case "MONTHLY":
+        return "per month";
+      case "YEARLY":
+        return "per year";
+      case "LIFETIME":
+        return "one-time";
+      case "CUSTOM":
+        return "custom";
+      default:
+        return period.toLowerCase();
     }
-  }
+  };
 
   return (
     <>
       <Head>
         <title>{seoTitle}</title>
         <meta name="description" content={seoDescription} />
-        <meta name="keywords" content={`${product.name}, subscription, plans, premium, discount, ${product.category.toLowerCase()}`} />
-        
+        <meta
+          name="keywords"
+          content={`${product.name}, subscription, plans, premium, discount, ${product.category.toLowerCase()}`}
+        />
+
         {/* Open Graph tags */}
         <meta property="og:title" content={seoTitle} />
         <meta property="og:description" content={seoDescription} />
         <meta property="og:image" content={seoImage} />
-        <meta property="og:url" content={`${process.env.NEXT_PUBLIC_APP_URL || 'https://easesubs.com'}/product/${product.slug}`} />
+        <meta
+          property="og:url"
+          content={`${process.env.NEXT_PUBLIC_APP_URL || "https://easesubs.com"}/product/${product.slug}`}
+        />
         <meta property="og:type" content="product" />
         <meta property="og:site_name" content="EaseSubs" />
-        
+
         {/* Twitter Card tags */}
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content={seoTitle} />
         <meta name="twitter:description" content={seoDescription} />
         <meta name="twitter:image" content={seoImage} />
-        
+
         {/* Additional meta tags */}
         <meta name="author" content="EaseSubs" />
         <meta name="robots" content="index, follow" />
-        <link rel="canonical" href={`${process.env.NEXT_PUBLIC_APP_URL || 'https://easesubs.com'}/product/${product.slug}`} />
-        
+        <link
+          rel="canonical"
+          href={`${process.env.NEXT_PUBLIC_APP_URL || "https://easesubs.com"}/product/${product.slug}`}
+        />
+
         {/* Product specific structured data */}
         <script
           type="application/ld+json"
@@ -200,25 +232,30 @@ export default function ProductPage() {
             __html: JSON.stringify({
               "@context": "https://schema.org/",
               "@type": "Product",
-              "name": product.name,
-              "description": product.description || seoDescription,
-              "image": seoImage,
-              "brand": {
+              name: product.name,
+              description: product.description || seoDescription,
+              image: seoImage,
+              brand: {
                 "@type": "Brand",
-                "name": "EaseSubs"
+                name: "EaseSubs",
               },
-              "offers": product.plans.map(plan => ({
+              offers: product.plans.map((plan) => ({
                 "@type": "Offer",
-                "name": plan.name,
-                "price": plan.price,
-                "priceCurrency": "USD",
-                "availability": plan.stockQuantity === null || plan.stockQuantity === undefined || plan.stockQuantity > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
-                "seller": {
+                name: plan.name,
+                price: plan.price,
+                priceCurrency: "USD",
+                availability:
+                  plan.stockQuantity === null ||
+                  plan.stockQuantity === undefined ||
+                  plan.stockQuantity > 0
+                    ? "https://schema.org/InStock"
+                    : "https://schema.org/OutOfStock",
+                seller: {
                   "@type": "Organization",
-                  "name": "EaseSubs"
-                }
-              }))
-            })
+                  name: "EaseSubs",
+                },
+              })),
+            }),
           }}
         />
       </Head>
@@ -227,7 +264,7 @@ export default function ProductPage() {
         {/* Simple Back Navigation */}
         <div className="border-b border-gray-800">
           <div className="container mx-auto px-4 py-4">
-            <Link 
+            <Link
               href="/#products"
               className="inline-flex items-center text-gray-400 hover:text-white transition-colors"
             >
@@ -246,16 +283,16 @@ export default function ProductPage() {
               className="space-y-6"
             >
               {/* Product Logo */}
-              <div 
+              <div
                 className="h-64 bg-gradient-to-br from-purple-500/20 to-blue-500/20 rounded-2xl flex items-center justify-center border-2"
                 style={{
-                  borderColor: product.borderColor || '#6366f1',
-                  boxShadow: `0 0 20px ${product.borderColor || '#6366f1'}40`,
+                  borderColor: product.borderColor || "#6366f1",
+                  boxShadow: `0 0 20px ${product.borderColor || "#6366f1"}40`,
                 }}
               >
                 {product.logoUrl ? (
-                  <Image 
-                    src={product.logoUrl} 
+                  <Image
+                    src={product.logoUrl}
                     alt={product.name}
                     width={96}
                     height={96}
@@ -263,13 +300,15 @@ export default function ProductPage() {
                     unoptimized
                   />
                 ) : (
-                  <div 
+                  <div
                     className="h-24 w-24 rounded-lg flex items-center justify-center text-white font-bold text-3xl"
-                    style={{ 
-                      backgroundColor: product.borderColor || '#9333EA'
+                    style={{
+                      backgroundColor: product.borderColor || "#9333EA",
                     }}
                   >
-                    {product.name?.[0]?.toUpperCase() || <Package className="h-16 w-16 text-purple-400" />}
+                    {product.name?.[0]?.toUpperCase() || (
+                      <Package className="h-16 w-16 text-purple-400" />
+                    )}
                   </div>
                 )}
               </div>
@@ -277,26 +316,33 @@ export default function ProductPage() {
               {/* Product Details */}
               <div className="space-y-4">
                 <div className="flex items-center space-x-3">
-                  <h1 className="text-3xl font-bold text-white">{product.name}</h1>
+                  <h1 className="text-3xl font-bold text-white">
+                    {product.name}
+                  </h1>
                   {product.isFeatured && (
                     <div className="bg-gradient-to-r from-yellow-400 to-yellow-500 text-black text-sm font-bold px-3 py-1.5 rounded-full flex items-center shadow-lg">
-                      <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                      <svg
+                        className="w-4 h-4 mr-1"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
                         <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                       </svg>
                       FEATURED
                     </div>
                   )}
                 </div>
-                
+
                 <div className="flex items-center space-x-2">
                   <span className="text-gray-400 text-sm">Category:</span>
                   <span className="text-white font-medium capitalize">
-                    {product.category.toLowerCase().replace('_', ' ')}
+                    {product.category.toLowerCase().replace("_", " ")}
                   </span>
                 </div>
-                
+
                 <div className="text-gray-300 text-lg leading-relaxed whitespace-pre-wrap break-words">
-                  {product.description || 'Premium quality product with excellent features and reliability.'}
+                  {product.description ||
+                    "Premium quality product with excellent features and reliability."}
                 </div>
 
                 {/* Product Stats */}
@@ -306,7 +352,9 @@ export default function ProductPage() {
                       <Users className="h-5 w-5 text-purple-400" />
                       <span className="text-gray-400">Plans Available</span>
                     </div>
-                    <p className="text-xl font-bold text-white mt-1">{product.plans.length}</p>
+                    <p className="text-xl font-bold text-white mt-1">
+                      {product.plans.length}
+                    </p>
                   </div>
                   <div className="bg-gray-800/50 p-4 rounded-lg">
                     <div className="flex items-center space-x-2">
@@ -314,7 +362,10 @@ export default function ProductPage() {
                       <span className="text-gray-400">Rating</span>
                     </div>
                     <p className="text-xl font-bold text-white mt-1">
-                      {product.plans.some(plan => plan.isPopular) ? '4.8' : '4.5'}/5
+                      {product.plans.some((plan) => plan.isPopular)
+                        ? "4.8"
+                        : "4.5"}
+                      /5
                     </p>
                     <p className="text-xs text-gray-500 mt-1">
                       Based on customer feedback
@@ -332,17 +383,20 @@ export default function ProductPage() {
             >
               {/* Plan Selection */}
               <div className="bg-gray-800/50 backdrop-blur-lg p-6 rounded-2xl border border-gray-700">
-                <h2 className="text-xl font-semibold text-white mb-4">Choose Your Plan</h2>
-                
+                <h2 className="text-xl font-semibold text-white mb-4">
+                  Choose Your Plan
+                </h2>
+
                 <div className="space-y-3">
                   {product.plans.map((plan) => (
                     <div
                       key={plan.id}
                       onClick={() => setSelectedPlanId(plan.id)}
                       className={`relative p-4 rounded-lg border-2 cursor-pointer transition-all ${
-                        selectedPlanId === plan.id || (!selectedPlanId && plan === product.plans[0])
-                          ? 'border-purple-500 bg-purple-500/10'
-                          : 'border-gray-600 hover:border-gray-500'
+                        selectedPlanId === plan.id ||
+                        (!selectedPlanId && plan === product.plans[0])
+                          ? "border-purple-500 bg-purple-500/10"
+                          : "border-gray-600 hover:border-gray-500"
                       }`}
                     >
                       {plan.isPopular && (
@@ -353,14 +407,20 @@ export default function ProductPage() {
 
                       <div className="flex items-center justify-between">
                         <div>
-                          <h3 className="font-semibold text-white">{plan.name}</h3>
-                          <p className="text-sm text-gray-400">{plan.planType}</p>
+                          <h3 className="font-semibold text-white">
+                            {plan.name}
+                          </h3>
+                          <p className="text-sm text-gray-400">
+                            {plan.planType}
+                          </p>
                           <div className="flex items-center space-x-2 mt-1">
                             <Clock className="h-4 w-4 text-gray-400" />
-                            <span className="text-sm text-gray-400">{plan.duration} days</span>
+                            <span className="text-sm text-gray-400">
+                              {plan.duration} days
+                            </span>
                           </div>
                         </div>
-                        
+
                         <div className="text-right">
                           <div className="flex items-center space-x-2">
                             {plan.originalPrice && (
@@ -369,7 +429,13 @@ export default function ProductPage() {
                                   {formatPrice(Number(plan.originalPrice))}
                                 </span>
                                 <span className="bg-green-500 text-white text-xs font-bold px-2 py-1 rounded">
-                                  {Math.round((1 - Number(plan.price) / Number(plan.originalPrice)) * 100)}% OFF
+                                  {Math.round(
+                                    (1 -
+                                      Number(plan.price) /
+                                        Number(plan.originalPrice)) *
+                                      100,
+                                  )}
+                                  % OFF
                                 </span>
                               </>
                             )}
@@ -377,33 +443,47 @@ export default function ProductPage() {
                               {formatPrice(Number(plan.price))}
                             </span>
                           </div>
-                          <p className="text-sm text-gray-400">{getBillingPeriodLabel(plan.billingPeriod)}</p>
+                          <p className="text-sm text-gray-400">
+                            {getBillingPeriodLabel(plan.billingPeriod)}
+                          </p>
                         </div>
                       </div>
 
                       {/* Plan Features */}
-                      {plan.features && Array.isArray(plan.features) && plan.features.length > 0 && (
-                        <div className="mt-3 pt-3 border-t border-gray-600">
-                          <div className="grid grid-cols-1 gap-1">
-                            {(plan.features as string[]).map((feature, index) => (
-                              <div key={index} className="flex items-center space-x-2">
-                                <Check className="h-3 w-3 text-green-400 flex-shrink-0" />
-                                <span className="text-xs text-gray-300">{feature}</span>
-                              </div>
-                            ))}
+                      {plan.features &&
+                        Array.isArray(plan.features) &&
+                        plan.features.length > 0 && (
+                          <div className="mt-3 pt-3 border-t border-gray-600">
+                            <div className="grid grid-cols-1 gap-1">
+                              {(plan.features as string[]).map(
+                                (feature, index) => (
+                                  <div
+                                    key={index}
+                                    className="flex items-center space-x-2"
+                                  >
+                                    <Check className="h-3 w-3 text-green-400 flex-shrink-0" />
+                                    <span className="text-xs text-gray-300">
+                                      {feature}
+                                    </span>
+                                  </div>
+                                ),
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      )}
+                        )}
 
                       {/* Stock Info */}
-                      {plan.stockQuantity !== null && plan.stockQuantity !== undefined && (
-                        <div className="mt-2 flex items-center space-x-2">
-                          <Package className="h-4 w-4 text-orange-400" />
-                          <span className="text-sm text-orange-400">
-                            {plan.stockQuantity > 0 ? `${plan.stockQuantity} left` : 'Out of stock'}
-                          </span>
-                        </div>
-                      )}
+                      {plan.stockQuantity !== null &&
+                        plan.stockQuantity !== undefined && (
+                          <div className="mt-2 flex items-center space-x-2">
+                            <Package className="h-4 w-4 text-orange-400" />
+                            <span className="text-sm text-orange-400">
+                              {plan.stockQuantity > 0
+                                ? `${plan.stockQuantity} left`
+                                : "Out of stock"}
+                            </span>
+                          </div>
+                        )}
                     </div>
                   ))}
                 </div>
@@ -424,11 +504,13 @@ export default function ProductPage() {
                       >
                         -
                       </button>
-                      <span className="text-white font-semibold w-8 text-center">{quantity}</span>
+                      <span className="text-white font-semibold w-8 text-center">
+                        {quantity}
+                      </span>
                       <button
                         onClick={() => {
-                          const maxQty = selectedPlan?.stockQuantity || 99
-                          setQuantity(Math.min(maxQty, quantity + 1))
+                          const maxQty = selectedPlan?.stockQuantity || 99;
+                          setQuantity(Math.min(maxQty, quantity + 1));
                         }}
                         className="p-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
                       >
@@ -442,7 +524,9 @@ export default function ProductPage() {
                     <div className="flex items-center justify-between text-lg">
                       <span className="text-gray-400">Total:</span>
                       <span className="font-bold text-white">
-                        {formatPrice(Number(selectedPlan?.price || 0) * quantity)}
+                        {formatPrice(
+                          Number(selectedPlan?.price || 0) * quantity,
+                        )}
                       </span>
                     </div>
                   </div>
@@ -450,11 +534,16 @@ export default function ProductPage() {
                   {/* Add to Cart Button */}
                   <motion.button
                     onClick={handleAddToCart}
-                    disabled={isAdding || (selectedPlan?.stockQuantity !== null && selectedPlan?.stockQuantity !== undefined && selectedPlan.stockQuantity <= 0)}
+                    disabled={
+                      isAdding ||
+                      (selectedPlan?.stockQuantity !== null &&
+                        selectedPlan?.stockQuantity !== undefined &&
+                        selectedPlan.stockQuantity <= 0)
+                    }
                     className={`w-full flex items-center justify-center px-6 py-3 rounded-lg text-white font-semibold transition-colors ${
-                      addToCartSuccess 
-                        ? 'bg-green-600 hover:bg-green-700' 
-                        : 'bg-purple-600 hover:bg-purple-700'
+                      addToCartSuccess
+                        ? "bg-green-600 hover:bg-green-700"
+                        : "bg-purple-600 hover:bg-purple-700"
                     } disabled:bg-gray-600 disabled:cursor-not-allowed`}
                     animate={addToCartSuccess ? { scale: [1, 1.05, 1] } : {}}
                     transition={{ duration: 0.3 }}
@@ -468,14 +557,15 @@ export default function ProductPage() {
                     ) : (
                       <ShoppingCart className="h-5 w-5 mr-2" />
                     )}
-                    {selectedPlan?.stockQuantity !== null && selectedPlan?.stockQuantity !== undefined && selectedPlan.stockQuantity <= 0
-                      ? 'Out of Stock'
+                    {selectedPlan?.stockQuantity !== null &&
+                    selectedPlan?.stockQuantity !== undefined &&
+                    selectedPlan.stockQuantity <= 0
+                      ? "Out of Stock"
                       : isAdding
-                      ? 'Adding...'
-                      : addToCartSuccess
-                      ? 'Added to Cart!'
-                      : 'Add to Cart'
-                    }
+                        ? "Adding..."
+                        : addToCartSuccess
+                          ? "Added to Cart!"
+                          : "Add to Cart"}
                   </motion.button>
                 </div>
               </div>
@@ -483,8 +573,8 @@ export default function ProductPage() {
           </div>
         </div>
       </div>
-      
+
       <Footer />
     </>
-  )
-} 
+  );
+}

@@ -1,47 +1,52 @@
-'use client'
+"use client";
 
-import { useSession } from 'next-auth/react'
-import { motion } from 'framer-motion'
-import { 
-  Users, 
+import { useSession } from "next-auth/react";
+import { motion } from "framer-motion";
+import {
+  Users,
   DollarSign,
   Package,
   Activity,
   ArrowUpRight,
   ArrowDownRight,
   Ticket,
-  RefreshCw
-} from 'lucide-react'
-import { UserRole } from '@prisma/client'
-import { trpc } from '@/lib/trpc'
-import { useState } from 'react'
+  RefreshCw,
+} from "lucide-react";
+import { UserRole } from "@prisma/client";
+import { trpc } from "@/lib/trpc";
+import { useState } from "react";
 
 interface ExtendedUser {
-  id: string
-  name?: string | null
-  email?: string | null
-  image?: string | null
-  role: UserRole
+  id: string;
+  name?: string | null;
+  email?: string | null;
+  image?: string | null;
+  role: UserRole;
 }
 
-function AdminStatsCard({ 
-  title, 
-  value, 
-  change, 
-  icon: Icon, 
-  color, 
-  trend = 'up',
-  changeText
+function AdminStatsCard({
+  title,
+  value,
+  change,
+  icon: Icon,
+  color,
+  trend = "up",
+  changeText,
 }: {
-  title: string
-  value: string
-  change: string
-  icon: React.ComponentType<{ className?: string }>
-  color: string
-  trend?: 'up' | 'down' | 'neutral'
-  changeText?: string
+  title: string;
+  value: string;
+  change: string;
+  icon: React.ComponentType<{ className?: string }>;
+  color: string;
+  trend?: "up" | "down" | "neutral";
+  changeText?: string;
 }) {
-  const TrendIcon = trend === 'up' ? ArrowUpRight : trend === 'down' ? ArrowDownRight : Activity
+  const TrendIcon =
+    trend === "up"
+      ? ArrowUpRight
+      : trend === "down"
+        ? ArrowDownRight
+        : Activity;
 
   return (
     <motion.div
@@ -54,14 +59,24 @@ function AdminStatsCard({
           <p className="text-gray-400 text-sm font-medium">{title}</p>
           <p className="text-3xl font-bold text-white mt-2">{value}</p>
           <div className="flex items-center mt-2">
-            <TrendIcon className={`h-4 w-4 mr-1 ${
-              trend === 'up' ? 'text-green-400' : 
-              trend === 'down' ? 'text-red-400' : 'text-gray-400'
-            }`} />
-            <p className={`text-sm ${
-              trend === 'up' ? 'text-green-400' : 
-              trend === 'down' ? 'text-red-400' : 'text-gray-400'
-            }`}>
+            <TrendIcon
+              className={`h-4 w-4 mr-1 ${
+                trend === "up"
+                  ? "text-green-400"
+                  : trend === "down"
+                    ? "text-red-400"
+                    : "text-gray-400"
+              }`}
+            />
+            <p
+              className={`text-sm ${
+                trend === "up"
+                  ? "text-green-400"
+                  : trend === "down"
+                    ? "text-red-400"
+                    : "text-gray-400"
+              }`}
+            >
               {change} {changeText}
             </p>
           </div>
@@ -71,7 +86,7 @@ function AdminStatsCard({
         </div>
       </div>
     </motion.div>
-  )
+  );
 }
 
 function LoadingCard() {
@@ -83,80 +98,79 @@ function LoadingCard() {
         <div className="h-3 bg-gray-700 rounded w-1/3"></div>
       </div>
     </div>
-  )
+  );
 }
 
 export default function AdminDashboardPage() {
-  const { data: session } = useSession()
-  const [isRefreshing, setIsRefreshing] = useState(false)
+  const { data: session } = useSession();
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Properly typed user with role
-  const user = session?.user as ExtendedUser | undefined
-  const isAdmin = user?.role === 'ADMIN'
+  const user = session?.user as ExtendedUser | undefined;
+  const isAdmin = user?.role === "ADMIN";
 
-  const { 
-    data: adminStats, 
+  const {
+    data: adminStats,
     isLoading: statsLoading,
-    refetch: refetchStats
+    refetch: refetchStats,
   } = trpc.admin.getDashboardStats.useQuery(undefined, {
     enabled: isAdmin,
     // Refresh dashboard stats every 30 seconds for real-time updates
     refetchInterval: 30 * 1000,
     // Ensure fresh data on mount
     staleTime: 0,
-  })
+  });
 
-  const { 
-    data: recentActivity, 
+  const {
+    data: recentActivity,
     isLoading: activityLoading,
-    refetch: refetchActivity
+    refetch: refetchActivity,
   } = trpc.admin.getRecentActivity.useQuery(undefined, {
     enabled: isAdmin,
     // Refresh activity every 30 seconds
     refetchInterval: 30 * 1000,
     // Ensure fresh data on mount
     staleTime: 0,
-  })
+  });
 
   // Manual refresh function
   const handleManualRefresh = async () => {
-    setIsRefreshing(true)
+    setIsRefreshing(true);
     try {
-      await Promise.all([
-        refetchStats(),
-        refetchActivity()
-      ])
+      await Promise.all([refetchStats(), refetchActivity()]);
     } finally {
-      setIsRefreshing(false)
+      setIsRefreshing(false);
     }
-  }
+  };
 
   // If not admin, redirect will be handled by middleware or layout
   if (!isAdmin) {
     return (
       <div className="text-center py-12">
         <h1 className="text-2xl font-bold text-white mb-4">Access Denied</h1>
-        <p className="text-gray-400">You don&apos;t have permission to access this page.</p>
+        <p className="text-gray-400">
+          You don&apos;t have permission to access this page.
+        </p>
       </div>
-    )
+    );
   }
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
-    }).format(amount)
-  }
+    }).format(amount);
+  };
 
   const formatDate = (date: Date | string) => {
-    return new Date(date).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-    })
-  }
+    return new Date(date).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  };
 
   return (
     <div className="space-y-8">
@@ -175,8 +189,10 @@ export default function AdminDashboardPage() {
           disabled={isRefreshing}
           className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-purple-800 text-white rounded-lg transition-colors"
         >
-          <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-          {isRefreshing ? 'Refreshing...' : 'Refresh'}
+          <RefreshCw
+            className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`}
+          />
+          {isRefreshing ? "Refreshing..." : "Refresh"}
         </button>
       </div>
 
@@ -188,7 +204,7 @@ export default function AdminDashboardPage() {
           <>
             <AdminStatsCard
               title="Total Users"
-              value={adminStats?.users.total.toString() || '0'}
+              value={adminStats?.users.total.toString() || "0"}
               change={`+${adminStats?.users.newThisMonth || 0}`}
               changeText="this month"
               icon={Users}
@@ -206,7 +222,7 @@ export default function AdminDashboardPage() {
             />
             <AdminStatsCard
               title="Total Orders"
-              value={adminStats?.orders.total.toString() || '0'}
+              value={adminStats?.orders.total.toString() || "0"}
               change={`+${adminStats?.orders.thisMonth || 0}`}
               changeText="this month"
               icon={Package}
@@ -215,7 +231,7 @@ export default function AdminDashboardPage() {
             />
             <AdminStatsCard
               title="Support Tickets"
-              value={adminStats?.tickets.open.toString() || '0'}
+              value={adminStats?.tickets.open.toString() || "0"}
               change={`${adminStats?.tickets.total || 0} total`}
               changeText=""
               icon={Ticket}
@@ -235,12 +251,17 @@ export default function AdminDashboardPage() {
           transition={{ delay: 0.3 }}
           className="bg-gray-800/50 backdrop-blur-lg p-6 rounded-2xl border border-gray-700"
         >
-          <h3 className="text-xl font-semibold text-white mb-6">System Overview</h3>
-          
+          <h3 className="text-xl font-semibold text-white mb-6">
+            System Overview
+          </h3>
+
           {statsLoading ? (
             <div className="space-y-4">
               {Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="animate-pulse flex items-center space-x-3 p-3 bg-gray-700/30 rounded-lg">
+                <div
+                  key={i}
+                  className="animate-pulse flex items-center space-x-3 p-3 bg-gray-700/30 rounded-lg"
+                >
                   <div className="w-10 h-10 bg-gray-600 rounded-full"></div>
                   <div className="flex-1">
                     <div className="h-4 bg-gray-600 rounded w-3/4 mb-2"></div>
@@ -259,12 +280,16 @@ export default function AdminDashboardPage() {
                   </div>
                   <div>
                     <p className="text-white font-medium">Active Users</p>
-                    <p className="text-gray-400 text-sm">{adminStats?.users.total || 0} total users</p>
+                    <p className="text-gray-400 text-sm">
+                      {adminStats?.users.total || 0} total users
+                    </p>
                   </div>
                 </div>
-                <span className="text-blue-400 font-semibold">{adminStats?.users.newThisMonth || 0} new</span>
+                <span className="text-blue-400 font-semibold">
+                  {adminStats?.users.newThisMonth || 0} new
+                </span>
               </div>
-              
+
               <div className="flex items-center justify-between p-3 bg-gray-700/30 rounded-lg">
                 <div className="flex items-center space-x-3">
                   <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center">
@@ -272,12 +297,16 @@ export default function AdminDashboardPage() {
                   </div>
                   <div>
                     <p className="text-white font-medium">Orders</p>
-                    <p className="text-gray-400 text-sm">{adminStats?.orders.total || 0} total orders</p>
+                    <p className="text-gray-400 text-sm">
+                      {adminStats?.orders.total || 0} total orders
+                    </p>
                   </div>
                 </div>
-                <span className="text-green-400 font-semibold">{adminStats?.orders.thisMonth || 0} this month</span>
+                <span className="text-green-400 font-semibold">
+                  {adminStats?.orders.thisMonth || 0} this month
+                </span>
               </div>
-              
+
               <div className="flex items-center justify-between p-3 bg-gray-700/30 rounded-lg">
                 <div className="flex items-center space-x-3">
                   <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-orange-600 rounded-full flex items-center justify-center">
@@ -285,10 +314,14 @@ export default function AdminDashboardPage() {
                   </div>
                   <div>
                     <p className="text-white font-medium">Support Tickets</p>
-                    <p className="text-gray-400 text-sm">{adminStats?.tickets.total || 0} total tickets</p>
+                    <p className="text-gray-400 text-sm">
+                      {adminStats?.tickets.total || 0} total tickets
+                    </p>
                   </div>
                 </div>
-                <span className="text-orange-400 font-semibold">{adminStats?.tickets.open || 0} open</span>
+                <span className="text-orange-400 font-semibold">
+                  {adminStats?.tickets.open || 0} open
+                </span>
               </div>
             </div>
           )}
@@ -301,12 +334,17 @@ export default function AdminDashboardPage() {
           transition={{ delay: 0.4 }}
           className="bg-gray-800/50 backdrop-blur-lg p-6 rounded-2xl border border-gray-700"
         >
-          <h3 className="text-xl font-semibold text-white mb-6">Recent Activity</h3>
-          
+          <h3 className="text-xl font-semibold text-white mb-6">
+            Recent Activity
+          </h3>
+
           {activityLoading ? (
             <div className="space-y-4">
               {Array.from({ length: 5 }).map((_, i) => (
-                <div key={i} className="animate-pulse flex items-center space-x-3 p-3 bg-gray-700/30 rounded-lg">
+                <div
+                  key={i}
+                  className="animate-pulse flex items-center space-x-3 p-3 bg-gray-700/30 rounded-lg"
+                >
                   <div className="w-2 h-2 bg-gray-600 rounded-full"></div>
                   <div className="w-4 h-4 bg-gray-600 rounded"></div>
                   <div className="flex-1 h-4 bg-gray-600 rounded"></div>
@@ -314,29 +352,42 @@ export default function AdminDashboardPage() {
                 </div>
               ))}
             </div>
-          ) : recentActivity && (recentActivity.orders?.length > 0 || recentActivity.users?.length > 0) ? (
+          ) : recentActivity &&
+            (recentActivity.orders?.length > 0 ||
+              recentActivity.users?.length > 0) ? (
             <div className="space-y-4 max-h-80 overflow-y-auto">
               {/* Recent Orders */}
               {recentActivity.orders?.slice(0, 3).map((order) => (
-                <div key={`order-${order.id}`} className="flex items-center space-x-3 p-3 bg-gray-700/30 rounded-lg">
+                <div
+                  key={`order-${order.id}`}
+                  className="flex items-center space-x-3 p-3 bg-gray-700/30 rounded-lg"
+                >
                   <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                   <Package className="w-4 h-4 text-gray-400" />
                   <p className="text-gray-300 text-sm flex-1">
-                    New order #{order.orderNumber} - {formatCurrency(Number(order.total || 0))}
+                    New order #{order.orderNumber} -{" "}
+                    {formatCurrency(Number(order.total || 0))}
                   </p>
-                  <span className="text-gray-500 text-xs">{formatDate(order.createdAt)}</span>
+                  <span className="text-gray-500 text-xs">
+                    {formatDate(order.createdAt)}
+                  </span>
                 </div>
               ))}
-              
+
               {/* Recent Users */}
               {recentActivity.users?.slice(0, 3).map((user) => (
-                <div key={`user-${user.id}`} className="flex items-center space-x-3 p-3 bg-gray-700/30 rounded-lg">
+                <div
+                  key={`user-${user.id}`}
+                  className="flex items-center space-x-3 p-3 bg-gray-700/30 rounded-lg"
+                >
                   <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
                   <Users className="w-4 h-4 text-gray-400" />
                   <p className="text-gray-300 text-sm flex-1">
                     New user registered: {user.name || user.email}
                   </p>
-                  <span className="text-gray-500 text-xs">{formatDate(user.createdAt)}</span>
+                  <span className="text-gray-500 text-xs">
+                    {formatDate(user.createdAt)}
+                  </span>
                 </div>
               ))}
             </div>
@@ -349,5 +400,5 @@ export default function AdminDashboardPage() {
         </motion.div>
       </div>
     </div>
-  )
-} 
+  );
+}

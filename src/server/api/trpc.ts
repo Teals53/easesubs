@@ -7,13 +7,13 @@
  * need to use are documented accordingly near the end.
  */
 
-import { initTRPC, TRPCError } from '@trpc/server'
-import { type Session } from 'next-auth'
-import superjson from 'superjson'
-import { ZodError } from 'zod'
+import { initTRPC, TRPCError } from "@trpc/server";
+import { type Session } from "next-auth";
+import superjson from "superjson";
+import { ZodError } from "zod";
 
-import { auth } from '@/lib/auth'
-import { db } from '@/lib/db'
+import { auth } from "@/lib/auth";
+import { db } from "@/lib/db";
 
 /**
  * 1. CONTEXT
@@ -24,7 +24,7 @@ import { db } from '@/lib/db'
  */
 
 interface CreateContextOptions {
-  session: Session | null
+  session: Session | null;
 }
 
 /**
@@ -41,8 +41,8 @@ const createInnerTRPCContext = (opts: CreateContextOptions) => {
   return {
     session: opts.session,
     db,
-  }
-}
+  };
+};
 
 /**
  * This is the actual context you will use in your router. It will be used to process every request
@@ -52,12 +52,12 @@ const createInnerTRPCContext = (opts: CreateContextOptions) => {
  */
 export const createTRPCContext = async () => {
   // Get the session from the server using the getServerSession wrapper function
-  const session = await auth()
+  const session = await auth();
 
   return createInnerTRPCContext({
     session,
-  })
-}
+  });
+};
 
 /**
  * 2. INITIALIZATION
@@ -77,9 +77,9 @@ const t = initTRPC.context<typeof createTRPCContext>().create({
         zodError:
           error.cause instanceof ZodError ? error.cause.flatten() : null,
       },
-    }
+    };
   },
-})
+});
 
 /**
  * 3. ROUTER & PROCEDURE (THE IMPORTANT BIT)
@@ -93,7 +93,7 @@ const t = initTRPC.context<typeof createTRPCContext>().create({
  *
  * @see https://trpc.io/docs/router
  */
-export const createTRPCRouter = t.router
+export const createTRPCRouter = t.router;
 
 /**
  * Public (unauthenticated) procedure
@@ -102,29 +102,29 @@ export const createTRPCRouter = t.router
  * guarantee that a user querying is authorized, but you can still access user session data if they
  * are logged in.
  */
-export const publicProcedure = t.procedure
+export const publicProcedure = t.procedure;
 
 /**
  * Reusable middleware that enforces users are logged in before running the procedure.
  */
 const enforceUserIsAuthed = t.middleware(({ ctx, next }) => {
   if (!ctx.session || !ctx.session.user) {
-    throw new TRPCError({ code: 'UNAUTHORIZED' })
+    throw new TRPCError({ code: "UNAUTHORIZED" });
   }
   return next({
     ctx: {
       // infers the `session` as non-nullable
       session: { ...ctx.session, user: ctx.session.user },
     },
-  })
-})
+  });
+});
 
 /**
  * Reusable middleware that enforces users are admins before running the procedure.
  */
 const enforceUserIsAdmin = t.middleware(({ ctx, next }) => {
   if (!ctx.session || !ctx.session.user) {
-    throw new TRPCError({ code: 'UNAUTHORIZED' })
+    throw new TRPCError({ code: "UNAUTHORIZED" });
   }
 
   // Check if user has admin role
@@ -133,8 +133,8 @@ const enforceUserIsAdmin = t.middleware(({ ctx, next }) => {
     ctx: {
       session: { ...ctx.session, user: ctx.session.user },
     },
-  })
-})
+  });
+});
 
 /**
  * Protected (authenticated) procedure
@@ -144,11 +144,11 @@ const enforceUserIsAdmin = t.middleware(({ ctx, next }) => {
  *
  * @see https://trpc.io/docs/procedures
  */
-export const protectedProcedure = t.procedure.use(enforceUserIsAuthed)
+export const protectedProcedure = t.procedure.use(enforceUserIsAuthed);
 
 /**
  * Admin only procedure
  *
  * Only allows admin users to access the procedure.
  */
-export const adminProcedure = t.procedure.use(enforceUserIsAdmin) 
+export const adminProcedure = t.procedure.use(enforceUserIsAdmin);

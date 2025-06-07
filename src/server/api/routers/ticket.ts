@@ -1,31 +1,33 @@
-import { z } from 'zod'
-import { createTRPCRouter, protectedProcedure } from '@/server/api/trpc'
-import { TRPCError } from '@trpc/server'
+import { z } from "zod";
+import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
+import { TRPCError } from "@trpc/server";
 
 function generateTicketNumber(): string {
-  const timestamp = Date.now().toString()
-  const random = Math.random().toString(36).substring(2, 6).toUpperCase()
-  return `TKT-${timestamp.slice(-6)}-${random}`
+  const timestamp = Date.now().toString();
+  const random = Math.random().toString(36).substring(2, 6).toUpperCase();
+  return `TKT-${timestamp.slice(-6)}-${random}`;
 }
 
 export const ticketRouter = createTRPCRouter({
   create: protectedProcedure
     .input(
       z.object({
-        title: z.string().min(5, 'Title must be at least 5 characters'),
-        description: z.string().min(10, 'Description must be at least 10 characters'),
+        title: z.string().min(5, "Title must be at least 5 characters"),
+        description: z
+          .string()
+          .min(10, "Description must be at least 10 characters"),
         category: z.enum([
-          'GENERAL',
-          'ORDER_ISSUES',
-          'PAYMENT_PROBLEMS',
-          'PRODUCT_QUESTIONS',
-          'TECHNICAL_SUPPORT',
-          'RETURNS_REFUNDS',
-          'ACCOUNT_ISSUES',
-          'BILLING_INQUIRIES',
+          "GENERAL",
+          "ORDER_ISSUES",
+          "PAYMENT_PROBLEMS",
+          "PRODUCT_QUESTIONS",
+          "TECHNICAL_SUPPORT",
+          "RETURNS_REFUNDS",
+          "ACCOUNT_ISSUES",
+          "BILLING_INQUIRIES",
         ]),
-        priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']).default('MEDIUM'),
-      })
+        priority: z.enum(["LOW", "MEDIUM", "HIGH", "URGENT"]).default("MEDIUM"),
+      }),
     )
     .mutation(async ({ ctx, input }) => {
       const ticket = await ctx.db.supportTicket.create({
@@ -36,7 +38,7 @@ export const ticketRouter = createTRPCRouter({
           description: input.description,
           category: input.category,
           priority: input.priority,
-          status: 'OPEN',
+          status: "OPEN",
           lastActivityAt: new Date(),
         },
         include: {
@@ -48,9 +50,9 @@ export const ticketRouter = createTRPCRouter({
             },
           },
         },
-      })
+      });
 
-      return ticket
+      return ticket;
     }),
 
   getAll: protectedProcedure
@@ -58,8 +60,10 @@ export const ticketRouter = createTRPCRouter({
       z.object({
         limit: z.number().min(1).max(100).default(20),
         cursor: z.string().optional(),
-        status: z.enum(['OPEN', 'IN_PROGRESS', 'WAITING_FOR_CUSTOMER', 'CLOSED']).optional(),
-      })
+        status: z
+          .enum(["OPEN", "IN_PROGRESS", "WAITING_FOR_CUSTOMER", "CLOSED"])
+          .optional(),
+      }),
     )
     .query(async ({ ctx, input }) => {
       const tickets = await ctx.db.supportTicket.findMany({
@@ -90,7 +94,7 @@ export const ticketRouter = createTRPCRouter({
           messages: {
             take: 1,
             orderBy: {
-              createdAt: 'desc',
+              createdAt: "desc",
             },
             select: {
               message: true,
@@ -100,19 +104,22 @@ export const ticketRouter = createTRPCRouter({
           },
         },
         orderBy: {
-          lastActivityAt: 'desc',
+          lastActivityAt: "desc",
         },
         take: input.limit,
         ...(input.cursor && {
           cursor: { id: input.cursor },
           skip: 1,
         }),
-      })
+      });
 
       return {
         tickets,
-        nextCursor: tickets.length === input.limit ? tickets[tickets.length - 1]?.id : undefined,
-      }
+        nextCursor:
+          tickets.length === input.limit
+            ? tickets[tickets.length - 1]?.id
+            : undefined,
+      };
     }),
 
   getById: protectedProcedure
@@ -143,7 +150,7 @@ export const ticketRouter = createTRPCRouter({
               isInternal: false, // Only show non-internal messages to customers
             },
             orderBy: {
-              createdAt: 'asc',
+              createdAt: "asc",
             },
             include: {
               user: {
@@ -158,24 +165,24 @@ export const ticketRouter = createTRPCRouter({
           },
           attachments: true,
         },
-      })
+      });
 
       if (!ticket) {
         throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Ticket not found',
-        })
+          code: "NOT_FOUND",
+          message: "Ticket not found",
+        });
       }
 
-      return ticket
+      return ticket;
     }),
 
   addMessage: protectedProcedure
     .input(
       z.object({
         ticketId: z.string(),
-        message: z.string().min(1, 'Message cannot be empty'),
-      })
+        message: z.string().min(1, "Message cannot be empty"),
+      }),
     )
     .mutation(async ({ ctx, input }) => {
       // Verify ticket belongs to user
@@ -184,13 +191,13 @@ export const ticketRouter = createTRPCRouter({
           id: input.ticketId,
           userId: ctx.session.user.id,
         },
-      })
+      });
 
       if (!ticket) {
         throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Ticket not found',
-        })
+          code: "NOT_FOUND",
+          message: "Ticket not found",
+        });
       }
 
       // Create message
@@ -211,18 +218,21 @@ export const ticketRouter = createTRPCRouter({
             },
           },
         },
-      })
+      });
 
       // Update ticket last activity
       await ctx.db.supportTicket.update({
         where: { id: input.ticketId },
         data: {
           lastActivityAt: new Date(),
-          status: ticket.status === 'WAITING_FOR_CUSTOMER' ? 'IN_PROGRESS' : ticket.status,
+          status:
+            ticket.status === "WAITING_FOR_CUSTOMER"
+              ? "IN_PROGRESS"
+              : ticket.status,
         },
-      })
+      });
 
-      return message
+      return message;
     }),
 
   close: protectedProcedure
@@ -232,27 +242,27 @@ export const ticketRouter = createTRPCRouter({
         where: {
           id: input.id,
           userId: ctx.session.user.id,
-          status: { not: 'CLOSED' },
+          status: { not: "CLOSED" },
         },
-      })
+      });
 
       if (!ticket) {
         throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Ticket not found or already closed',
-        })
+          code: "NOT_FOUND",
+          message: "Ticket not found or already closed",
+        });
       }
 
       const updatedTicket = await ctx.db.supportTicket.update({
         where: { id: input.id },
         data: {
-          status: 'CLOSED',
+          status: "CLOSED",
           closedAt: new Date(),
           lastActivityAt: new Date(),
         },
-      })
+      });
 
-      return updatedTicket
+      return updatedTicket;
     }),
 
   reopen: protectedProcedure
@@ -262,27 +272,27 @@ export const ticketRouter = createTRPCRouter({
         where: {
           id: input.id,
           userId: ctx.session.user.id,
-          status: { in: ['CLOSED'] },
+          status: { in: ["CLOSED"] },
         },
-      })
+      });
 
       if (!ticket) {
         throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Ticket not found or cannot be reopened',
-        })
+          code: "NOT_FOUND",
+          message: "Ticket not found or cannot be reopened",
+        });
       }
 
       const updatedTicket = await ctx.db.supportTicket.update({
         where: { id: input.id },
         data: {
-          status: 'OPEN',
+          status: "OPEN",
           closedAt: null,
           lastActivityAt: new Date(),
         },
-      })
+      });
 
-      return updatedTicket
+      return updatedTicket;
     }),
 
   getStats: protectedProcedure.query(async ({ ctx }) => {
@@ -293,21 +303,21 @@ export const ticketRouter = createTRPCRouter({
       ctx.db.supportTicket.count({
         where: {
           userId: ctx.session.user.id,
-          status: { in: ['OPEN', 'IN_PROGRESS', 'WAITING_FOR_CUSTOMER'] },
+          status: { in: ["OPEN", "IN_PROGRESS", "WAITING_FOR_CUSTOMER"] },
         },
       }),
       ctx.db.supportTicket.count({
         where: {
           userId: ctx.session.user.id,
-          status: 'CLOSED',
+          status: "CLOSED",
         },
       }),
-    ])
+    ]);
 
     return {
       totalTickets,
       openTickets,
       closedTickets,
-    }
+    };
   }),
-}) 
+});

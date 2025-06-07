@@ -1,35 +1,36 @@
-'use client'
+"use client";
 
-import { motion } from 'framer-motion'
-import { ArrowRight } from 'lucide-react'
-import Link from 'next/link'
-import { useSession } from 'next-auth/react'
-import { Header } from '@/components/layout/header'
-import { Products } from '@/components/product/products'
-import { WhyChooseUs } from '@/components/marketing/why-choose-us'
-import { DiscordCTA } from '@/components/marketing/discord-cta'
-import { Footer } from '@/components/layout/footer'
+import { motion } from "framer-motion";
+import { ArrowRight } from "lucide-react";
+import Link from "next/link";
+import { useSession } from "next-auth/react";
+import { Header } from "@/components/layout/header";
+import { Products } from "@/components/product/products";
+import { WhyChooseUs } from "@/components/marketing/why-choose-us";
+import { DiscordCTA } from "@/components/marketing/discord-cta";
+import { Footer } from "@/components/layout/footer";
 
 export default function HomePage() {
-  const { data: session } = useSession()
+  const { data: session } = useSession();
 
   const structuredData = {
     "@context": "https://schema.org",
     "@type": "WebSite",
-    "name": "EaseSubs",
-    "description": "Get your favorite subscriptions at a fraction of the cost through our legal regional pricing system. Save up to 80% on premium services.",
-    "url": "https://easesubs.com",
-    "potentialAction": {
+    name: "EaseSubs",
+    description:
+      "Get your favorite subscriptions at a fraction of the cost through our legal regional pricing system. Save up to 80% on premium services.",
+    url: "https://easesubs.com",
+    potentialAction: {
       "@type": "SearchAction",
-      "target": "https://easesubs.com/search?q={search_term_string}",
-      "query-input": "required name=search_term_string"
+      target: "https://easesubs.com/search?q={search_term_string}",
+      "query-input": "required name=search_term_string",
     },
-    "publisher": {
+    publisher: {
       "@type": "Organization",
-      "name": "EaseSubs",
-      "url": "https://easesubs.com"
-    }
-  }
+      name: "EaseSubs",
+      url: "https://easesubs.com",
+    },
+  };
 
   return (
     <>
@@ -39,7 +40,7 @@ export default function HomePage() {
       />
       <div className="min-h-screen bg-gray-950">
         <Header />
-        
+
         {/* Hero Section */}
         <section className="relative pt-28 pb-20 md:pt-36 md:pb-32 overflow-hidden">
           {/* Background with gradient */}
@@ -70,7 +71,7 @@ export default function HomePage() {
               <motion.div
                 initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
-                transition={{ duration: 0.6, ease: 'easeOut' }}
+                transition={{ duration: 0.6, ease: "easeOut" }}
                 className="flex items-center justify-center mb-6"
               >
                 <motion.svg
@@ -86,7 +87,7 @@ export default function HomePage() {
                   <motion.path
                     initial={{ pathLength: 0 }}
                     animate={{ pathLength: 1 }}
-                    transition={{ duration: 1, ease: 'easeInOut' }}
+                    transition={{ duration: 1, ease: "easeInOut" }}
                     d="M13 3L4 13H11L10 21L19 11H12L13 3Z"
                     fill="#9333EA"
                     stroke="#9333EA"
@@ -103,10 +104,10 @@ export default function HomePage() {
               <motion.h2
                 initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
-                transition={{ duration: 0.6, delay: 0.2, ease: 'easeOut' }}
+                transition={{ duration: 0.6, delay: 0.2, ease: "easeOut" }}
                 className="text-2xl md:text-3xl lg:text-4xl font-medium text-white mb-6 tracking-tight"
               >
-                Same subscriptions,{' '}
+                Same subscriptions,{" "}
                 <span className="bg-gradient-to-r from-purple-400 to-purple-600 bg-clip-text text-transparent">
                   easier prices.
                 </span>
@@ -115,18 +116,18 @@ export default function HomePage() {
               <motion.p
                 initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
-                transition={{ duration: 0.6, delay: 0.4, ease: 'easeOut' }}
+                transition={{ duration: 0.6, delay: 0.4, ease: "easeOut" }}
                 className="text-gray-300 text-lg md:text-xl max-w-2xl mb-10 leading-relaxed"
               >
-                Get your favorite subscriptions at a fraction of the cost through
-                our legal regional pricing system. Save up to 80% on premium
-                services.
+                Get your favorite subscriptions at a fraction of the cost
+                through our legal regional pricing system. Save up to 80% on
+                premium services.
               </motion.p>
 
               <motion.div
                 initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
-                transition={{ duration: 0.6, delay: 0.6, ease: 'easeOut' }}
+                transition={{ duration: 0.6, delay: 0.6, ease: "easeOut" }}
                 className="flex flex-col sm:flex-row gap-4"
               >
                 <motion.a
@@ -139,7 +140,7 @@ export default function HomePage() {
                   <motion.span
                     initial={{ x: 0 }}
                     whileHover={{ x: 5 }}
-                    transition={{ type: 'spring', stiffness: 400 }}
+                    transition={{ type: "spring", stiffness: 400 }}
                   >
                     <ArrowRight className="ml-2 h-5 w-5" aria-hidden="true" />
                   </motion.span>
@@ -184,5 +185,5 @@ export default function HomePage() {
         <Footer />
       </div>
     </>
-  )
+  );
 }

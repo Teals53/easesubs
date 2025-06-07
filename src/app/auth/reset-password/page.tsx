@@ -1,88 +1,95 @@
-'use client'
+"use client";
 
-import { useState, useEffect } from 'react'
-import { motion } from 'framer-motion'
-import { ArrowLeft, Lock, AlertCircle, CheckCircle, Eye, EyeOff } from 'lucide-react'
-import Link from 'next/link'
-import { useRouter, useSearchParams } from 'next/navigation'
-import { trpc } from '@/lib/trpc'
+import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
+import {
+  ArrowLeft,
+  Lock,
+  AlertCircle,
+  CheckCircle,
+  Eye,
+  EyeOff,
+} from "lucide-react";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import { trpc } from "@/lib/trpc";
 
 export default function ResetPasswordPage() {
-  const [password, setPassword] = useState('')
-  const [confirmPassword, setConfirmPassword] = useState('')
-  const [showPassword, setShowPassword] = useState(false)
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
-  const [error, setError] = useState('')
-  const [isSuccess, setIsSuccess] = useState(false)
-  const [isValidating, setIsValidating] = useState(true)
-  const [isValidToken, setIsValidToken] = useState(false)
-  
-  const router = useRouter()
-  const searchParams = useSearchParams()
-  const token = searchParams.get('token')
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [error, setError] = useState("");
+  const [isSuccess, setIsSuccess] = useState(false);
+  const [isValidating, setIsValidating] = useState(true);
+  const [isValidToken, setIsValidToken] = useState(false);
+
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const token = searchParams.get("token");
 
   const validateToken = trpc.auth.validateResetToken.useQuery(
-    { token: token || '' },
+    { token: token || "" },
     {
       enabled: !!token,
       retry: false,
-    }
-  )
+    },
+  );
 
   const resetPassword = trpc.auth.resetPassword.useMutation({
     onSuccess: () => {
-      setIsSuccess(true)
-      setError('')
+      setIsSuccess(true);
+      setError("");
     },
     onError: (error) => {
-      setError(error.message)
-    }
-  })
+      setError(error.message);
+    },
+  });
 
   useEffect(() => {
     if (!token) {
-      setIsValidating(false)
-      setIsValidToken(false)
-      return
+      setIsValidating(false);
+      setIsValidToken(false);
+      return;
     }
 
     if (validateToken.data !== undefined) {
-      setIsValidating(false)
-      setIsValidToken(validateToken.data.valid)
+      setIsValidating(false);
+      setIsValidToken(validateToken.data.valid);
     }
 
     if (validateToken.error) {
-      setIsValidating(false)
-      setIsValidToken(false)
+      setIsValidating(false);
+      setIsValidToken(false);
     }
-  }, [token, validateToken.data, validateToken.error])
+  }, [token, validateToken.data, validateToken.error]);
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError('')
-    
+    e.preventDefault();
+    setError("");
+
     if (!password || !confirmPassword) {
-      setError('Both password fields are required')
-      return
+      setError("Both password fields are required");
+      return;
     }
 
     if (password.length < 8) {
-      setError('Password must be at least 8 characters long')
-      return
+      setError("Password must be at least 8 characters long");
+      return;
     }
 
     if (password !== confirmPassword) {
-      setError('Passwords do not match')
-      return
+      setError("Passwords do not match");
+      return;
     }
 
     if (!token) {
-      setError('Invalid reset token')
-      return
+      setError("Invalid reset token");
+      return;
     }
 
-    await resetPassword.mutateAsync({ token, password })
-  }
+    await resetPassword.mutateAsync({ token, password });
+  };
 
   if (isValidating) {
     return (
@@ -96,7 +103,7 @@ export default function ResetPasswordPage() {
           <p className="text-gray-400">Validating reset token...</p>
         </motion.div>
       </div>
-    )
+    );
   }
 
   if (!isValidToken) {
@@ -117,22 +124,23 @@ export default function ResetPasswordPage() {
               >
                 <AlertCircle className="w-8 h-8 text-white" />
               </motion.div>
-              
+
               <h1 className="text-2xl font-bold text-white mb-4">
                 Invalid or Expired Link
               </h1>
-              
+
               <p className="text-gray-400 mb-6">
-                This password reset link is invalid or has expired. Please request a new one.
+                This password reset link is invalid or has expired. Please
+                request a new one.
               </p>
-              
+
               <Link
                 href="/auth/forgot-password"
                 className="inline-block bg-purple-600 hover:bg-purple-700 text-white font-semibold px-6 py-3 rounded-lg transition-colors mb-4"
               >
                 Request New Reset Link
               </Link>
-              
+
               <div className="mt-4">
                 <Link
                   href="/auth/signin"
@@ -146,7 +154,7 @@ export default function ResetPasswordPage() {
           </div>
         </motion.div>
       </div>
-    )
+    );
   }
 
   if (isSuccess) {
@@ -167,17 +175,18 @@ export default function ResetPasswordPage() {
               >
                 <CheckCircle className="w-8 h-8 text-white" />
               </motion.div>
-              
+
               <h1 className="text-2xl font-bold text-white mb-4">
                 Password Reset Successful
               </h1>
-              
+
               <p className="text-gray-400 mb-6">
-                Your password has been successfully reset. You can now sign in with your new password.
+                Your password has been successfully reset. You can now sign in
+                with your new password.
               </p>
-              
+
               <button
-                onClick={() => router.push('/auth/signin')}
+                onClick={() => router.push("/auth/signin")}
                 className="inline-block bg-purple-600 hover:bg-purple-700 text-white font-semibold px-6 py-3 rounded-lg transition-colors"
               >
                 Sign In Now
@@ -186,7 +195,7 @@ export default function ResetPasswordPage() {
           </div>
         </motion.div>
       </div>
-    )
+    );
   }
 
   return (
@@ -206,14 +215,12 @@ export default function ResetPasswordPage() {
             >
               <Lock className="w-8 h-8 text-white" />
             </motion.div>
-            
+
             <h1 className="text-2xl font-bold text-white mb-2">
               Reset Your Password
             </h1>
-            
-            <p className="text-gray-400">
-              Enter your new password below.
-            </p>
+
+            <p className="text-gray-400">Enter your new password below.</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -229,13 +236,16 @@ export default function ResetPasswordPage() {
             )}
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-2">
+              <label
+                htmlFor="password"
+                className="block text-sm font-medium text-gray-300 mb-2"
+              >
                 New Password
               </label>
               <div className="relative">
                 <input
                   id="password"
-                  type={showPassword ? 'text' : 'password'}
+                  type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full px-4 py-3 pr-12 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
@@ -248,7 +258,11 @@ export default function ResetPasswordPage() {
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
                 >
-                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  {showPassword ? (
+                    <EyeOff className="w-5 h-5" />
+                  ) : (
+                    <Eye className="w-5 h-5" />
+                  )}
                 </button>
               </div>
               <p className="text-xs text-gray-500 mt-1">
@@ -257,13 +271,16 @@ export default function ResetPasswordPage() {
             </div>
 
             <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-300 mb-2">
+              <label
+                htmlFor="confirmPassword"
+                className="block text-sm font-medium text-gray-300 mb-2"
+              >
                 Confirm New Password
               </label>
               <div className="relative">
                 <input
                   id="confirmPassword"
-                  type={showConfirmPassword ? 'text' : 'password'}
+                  type={showConfirmPassword ? "text" : "password"}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   className="w-full px-4 py-3 pr-12 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
@@ -275,7 +292,11 @@ export default function ResetPasswordPage() {
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                   className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
                 >
-                  {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  {showConfirmPassword ? (
+                    <EyeOff className="w-5 h-5" />
+                  ) : (
+                    <Eye className="w-5 h-5" />
+                  )}
                 </button>
               </div>
             </div>
@@ -293,7 +314,7 @@ export default function ResetPasswordPage() {
                   Resetting Password...
                 </div>
               ) : (
-                'Reset Password'
+                "Reset Password"
               )}
             </motion.button>
           </form>
@@ -310,5 +331,5 @@ export default function ResetPasswordPage() {
         </div>
       </motion.div>
     </div>
-  )
-} 
+  );
+}

@@ -51,6 +51,7 @@ NEXTAUTH_URL=https://yourdomain.com
 ### 3. Webhook Setup
 
 Configure your webhook URL in the Cryptomus dashboard:
+
 - Webhook URL: `https://yourdomain.com/api/webhooks/cryptomus`
 - Enable webhook notifications for payment status changes
 
@@ -59,48 +60,48 @@ Configure your webhook URL in the Cryptomus dashboard:
 ### Basic Payment Creation
 
 ```typescript
-import { Cryptomus } from '@/lib/cryptomus'
+import { Cryptomus } from "@/lib/cryptomus";
 
 const cryptomus = new Cryptomus({
   merchantId: process.env.CRYPTOMUS_MERCHANT_ID!,
   paymentApiKey: process.env.CRYPTOMUS_PAYMENT_API_KEY!,
-  payoutApiKey: process.env.CRYPTOMUS_PAYOUT_API_KEY
-})
+  payoutApiKey: process.env.CRYPTOMUS_PAYOUT_API_KEY,
+});
 
 // Create a payment
 const payment = await cryptomus.createPayment({
-  amount: '10.00',
-  currency: 'USD',
+  amount: "10.00",
+  currency: "USD",
   order_id: Cryptomus.generateUUID(),
-  url_return: 'https://yoursite.com/return',
-  url_callback: 'https://yoursite.com/webhook',
+  url_return: "https://yoursite.com/return",
+  url_callback: "https://yoursite.com/webhook",
   lifetime: 3600, // 1 hour
-  to_currency: 'USDT', // Convert USD to USDT
-  network: 'tron' // Use Tron network
-})
+  to_currency: "USDT", // Convert USD to USDT
+  network: "tron", // Use Tron network
+});
 
 if (payment.state === 0 && payment.result) {
-  console.log('Payment URL:', payment.result.url)
-  console.log('Payment ID:', payment.result.uuid)
+  console.log("Payment URL:", payment.result.url);
+  console.log("Payment ID:", payment.result.uuid);
 }
 ```
 
 ### Using the PaymentProviders Wrapper
 
 ```typescript
-import { PaymentProviders } from '@/lib/payment-providers'
+import { PaymentProviders } from "@/lib/payment-providers";
 
 const result = await PaymentProviders.createCryptomusPayment({
-  orderId: 'order-123',
-  amount: 25.00,
-  currency: 'USD',
-  returnUrl: 'https://yoursite.com/return',
-  callbackUrl: 'https://yoursite.com/webhook'
-})
+  orderId: "order-123",
+  amount: 25.0,
+  currency: "USD",
+  returnUrl: "https://yoursite.com/return",
+  callbackUrl: "https://yoursite.com/webhook",
+});
 
 if (result.success) {
-  console.log('Payment URL:', result.paymentUrl)
-  console.log('Payment ID:', result.paymentId)
+  console.log("Payment URL:", result.paymentUrl);
+  console.log("Payment ID:", result.paymentId);
 }
 ```
 
@@ -108,15 +109,15 @@ if (result.success) {
 
 ```typescript
 const wallet = await cryptomus.createWallet({
-  network: 'tron',
-  currency: 'USDT',
+  network: "tron",
+  currency: "USDT",
   order_id: Cryptomus.generateShortUUID(),
-  url_callback: 'https://yoursite.com/webhook'
-})
+  url_callback: "https://yoursite.com/webhook",
+});
 
 if (wallet.state === 0 && wallet.result) {
-  console.log('Wallet Address:', wallet.result.address)
-  console.log('Wallet UUID:', wallet.result.wallet_uuid)
+  console.log("Wallet Address:", wallet.result.address);
+  console.log("Wallet UUID:", wallet.result.wallet_uuid);
 }
 ```
 
@@ -124,12 +125,12 @@ if (wallet.state === 0 && wallet.result) {
 
 ```typescript
 const paymentInfo = await cryptomus.getPaymentInfo({
-  uuid: 'payment-uuid-here'
-})
+  uuid: "payment-uuid-here",
+});
 
 if (paymentInfo.state === 0 && paymentInfo.result) {
-  console.log('Payment Status:', paymentInfo.result.payment_status)
-  console.log('Amount Paid:', paymentInfo.result.payment_amount)
+  console.log("Payment Status:", paymentInfo.result.payment_status);
+  console.log("Amount Paid:", paymentInfo.result.payment_amount);
 }
 ```
 
@@ -137,36 +138,36 @@ if (paymentInfo.state === 0 && paymentInfo.result) {
 
 ```typescript
 const payout = await cryptomus.createPayout({
-  amount: '5.00',
-  currency: 'USDT',
-  network: 'tron',
+  amount: "5.00",
+  currency: "USDT",
+  network: "tron",
   order_id: Cryptomus.generateShortUUID(),
-  address: 'TYourWalletAddressHere...',
-  is_subtract: true // Merchant pays the fee
-})
+  address: "TYourWalletAddressHere...",
+  is_subtract: true, // Merchant pays the fee
+});
 
 if (payout.state === 0 && payout.result) {
-  console.log('Payout UUID:', payout.result.uuid)
-  console.log('Status:', payout.result.status)
+  console.log("Payout UUID:", payout.result.uuid);
+  console.log("Status:", payout.result.status);
 }
 ```
 
 ### Webhook Validation
 
 ```typescript
-import { Cryptomus } from '@/lib/cryptomus'
+import { Cryptomus } from "@/lib/cryptomus";
 
 // In your webhook handler
 const isValid = Cryptomus.validateWebhook(
-  webhookBody, 
-  '', 
-  process.env.CRYPTOMUS_PAYMENT_API_KEY!
-)
+  webhookBody,
+  "",
+  process.env.CRYPTOMUS_PAYMENT_API_KEY!,
+);
 
 if (isValid) {
   // Process the webhook
-  const webhookData = JSON.parse(webhookBody)
-  console.log('Payment status:', webhookData.status)
+  const webhookData = JSON.parse(webhookBody);
+  console.log("Payment status:", webhookData.status);
 }
 ```
 
@@ -182,16 +183,16 @@ The webhook handler at `/api/webhooks/cryptomus/route.ts` automatically:
 
 ### Supported Payment Statuses
 
-| Cryptomus Status | App Status | Description |
-|-----------------|------------|-------------|
-| `paid` | `COMPLETED` | Payment successfully completed |
-| `paid_over` | `COMPLETED` | Payment completed with overpayment |
-| `confirm_check` | `COMPLETED` | Payment confirmed and being processed |
-| `fail` | `FAILED` | Payment failed |
-| `system_fail` | `FAILED` | System error occurred |
-| `wrong_amount` | `FAILED` | Incorrect payment amount |
-| `cancel` | `CANCELLED` | Payment cancelled |
-| `refund_paid` | `CANCELLED` | Refund completed |
+| Cryptomus Status | App Status  | Description                           |
+| ---------------- | ----------- | ------------------------------------- |
+| `paid`           | `COMPLETED` | Payment successfully completed        |
+| `paid_over`      | `COMPLETED` | Payment completed with overpayment    |
+| `confirm_check`  | `COMPLETED` | Payment confirmed and being processed |
+| `fail`           | `FAILED`    | Payment failed                        |
+| `system_fail`    | `FAILED`    | System error occurred                 |
+| `wrong_amount`   | `FAILED`    | Incorrect payment amount              |
+| `cancel`         | `CANCELLED` | Payment cancelled                     |
+| `refund_paid`    | `CANCELLED` | Refund completed                      |
 
 ## 🛠️ API Methods
 
@@ -231,10 +232,10 @@ All API methods return a standardized response format:
 
 ```typescript
 interface CryptomusResponse<T> {
-  state: number        // 0 = success, 1 = error
-  result?: T          // Response data (on success)
-  message?: string    // Error message (on failure)
-  errors?: Record<string, string[]> // Validation errors
+  state: number; // 0 = success, 1 = error
+  result?: T; // Response data (on success)
+  message?: string; // Error message (on failure)
+  errors?: Record<string, string[]>; // Validation errors
 }
 ```
 
@@ -242,18 +243,18 @@ Example error handling:
 
 ```typescript
 try {
-  const payment = await cryptomus.createPayment(paymentData)
-  
+  const payment = await cryptomus.createPayment(paymentData);
+
   if (payment.state === 0 && payment.result) {
     // Success
-    console.log('Payment created:', payment.result.url)
+    console.log("Payment created:", payment.result.url);
   } else {
     // API error
-    console.error('Payment failed:', payment.message)
+    console.error("Payment failed:", payment.message);
   }
 } catch (error) {
   // Network/system error
-  console.error('Request failed:', error)
+  console.error("Request failed:", error);
 }
 ```
 
@@ -294,11 +295,13 @@ The implementation includes comprehensive TypeScript interfaces for all API requ
 ### Common Issues
 
 1. **Invalid Signature Errors**
+
    - Ensure `CRYPTOMUS_PAYMENT_API_KEY` is correctly set
    - Check that webhook URL is accessible from the internet
    - Verify merchant UUID is correct
 
 2. **Payment Creation Fails**
+
    - Check that all required parameters are provided
    - Verify API keys have sufficient permissions
    - Ensure amounts meet minimum/maximum limits
@@ -335,4 +338,4 @@ If upgrading from the previous implementation:
 3. Replace direct API calls with the new SDK methods
 4. Update payment status mapping to use the new status values
 
-The new implementation provides better error handling, complete TypeScript support, and follows the official API documentation exactly. 
+The new implementation provides better error handling, complete TypeScript support, and follows the official API documentation exactly.

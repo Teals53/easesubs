@@ -1,63 +1,71 @@
-'use client'
+"use client";
 
-import { motion } from 'framer-motion'
-import Link from 'next/link'
-import { ArrowLeft, Shield, Eye, Lock, Database, Globe, Mail } from 'lucide-react'
-import { Header } from '@/components/layout/header'
-import { Footer } from '@/components/layout/footer'
+import { motion } from "framer-motion";
+import Link from "next/link";
+import {
+  ArrowLeft,
+  Shield,
+  Eye,
+  Lock,
+  Database,
+  Globe,
+  Mail,
+} from "lucide-react";
+import { Header } from "@/components/layout/header";
+import { Footer } from "@/components/layout/footer";
 
 export default function PrivacyPolicyPage() {
   const sections = [
     {
-      title: 'Information We Collect',
+      title: "Information We Collect",
       icon: Database,
       content: [
-        'Personal information such as name, email address, and contact details when you create an account',
-        'Payment information processed securely through our payment providers',
-        'Usage data including how you interact with our services',
-        'Technical information such as IP address, browser type, and device information',
-        'Communication data when you contact our support team'
-      ]
+        "Personal information such as name, email address, and contact details when you create an account",
+        "Payment information processed securely through our payment providers",
+        "Usage data including how you interact with our services",
+        "Technical information such as IP address, browser type, and device information",
+        "Communication data when you contact our support team",
+      ],
     },
     {
-      title: 'How We Use Your Information',
+      title: "How We Use Your Information",
       icon: Eye,
       content: [
-        'To provide and maintain our services',
-        'To process payments and manage subscriptions',
-        'To communicate with you about your account and our services',
-        'To improve our services and develop new features',
-        'To ensure security and prevent fraud',
-        'To comply with legal obligations'
-      ]
+        "To provide and maintain our services",
+        "To process payments and manage subscriptions",
+        "To communicate with you about your account and our services",
+        "To improve our services and develop new features",
+        "To ensure security and prevent fraud",
+        "To comply with legal obligations",
+      ],
     },
     {
-      title: 'Information Sharing',
+      title: "Information Sharing",
       icon: Globe,
       content: [
-        'We do not sell, trade, or rent your personal information to third parties',
-        'We may share information with trusted service providers who assist in our operations',
-        'Information may be disclosed if required by law or to protect our rights',
-        'Anonymized data may be used for analytics and research purposes'
-      ]
+        "We do not sell, trade, or rent your personal information to third parties",
+        "We may share information with trusted service providers who assist in our operations",
+        "Information may be disclosed if required by law or to protect our rights",
+        "Anonymized data may be used for analytics and research purposes",
+      ],
     },
     {
-      title: 'Data Security',
+      title: "Data Security",
       icon: Lock,
       content: [
-        'We implement industry-standard security measures to protect your data',
-        'All payment information is processed using secure encryption',
-        'Regular security audits and updates to our systems',
-        'Limited access to personal information on a need-to-know basis',
-        'Secure data storage with backup and recovery procedures'
-      ]
-    }
-  ]
+        "We implement industry-standard security measures to protect your data",
+        "All payment information is processed using secure encryption",
+        "Regular security audits and updates to our systems",
+        "Limited access to personal information on a need-to-know basis",
+        "Secure data storage with backup and recovery procedures",
+      ],
+    },
+  ];
 
   return (
     <div className="min-h-screen bg-gray-950">
       <Header />
-      
+
       <div className="pt-20 pb-16">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Back Button */}
@@ -88,10 +96,11 @@ export default function PrivacyPolicyPage() {
               </h1>
             </div>
             <p className="text-xl text-gray-400">
-              Last updated: {new Date().toLocaleDateString('en-US', { 
-                year: 'numeric', 
-                month: 'long', 
-                day: 'numeric' 
+              Last updated:{" "}
+              {new Date().toLocaleDateString("en-US", {
+                year: "numeric",
+                month: "long",
+                day: "numeric",
               })}
             </p>
           </motion.div>
@@ -103,10 +112,14 @@ export default function PrivacyPolicyPage() {
             transition={{ delay: 0.1 }}
             className="bg-gray-800/50 backdrop-blur-lg rounded-2xl border border-gray-700 p-8 mb-8"
           >
-            <h2 className="text-2xl font-semibold text-white mb-4">Our Commitment to Your Privacy</h2>
+            <h2 className="text-2xl font-semibold text-white mb-4">
+              Our Commitment to Your Privacy
+            </h2>
             <p className="text-gray-300 leading-relaxed">
-              At our company, we are committed to protecting your privacy and ensuring the security of your personal information. 
-              This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our services.
+              At our company, we are committed to protecting your privacy and
+              ensuring the security of your personal information. This Privacy
+              Policy explains how we collect, use, disclose, and safeguard your
+              information when you use our services.
             </p>
           </motion.div>
 
@@ -124,12 +137,17 @@ export default function PrivacyPolicyPage() {
                   <div className="p-3 rounded-lg bg-blue-500/10 border border-blue-500/20 mr-4">
                     <section.icon className="h-6 w-6 text-blue-400" />
                   </div>
-                  <h2 className="text-2xl font-semibold text-white">{section.title}</h2>
+                  <h2 className="text-2xl font-semibold text-white">
+                    {section.title}
+                  </h2>
                 </div>
-                
+
                 <ul className="space-y-3">
                   {section.content.map((item, itemIndex) => (
-                    <li key={itemIndex} className="flex items-start text-gray-300">
+                    <li
+                      key={itemIndex}
+                      className="flex items-start text-gray-300"
+                    >
                       <div className="w-2 h-2 bg-blue-400 rounded-full mt-2 mr-3 flex-shrink-0" />
                       <span className="leading-relaxed">{item}</span>
                     </li>
@@ -154,7 +172,9 @@ export default function PrivacyPolicyPage() {
             </h2>
             <div className="grid md:grid-cols-2 gap-6">
               <div>
-                <h3 className="text-lg font-semibold text-white mb-3">You have the right to:</h3>
+                <h3 className="text-lg font-semibold text-white mb-3">
+                  You have the right to:
+                </h3>
                 <ul className="space-y-2 text-gray-300">
                   <li>• Access your personal information</li>
                   <li>• Correct inaccurate data</li>
@@ -163,10 +183,12 @@ export default function PrivacyPolicyPage() {
                 </ul>
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-white mb-3">Data Retention:</h3>
+                <h3 className="text-lg font-semibold text-white mb-3">
+                  Data Retention:
+                </h3>
                 <p className="text-gray-300">
-                  We retain your information only as long as necessary to provide our services 
-                  and comply with legal obligations.
+                  We retain your information only as long as necessary to
+                  provide our services and comply with legal obligations.
                 </p>
               </div>
             </div>
@@ -181,10 +203,13 @@ export default function PrivacyPolicyPage() {
           >
             <div className="flex items-center justify-center mb-4">
               <Mail className="h-8 w-8 text-purple-400 mr-3" />
-              <h2 className="text-2xl font-semibold text-white">Questions About This Policy?</h2>
+              <h2 className="text-2xl font-semibold text-white">
+                Questions About This Policy?
+              </h2>
             </div>
             <p className="text-gray-400 mb-6">
-              If you have any questions about this Privacy Policy or our data practices, please contact us.
+              If you have any questions about this Privacy Policy or our data
+              practices, please contact us.
             </p>
             <Link
               href="/dashboard/support"
@@ -198,5 +223,5 @@ export default function PrivacyPolicyPage() {
 
       <Footer />
     </div>
-  )
-} 
+  );
+}

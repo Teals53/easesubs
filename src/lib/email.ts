@@ -1,68 +1,68 @@
-import nodemailer from 'nodemailer'
+import nodemailer from "nodemailer";
 
 interface EmailConfig {
-  host: string
-  port: number
-  secure: boolean
+  host: string;
+  port: number;
+  secure: boolean;
   auth: {
-    user: string
-    pass: string
-  }
+    user: string;
+    pass: string;
+  };
 }
 
 interface EmailData {
-  to: string
-  subject: string
-  html: string
-  text?: string
+  to: string;
+  subject: string;
+  html: string;
+  text?: string;
 }
 
 class EmailService {
-  private transporter: nodemailer.Transporter | null = null
+  private transporter: nodemailer.Transporter | null = null;
 
   constructor() {
-    this.initializeTransporter()
+    this.initializeTransporter();
   }
 
   private initializeTransporter() {
     try {
       const config: EmailConfig = {
-        host: process.env.SMTP_HOST || 'smtp.gmail.com',
-        port: parseInt(process.env.SMTP_PORT || '587'),
+        host: process.env.SMTP_HOST || "smtp.gmail.com",
+        port: parseInt(process.env.SMTP_PORT || "587"),
         secure: false, // true for 465, false for other ports
         auth: {
-          user: process.env.SMTP_USER || '',
-          pass: process.env.SMTP_PASSWORD || '',
+          user: process.env.SMTP_USER || "",
+          pass: process.env.SMTP_PASSWORD || "",
         },
-      }
+      };
 
-      this.transporter = nodemailer.createTransport(config)
+      this.transporter = nodemailer.createTransport(config);
     } catch (error) {
-      console.error('Failed to initialize email transporter:', error)
+      console.error("Failed to initialize email transporter:", error);
     }
   }
 
   async sendEmail(data: EmailData): Promise<boolean> {
     if (!this.transporter) {
-      console.error('Email transporter not initialized')
-      return false
+      console.error("Email transporter not initialized");
+      return false;
     }
 
     try {
       const mailOptions = {
-        from: process.env.SMTP_FROM || 'EaseSubs <noreply@easesubs.com>',
+        from: process.env.SMTP_FROM || "EaseSubs <noreply@easesubs.com>",
         to: data.to,
         subject: data.subject,
         text: data.text,
         html: data.html,
-      }
+      };
 
-      await this.transporter.sendMail(mailOptions)
-      console.log(`Email sent successfully to ${data.to}`)
-      return true
+      await this.transporter.sendMail(mailOptions);
+      console.log(`Email sent successfully to ${data.to}`);
+      return true;
     } catch (error) {
-      console.error('Failed to send email:', error)
-      return false
+      console.error("Failed to send email:", error);
+      return false;
     }
   }
 
@@ -71,10 +71,11 @@ class EmailService {
     email: string,
     orderNumber: string,
     orderTotal: number,
-    items: Array<{ productName: string; planName: string; price: number }>
+    items: Array<{ productName: string; planName: string; price: number }>,
   ): Promise<boolean> {
     const itemsList = items
-      .map(item => `
+      .map(
+        (item) => `
         <tr>
           <td style="padding: 12px; border-bottom: 1px solid #eee;">
             ${item.productName} - ${item.planName}
@@ -83,8 +84,9 @@ class EmailService {
             $${item.price.toFixed(2)}
           </td>
         </tr>
-      `)
-      .join('')
+      `,
+      )
+      .join("");
 
     const html = `
       <!DOCTYPE html>
@@ -129,7 +131,7 @@ class EmailService {
         </div>
       </body>
       </html>
-    `
+    `;
 
     const text = `
       Order Confirmation - EaseSubs
@@ -140,19 +142,19 @@ class EmailService {
       Total Amount: $${orderTotal.toFixed(2)}
       
       Items Purchased:
-      ${items.map(item => `- ${item.productName} - ${item.planName}: $${item.price.toFixed(2)}`).join('\n')}
+      ${items.map((item) => `- ${item.productName} - ${item.planName}: $${item.price.toFixed(2)}`).join("\n")}
       
       Your subscriptions are now active! Access them at: ${process.env.NEXTAUTH_URL}/dashboard
       
       Questions? Contact us at support@easesubs.com
-    `
+    `;
 
     return this.sendEmail({
       to: email,
       subject: `Order Confirmation - ${orderNumber}`,
       html,
       text,
-    })
+    });
   }
 
   // Welcome email for new users
@@ -192,7 +194,7 @@ class EmailService {
         </div>
       </body>
       </html>
-    `
+    `;
 
     const text = `
       Welcome to EaseSubs!
@@ -204,19 +206,22 @@ class EmailService {
       Get started by browsing our subscriptions: ${process.env.NEXTAUTH_URL}
       
       Need help? Contact us at support@easesubs.com
-    `
+    `;
 
     return this.sendEmail({
       to: email,
-      subject: 'Welcome to EaseSubs - Start Saving Today!',
+      subject: "Welcome to EaseSubs - Start Saving Today!",
       html,
       text,
-    })
+    });
   }
 
   // Password reset email
-  async sendPasswordResetEmail(email: string, resetToken: string): Promise<boolean> {
-    const resetUrl = `${process.env.NEXTAUTH_URL}/auth/reset-password?token=${resetToken}`
+  async sendPasswordResetEmail(
+    email: string,
+    resetToken: string,
+  ): Promise<boolean> {
+    const resetUrl = `${process.env.NEXTAUTH_URL}/auth/reset-password?token=${resetToken}`;
 
     const html = `
       <!DOCTYPE html>
@@ -250,7 +255,7 @@ class EmailService {
         </div>
       </body>
       </html>
-    `
+    `;
 
     const text = `
       Password Reset - EaseSubs
@@ -262,14 +267,14 @@ class EmailService {
       This link will expire in 1 hour. If you didn't request this reset, please ignore this email.
       
       Questions? Contact us at support@easesubs.com
-    `
+    `;
 
     return this.sendEmail({
       to: email,
-      subject: 'Reset Your EaseSubs Password',
+      subject: "Reset Your EaseSubs Password",
       html,
       text,
-    })
+    });
   }
 
   // Support ticket notification
@@ -277,9 +282,9 @@ class EmailService {
     email: string,
     ticketNumber: string,
     subject: string,
-    isNewTicket: boolean = true
+    isNewTicket: boolean = true,
   ): Promise<boolean> {
-    const action = isNewTicket ? 'created' : 'updated'
+    const action = isNewTicket ? "created" : "updated";
     const html = `
       <!DOCTYPE html>
       <html>
@@ -309,7 +314,7 @@ class EmailService {
         </div>
       </body>
       </html>
-    `
+    `;
 
     const text = `
       Support Ticket ${action} - EaseSubs
@@ -322,15 +327,15 @@ class EmailService {
       View ticket: ${process.env.NEXTAUTH_URL}/dashboard/support/${ticketNumber}
       
       Questions? Contact us at support@easesubs.com
-    `
+    `;
 
     return this.sendEmail({
       to: email,
       subject: `Support Ticket ${action} - ${ticketNumber}`,
       html,
       text,
-    })
+    });
   }
 }
 
-export const emailService = new EmailService() 
+export const emailService = new EmailService();

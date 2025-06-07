@@ -1,46 +1,53 @@
-'use client'
+"use client";
 
-import { motion } from 'framer-motion'
-import Link from 'next/link'
-import { FileText, Shield, ScrollText, CreditCard, ArrowRight } from 'lucide-react'
-import { Header } from '@/components/layout/header'
-import { Footer } from '@/components/layout/footer'
+import { motion } from "framer-motion";
+import Link from "next/link";
+import {
+  FileText,
+  Shield,
+  ScrollText,
+  CreditCard,
+  ArrowRight,
+} from "lucide-react";
+import { Header } from "@/components/layout/header";
+import { Footer } from "@/components/layout/footer";
 
 const legalPages = [
   {
-    title: 'Privacy Policy',
-    description: 'Learn how we collect, use, and protect your personal information.',
+    title: "Privacy Policy",
+    description:
+      "Learn how we collect, use, and protect your personal information.",
     icon: Shield,
-    href: '/legal/privacy-policy',
-    color: 'text-blue-400',
-    bgColor: 'bg-blue-500/10',
-    borderColor: 'border-blue-500/20'
+    href: "/legal/privacy-policy",
+    color: "text-blue-400",
+    bgColor: "bg-blue-500/10",
+    borderColor: "border-blue-500/20",
   },
   {
-    title: 'Terms of Service',
-    description: 'Understand the terms and conditions for using our services.',
+    title: "Terms of Service",
+    description: "Understand the terms and conditions for using our services.",
     icon: ScrollText,
-    href: '/legal/terms-of-service',
-    color: 'text-green-400',
-    bgColor: 'bg-green-500/10',
-    borderColor: 'border-green-500/20'
+    href: "/legal/terms-of-service",
+    color: "text-green-400",
+    bgColor: "bg-green-500/10",
+    borderColor: "border-green-500/20",
   },
   {
-    title: 'Refund Policy',
-    description: 'Information about our refund and cancellation policies.',
+    title: "Refund Policy",
+    description: "Information about our refund and cancellation policies.",
     icon: CreditCard,
-    href: '/legal/refund-policy',
-    color: 'text-purple-400',
-    bgColor: 'bg-purple-500/10',
-    borderColor: 'border-purple-500/20'
-  }
-]
+    href: "/legal/refund-policy",
+    color: "text-purple-400",
+    bgColor: "bg-purple-500/10",
+    borderColor: "border-purple-500/20",
+  },
+];
 
 export default function LegalPage() {
   return (
     <div className="min-h-screen bg-gray-950">
       <Header />
-      
+
       <div className="pt-20 pb-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Header */}
@@ -56,7 +63,8 @@ export default function LegalPage() {
               </h1>
             </div>
             <p className="text-xl text-gray-400 max-w-3xl mx-auto">
-              Transparency is important to us. Review our legal documents to understand your rights and our commitments.
+              Transparency is important to us. Review our legal documents to
+              understand your rights and our commitments.
             </p>
           </motion.div>
 
@@ -74,16 +82,18 @@ export default function LegalPage() {
                   className={`block p-8 rounded-2xl border ${page.borderColor} ${page.bgColor} backdrop-blur-lg hover:scale-105 transition-all duration-300 group`}
                 >
                   <div className="flex items-center mb-4">
-                    <div className={`p-3 rounded-lg ${page.bgColor} ${page.borderColor} border`}>
+                    <div
+                      className={`p-3 rounded-lg ${page.bgColor} ${page.borderColor} border`}
+                    >
                       <page.icon className={`h-6 w-6 ${page.color}`} />
                     </div>
                     <ArrowRight className="h-5 w-5 text-gray-400 ml-auto group-hover:text-white group-hover:translate-x-1 transition-all" />
                   </div>
-                  
+
                   <h3 className="text-xl font-semibold text-white mb-2 group-hover:text-purple-300 transition-colors">
                     {page.title}
                   </h3>
-                  
+
                   <p className="text-gray-400 group-hover:text-gray-300 transition-colors">
                     {page.description}
                   </p>
@@ -103,8 +113,8 @@ export default function LegalPage() {
               Questions About Our Legal Policies?
             </h2>
             <p className="text-gray-400 mb-6 max-w-2xl mx-auto">
-              If you have any questions about our legal documents or need clarification on any terms, 
-              our support team is here to help.
+              If you have any questions about our legal documents or need
+              clarification on any terms, our support team is here to help.
             </p>
             <Link
               href="/dashboard/support"
@@ -119,5 +129,5 @@ export default function LegalPage() {
 
       <Footer />
     </div>
-  )
-} 
+  );
+}

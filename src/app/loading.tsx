@@ -1,6 +1,6 @@
-'use client'
+"use client";
 
-import { motion } from 'framer-motion'
+import { motion } from "framer-motion";
 
 export default function Loading() {
   return (
@@ -33,7 +33,7 @@ export default function Loading() {
             EaseSubs
           </span>
         </motion.div>
-        
+
         <motion.div
           className="flex space-x-1"
           initial={{ opacity: 0 }}
@@ -56,7 +56,7 @@ export default function Loading() {
             />
           ))}
         </motion.div>
-        
+
         <motion.p
           className="text-gray-400 text-sm"
           initial={{ opacity: 0 }}
@@ -67,5 +67,5 @@ export default function Loading() {
         </motion.p>
       </div>
     </div>
-  )
-} 
+  );
+}

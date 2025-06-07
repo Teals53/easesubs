@@ -1,64 +1,66 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import { signIn } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
-import { motion } from 'framer-motion'
-import { Eye, EyeOff, Mail, Lock, User, UserPlus } from 'lucide-react'
-import Link from 'next/link'
-import { trpc } from '@/lib/trpc'
+import { useState } from "react";
+import { signIn } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
+import { Eye, EyeOff, Mail, Lock, User, UserPlus } from "lucide-react";
+import Link from "next/link";
+import { trpc } from "@/lib/trpc";
 
 export function SignUpForm() {
-  const [name, setName] = useState('')
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [confirmPassword, setConfirmPassword] = useState('')
-  const [showPassword, setShowPassword] = useState(false)
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const router = useRouter()
+  const router = useRouter();
 
   const registerMutation = trpc.auth.register.useMutation({
     onSuccess: async () => {
       // After successful registration, sign in the user
-      const result = await signIn('credentials', {
+      const result = await signIn("credentials", {
         redirect: false,
         email,
         password,
-      })
+      });
 
       if (result?.error) {
-        setError('Registration successful, but failed to sign in. Please try signing in manually.')
-        setIsLoading(false)
-        return
+        setError(
+          "Registration successful, but failed to sign in. Please try signing in manually.",
+        );
+        setIsLoading(false);
+        return;
       }
 
       // Redirect to dashboard on success
-      router.push('/dashboard')
+      router.push("/dashboard");
     },
     onError: (error: { message: string }) => {
-      setError(error.message || 'Registration failed')
-      setIsLoading(false)
-    }
-  })
+      setError(error.message || "Registration failed");
+      setIsLoading(false);
+    },
+  });
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError('')
-    setIsLoading(true)
+    e.preventDefault();
+    setError("");
+    setIsLoading(true);
 
     if (password !== confirmPassword) {
-      setError('Passwords do not match')
-      setIsLoading(false)
-      return
+      setError("Passwords do not match");
+      setIsLoading(false);
+      return;
     }
 
     if (password.length < 8) {
-      setError('Password must be at least 8 characters long')
-      setIsLoading(false)
-      return
+      setError("Password must be at least 8 characters long");
+      setIsLoading(false);
+      return;
     }
 
     try {
@@ -66,22 +68,22 @@ export function SignUpForm() {
         name,
         email,
         password,
-      })
+      });
     } catch {
       // Error is handled by the mutation's onError callback
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const handleGoogleSignUp = async () => {
-    setIsLoading(true)
+    setIsLoading(true);
     try {
-      await signIn('google', { callbackUrl: '/dashboard' })
+      await signIn("google", { callbackUrl: "/dashboard" });
     } catch {
-      setError('Failed to sign up with Google')
-      setIsLoading(false)
+      setError("Failed to sign up with Google");
+      setIsLoading(false);
     }
-  }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-950 to-gray-900 flex items-center justify-center px-4">
@@ -102,8 +104,12 @@ export function SignUpForm() {
             >
               <UserPlus className="w-8 h-8 text-white" />
             </motion.div>
-            <h1 className="text-2xl font-bold text-white mb-2">Create Account</h1>
-            <p className="text-gray-400">Join EaseSubs to access discounted subscriptions</p>
+            <h1 className="text-2xl font-bold text-white mb-2">
+              Create Account
+            </h1>
+            <p className="text-gray-400">
+              Join EaseSubs to access discounted subscriptions
+            </p>
           </div>
 
           {/* Error Message */}
@@ -120,7 +126,10 @@ export function SignUpForm() {
           {/* Sign Up Form */}
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-300 mb-2">
+              <label
+                htmlFor="name"
+                className="block text-sm font-medium text-gray-300 mb-2"
+              >
                 Full Name
               </label>
               <div className="relative">
@@ -138,7 +147,10 @@ export function SignUpForm() {
             </div>
 
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-2">
+              <label
+                htmlFor="email"
+                className="block text-sm font-medium text-gray-300 mb-2"
+              >
                 Email Address
               </label>
               <div className="relative">
@@ -156,14 +168,17 @@ export function SignUpForm() {
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-2">
+              <label
+                htmlFor="password"
+                className="block text-sm font-medium text-gray-300 mb-2"
+              >
                 Password
               </label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
                   id="password"
-                  type={showPassword ? 'text' : 'password'}
+                  type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full pl-10 pr-12 py-3 bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
@@ -175,20 +190,27 @@ export function SignUpForm() {
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-300"
                 >
-                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  {showPassword ? (
+                    <EyeOff className="w-5 h-5" />
+                  ) : (
+                    <Eye className="w-5 h-5" />
+                  )}
                 </button>
               </div>
             </div>
 
             <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-300 mb-2">
+              <label
+                htmlFor="confirmPassword"
+                className="block text-sm font-medium text-gray-300 mb-2"
+              >
                 Confirm Password
               </label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
                   id="confirmPassword"
-                  type={showConfirmPassword ? 'text' : 'password'}
+                  type={showConfirmPassword ? "text" : "password"}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   className="w-full pl-10 pr-12 py-3 bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
@@ -200,7 +222,11 @@ export function SignUpForm() {
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                   className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-300"
                 >
-                  {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  {showConfirmPassword ? (
+                    <EyeOff className="w-5 h-5" />
+                  ) : (
+                    <Eye className="w-5 h-5" />
+                  )}
                 </button>
               </div>
             </div>
@@ -210,7 +236,7 @@ export function SignUpForm() {
               disabled={isLoading}
               className="w-full bg-purple-600 hover:bg-purple-700 disabled:bg-purple-600/50 text-white font-medium py-3 px-4 rounded-lg transition-colors duration-200 disabled:cursor-not-allowed"
             >
-              {isLoading ? 'Creating Account...' : 'Create Account'}
+              {isLoading ? "Creating Account..." : "Create Account"}
             </button>
           </form>
 
@@ -239,8 +265,11 @@ export function SignUpForm() {
           {/* Sign In Link */}
           <div className="mt-6 text-center">
             <p className="text-gray-400 text-sm">
-              Already have an account?{' '}
-              <Link href="/auth/signin" className="text-purple-500 hover:text-purple-400 font-medium">
+              Already have an account?{" "}
+              <Link
+                href="/auth/signin"
+                className="text-purple-500 hover:text-purple-400 font-medium"
+              >
                 Sign in
               </Link>
             </p>
@@ -248,5 +277,5 @@ export function SignUpForm() {
         </div>
       </motion.div>
     </div>
-  )
-} 
+  );
+}

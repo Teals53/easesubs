@@ -1,33 +1,33 @@
-'use client'
+"use client";
 
-import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
 
 export interface CartItem {
-  id: string
-  productId: string
-  planId: string
-  productName: string
-  planName: string
-  planType: string
-  price: number
-  originalPrice?: number
-  billingPeriod: string
-  borderColor?: string
-  logoUrl?: string
-  quantity: number
+  id: string;
+  productId: string;
+  planId: string;
+  productName: string;
+  planName: string;
+  planType: string;
+  price: number;
+  originalPrice?: number;
+  billingPeriod: string;
+  borderColor?: string;
+  logoUrl?: string;
+  quantity: number;
 }
 
 interface CartStore {
-  items: CartItem[]
-  isOpen: boolean
-  isHydrated: boolean
+  items: CartItem[];
+  isOpen: boolean;
+  isHydrated: boolean;
   // Remove local state management - let server be source of truth
-  toggleCart: () => void
-  setItems: (items: CartItem[]) => void
-  setHydrated: (hydrated: boolean) => void
-  getTotalItems: () => number
-  getTotalPrice: () => number
+  toggleCart: () => void;
+  setItems: (items: CartItem[]) => void;
+  setHydrated: (hydrated: boolean) => void;
+  getTotalItems: () => number;
+  getTotalPrice: () => number;
 }
 
 export const useCartStore = create<CartStore>()(
@@ -38,39 +38,42 @@ export const useCartStore = create<CartStore>()(
       isHydrated: false,
 
       toggleCart: () => {
-        set({ isOpen: !get().isOpen })
+        set({ isOpen: !get().isOpen });
       },
 
       setItems: (items) => {
-        set({ items })
+        set({ items });
       },
 
       setHydrated: (hydrated) => {
-        set({ isHydrated: hydrated })
+        set({ isHydrated: hydrated });
       },
 
       getTotalItems: () => {
         // Return 0 if not hydrated to prevent hydration mismatch
-        if (!get().isHydrated) return 0
-        return get().items.reduce((total, item) => total + item.quantity, 0)
+        if (!get().isHydrated) return 0;
+        return get().items.reduce((total, item) => total + item.quantity, 0);
       },
 
       getTotalPrice: () => {
-        return get().items.reduce((total, item) => total + (item.price * item.quantity), 0)
+        return get().items.reduce(
+          (total, item) => total + item.price * item.quantity,
+          0,
+        );
       },
     }),
     {
-      name: 'easesubs-cart',
+      name: "easesubs-cart",
       // Only persist cart items and open state
-      partialize: (state) => ({ 
+      partialize: (state) => ({
         items: state.items,
       }),
       onRehydrateStorage: () => (state) => {
         // Set hydrated to true after rehydration
         if (state) {
-          state.setHydrated(true)
+          state.setHydrated(true);
         }
       },
-    }
-  )
-) 
+    },
+  ),
+);
