@@ -181,11 +181,11 @@ export default function SupportPage() {
       return;
     }
 
-    if (formData.description.trim().length > 2000) {
+    if (formData.description.trim().length > 5000) {
       setErrorMessage({
         type: "error",
         title: "Description Too Long",
-        message: "Description must be less than 2000 characters.",
+        message: "Description must be less than 5000 characters.",
       });
       return;
     }
@@ -385,33 +385,50 @@ export default function SupportPage() {
       >
         {/* Quick Help */}
         <div className="bg-gray-800/50 backdrop-blur-lg p-6 rounded-2xl border border-gray-700">
-          <div className="flex items-center mb-4">
-            <Book className="w-6 h-6 text-purple-400 mr-3" />
-            <h2 className="text-xl font-semibold text-white">Quick Help</h2>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center">
+              <Book className="w-6 h-6 text-purple-400 mr-3" />
+              <h2 className="text-xl font-semibold text-white">Quick Help</h2>
+            </div>
+            <Link
+              href="/dashboard/support/faq"
+              className="text-sm text-purple-400 hover:text-purple-300 transition-colors"
+            >
+              View All FAQs →
+            </Link>
           </div>
           <div className="space-y-3">
-            <div className="p-3 bg-gray-700/50 rounded-lg hover:bg-gray-700/70 transition-colors cursor-pointer">
+            <Link
+              href="/dashboard/support/faq"
+              className="block p-3 bg-gray-700/50 rounded-lg hover:bg-gray-700/70 transition-colors"
+            >
               <h3 className="text-white font-medium mb-1">
                 How to place an order
               </h3>
               <p className="text-gray-400 text-sm">
                 Learn how to browse and purchase subscriptions
               </p>
-            </div>
-            <div className="p-3 bg-gray-700/50 rounded-lg hover:bg-gray-700/70 transition-colors cursor-pointer">
+            </Link>
+            <Link
+              href="/dashboard/support/faq"
+              className="block p-3 bg-gray-700/50 rounded-lg hover:bg-gray-700/70 transition-colors"
+            >
               <h3 className="text-white font-medium mb-1">Payment & Billing</h3>
               <p className="text-gray-400 text-sm">
                 Understanding payments, invoices, and refunds
               </p>
-            </div>
-            <div className="p-3 bg-gray-700/50 rounded-lg hover:bg-gray-700/70 transition-colors cursor-pointer">
+            </Link>
+            <Link
+              href="/dashboard/support/faq"
+              className="block p-3 bg-gray-700/50 rounded-lg hover:bg-gray-700/70 transition-colors"
+            >
               <h3 className="text-white font-medium mb-1">
-                Account Management
+                Delivery & Timing
               </h3>
               <p className="text-gray-400 text-sm">
-                Managing your profile and account settings
+                Understanding delivery methods and timeframes
               </p>
-            </div>
+            </Link>
           </div>
         </div>
 
@@ -436,13 +453,16 @@ export default function SupportPage() {
                 </p>
               </div>
             </a>
-            <div className="flex items-center p-4 bg-gray-700/50 rounded-lg">
-              <Mail className="w-6 h-6 text-gray-400 mr-3" />
+            <a 
+              href="mailto:support@easesubs.com?subject=Support Request - EaseSubs"
+              className="flex items-center p-4 bg-gray-700/50 rounded-lg hover:bg-gray-600/50 transition-colors cursor-pointer group"
+            >
+              <Mail className="w-6 h-6 text-gray-400 group-hover:text-purple-400 mr-3 transition-colors" />
               <div>
-                <h3 className="text-white font-medium">Email Support</h3>
-                <p className="text-gray-400 text-sm">support@easesubs.com</p>
+                <h3 className="text-white font-medium group-hover:text-purple-300 transition-colors">Email Support</h3>
+                <p className="text-gray-400 text-sm group-hover:text-gray-300 transition-colors">support@easesubs.com</p>
               </div>
-            </div>
+            </a>
           </div>
         </div>
       </motion.div>
@@ -554,6 +574,8 @@ export default function SupportPage() {
           </div>
         )}
       </motion.div>
+
+
 
       {/* Create Ticket Modal */}
       {showCreateForm && (
@@ -671,11 +693,11 @@ export default function SupportPage() {
                   }
                   placeholder="Please provide detailed information about your issue..."
                   rows={6}
-                  maxLength={2000}
+                  maxLength={5000}
                   className="w-full px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
                 />
                 <p className="text-xs text-gray-500 mt-1">
-                  {formData.description.length}/2000 characters
+                  {formData.description.length}/5000 characters
                 </p>
               </div>
 

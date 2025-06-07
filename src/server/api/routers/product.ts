@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "@/server/api/trpc";
+import { TRPCError } from "@trpc/server";
 
 export const productRouter = createTRPCRouter({
   getAll: publicProcedure
@@ -17,6 +18,7 @@ export const productRouter = createTRPCRouter({
           ...(input.featured !== undefined && { isFeatured: input.featured }),
         },
         include: {
+          category: true,
           plans: {
             where: {
               isAvailable: true,
@@ -36,41 +38,36 @@ export const productRouter = createTRPCRouter({
     }),
 
   getCategories: publicProcedure.query(async ({ ctx }) => {
-    // Define category labels
-    const categoryLabels = {
-      STREAMING_MEDIA: "Streaming & Media",
-      PRODUCTIVITY_TOOLS: "Productivity & Tools",
-      CREATIVE_DESIGN: "Creative & Design",
-      LEARNING_EDUCATION: "Learning & Education",
-      SOCIAL_COMMUNICATION: "Social & Communication",
-      GAMING: "Gaming",
-      BUSINESS_FINANCE: "Business & Finance",
-      HEALTH_FITNESS: "Health & Fitness",
-    };
-
-    // Get product counts per category for active products only
-    const categoryCounts = await ctx.db.product.groupBy({
-      by: ["category"],
+    const categories = await ctx.db.category.findMany({
       where: {
         isActive: true,
       },
-      _count: {
-        id: true,
+      include: {
+        _count: {
+          select: {
+            products: {
+              where: {
+                isActive: true,
+              },
+            },
+          },
+        },
       },
+      orderBy: [
+        { displayOrder: "asc" },
+        { name: "asc" },
+      ],
     });
 
     // Filter to only include categories that have products
-    return categoryCounts
-      .filter((categoryCount) => categoryCount._count.id > 0)
-      .map((categoryCount) => ({
-        key: categoryCount.category,
-        label:
-          categoryLabels[
-            categoryCount.category as keyof typeof categoryLabels
-          ] || categoryCount.category,
-        count: categoryCount._count.id,
-      }))
-      .sort((a, b) => a.label.localeCompare(b.label));
+    return categories
+      .filter((category) => category._count.products > 0)
+      .map((category) => ({
+        id: category.id,
+        key: category.slug,
+        label: category.name,
+        count: category._count.products,
+      }));
   }),
 
   getById: publicProcedure
@@ -82,6 +79,7 @@ export const productRouter = createTRPCRouter({
           isActive: true,
         },
         include: {
+          category: true,
           plans: {
             where: {
               isAvailable: true,
@@ -103,6 +101,7 @@ export const productRouter = createTRPCRouter({
           isActive: true,
         },
         include: {
+          category: true,
           plans: {
             where: {
               isAvailable: true,
@@ -113,5 +112,44 @@ export const productRouter = createTRPCRouter({
           },
         },
       });
+    }),
+
+  getStockAvailability: publicProcedure
+    .input(z.object({ planId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const plan = await ctx.db.productPlan.findUnique({
+        where: { id: input.planId },
+        select: { deliveryType: true },
+      });
+
+      if (!plan) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Plan not found",
+        });
+      }
+
+      // For MANUAL delivery, always return unlimited stock
+      if (plan.deliveryType === "MANUAL") {
+        return {
+          available: true,
+          count: null, // null means unlimited
+          deliveryType: "MANUAL",
+        };
+      }
+
+      // For AUTOMATIC delivery, check actual stock
+      const stockCount = await ctx.db.stockItem.count({
+        where: {
+          planId: input.planId,
+          isUsed: false,
+        },
+      });
+
+      return {
+        available: stockCount > 0,
+        count: stockCount,
+        deliveryType: "AUTOMATIC",
+      };
     }),
 });

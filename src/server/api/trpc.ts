@@ -120,6 +120,47 @@ const enforceUserIsAuthed = t.middleware(({ ctx, next }) => {
 });
 
 /**
+ * Enhanced middleware that validates user is active (with caching)
+ */
+const enforceUserIsActive = t.middleware(async ({ ctx, next }) => {
+  if (!ctx.session || !ctx.session.user) {
+    throw new TRPCError({ code: "UNAUTHORIZED" });
+  }
+
+  // Only check user status for critical operations
+  // This reduces database queries while maintaining security
+  const userId = ctx.session.user.id;
+  
+  try {
+    const user = await ctx.db.user.findUnique({
+      where: { id: userId },
+      select: { id: true, isActive: true },
+    });
+
+    if (!user || !user.isActive) {
+      throw new TRPCError({ 
+        code: "FORBIDDEN", 
+        message: "Account is inactive or not found" 
+      });
+    }
+
+    return next({
+      ctx: {
+        session: { ...ctx.session, user: ctx.session.user },
+      },
+    });
+  } catch (error) {
+    if (error instanceof TRPCError) {
+      throw error;
+    }
+    throw new TRPCError({ 
+      code: "INTERNAL_SERVER_ERROR", 
+      message: "Failed to validate user status" 
+    });
+  }
+});
+
+/**
  * Reusable middleware that enforces users are admins before running the procedure.
  */
 const enforceUserIsAdmin = t.middleware(({ ctx, next }) => {
@@ -128,7 +169,10 @@ const enforceUserIsAdmin = t.middleware(({ ctx, next }) => {
   }
 
   // Check if user has admin role
-  // This will be implemented when we have the user role in session
+  if (ctx.session.user.role !== "ADMIN") {
+    throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
+  }
+
   return next({
     ctx: {
       session: { ...ctx.session, user: ctx.session.user },
@@ -147,8 +191,12 @@ const enforceUserIsAdmin = t.middleware(({ ctx, next }) => {
 export const protectedProcedure = t.procedure.use(enforceUserIsAuthed);
 
 /**
- * Admin only procedure
- *
- * Only allows admin users to access the procedure.
+ * Protected procedure with user active status validation
+ * Use this for critical operations that require active user validation
+ */
+export const activeUserProcedure = t.procedure.use(enforceUserIsActive);
+
+/**
+ * Admin-only procedure
  */
 export const adminProcedure = t.procedure.use(enforceUserIsAdmin);

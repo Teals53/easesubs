@@ -1,4 +1,4 @@
-import { PrismaClient, BillingPeriod } from "@prisma/client";
+﻿import { PrismaClient, BillingPeriod } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
@@ -71,16 +71,14 @@ const defaultCategories = [
 ];
 
 async function main() {
-  console.log("🌱 Starting database seeding...");
+  console.log("ğŸŒ± Starting database seeding...");
 
   // First, create categories
   console.log("Creating categories...");
   const categories = await Promise.all(
     defaultCategories.map(async (categoryData) => {
-      return await prisma.category.upsert({
-        where: { slug: categoryData.slug },
-        update: categoryData,
-        create: categoryData
+      return await prisma.category.create({
+        data: categoryData
       });
     })
   );
@@ -104,7 +102,6 @@ async function main() {
     description: string;
     categoryId: string;
     logoName?: string;
-    logoUrl?: string;
     borderColor?: string;
     isFeatured: boolean;
     displayOrder: number;
@@ -129,7 +126,6 @@ async function main() {
         "Ad-free YouTube videos, background play, and YouTube Music included.",
       categoryId: categoryMap['streaming-media'],
       logoName: "youtube.png",
-      logoUrl: "https://cdn.brandfetch.io/idVfYwcuQz/theme/dark/symbol.svg?c=1dxbfHSJFAPEGdCLU4o5B",
       borderColor: "#FF0000",
       isFeatured: true,
       displayOrder: 1,
@@ -152,7 +148,6 @@ async function main() {
             "Own Account Upgrade",
           ],
           isPopular: true,
-
         },
       ],
     },
@@ -163,7 +158,6 @@ async function main() {
         "Stream millions of songs and podcasts ad-free with Spotify Premium.",
       categoryId: categoryMap['streaming-media'],
       logoName: "spotify.png",
-      logoUrl: "https://cdn.brandfetch.io/id20mQyGeY/theme/dark/symbol.svg?c=1dxbfHSJFAPEGdCLU4o5B",
       borderColor: "#1DB954",
       isFeatured: true,
       displayOrder: 2,
@@ -184,7 +178,6 @@ async function main() {
             "Own Account Upgrade",
           ],
           isPopular: true,
-
         },
         {
           name: "Individual 1 Month",
@@ -199,7 +192,6 @@ async function main() {
             "High quality audio",
           ],
           isPopular: false,
-
         },
         {
           name: "Individual 3 Month",
@@ -214,7 +206,6 @@ async function main() {
             "High quality audio",
           ],
           isPopular: false,
-
         },
         {
           name: "Individual 6 Month",
@@ -229,7 +220,6 @@ async function main() {
             "High quality audio",
           ],
           isPopular: false,
-
         },
         {
           name: "Individual 12 Month",
@@ -244,7 +234,6 @@ async function main() {
             "High quality audio",
           ],
           isPopular: false,
-
         },
         {
           name: "Duo 1 Month",
@@ -259,7 +248,6 @@ async function main() {
             "Unlimited skips",
           ],
           isPopular: false,
-
         },
         {
           name: "Duo 3 Month",
@@ -274,7 +262,6 @@ async function main() {
             "Unlimited skips",
           ],
           isPopular: false,
-
         },
         {
           name: "Duo 6 Month",
@@ -289,7 +276,6 @@ async function main() {
             "Unlimited skips",
           ],
           isPopular: false,
-
         },
         {
           name: "Duo 12 Month",
@@ -304,7 +290,6 @@ async function main() {
             "Unlimited skips",
           ],
           isPopular: false,
-
         },
         {
           name: "Family 12 Month",
@@ -320,7 +305,6 @@ async function main() {
             "Kid-safe mode",
           ],
           isPopular: false,
-
         },
       ],
     },
@@ -331,7 +315,6 @@ async function main() {
         "Watch thousands of movies and TV shows with unlimited streaming.",
       categoryId: categoryMap['streaming-media'],
       logoName: "netflix.png",
-      logoUrl: "https://cdn.brandfetch.io/ideQwN5lBE/w/496/h/901/theme/dark/symbol.png?c=1dxbfHSJFAPEGdCLU4o5B",
       borderColor: "#E50914",
       isFeatured: true,
       displayOrder: 3,
@@ -346,7 +329,6 @@ async function main() {
           duration: 180,
           features: ["720p HD", "1 Device", "Unlimited movies & shows"],
           isPopular: false,
-
         },
         {
           name: "Basic 12 Month",
@@ -356,7 +338,6 @@ async function main() {
           duration: 365,
           features: ["720p HD", "1 Device", "Unlimited movies & shows"],
           isPopular: false,
-
         },
         {
           name: "Standard 6 Month",
@@ -366,7 +347,6 @@ async function main() {
           duration: 180,
           features: ["1080p Full HD", "2 Devices", "Unlimited movies & shows"],
           isPopular: true,
-
         },
         {
           name: "Standard 12 Month",
@@ -376,7 +356,6 @@ async function main() {
           duration: 365,
           features: ["1080p Full HD", "2 Devices", "Unlimited movies & shows"],
           isPopular: false,
-
         },
         {
           name: "Premium 6 Month",
@@ -390,7 +369,6 @@ async function main() {
             "Unlimited movies & shows",
           ],
           isPopular: false,
-
         },
         {
           name: "Premium 12 Month",
@@ -404,7 +382,6 @@ async function main() {
             "Unlimited movies & shows",
           ],
           isPopular: false,
-
         },
       ],
     },
@@ -415,7 +392,6 @@ async function main() {
         "Stream Disney, Pixar, Marvel, Star Wars, and National Geographic content.",
       categoryId: categoryMap['streaming-media'],
       logoName: "disney.png",
-      logoUrl: "https://cdn.brandfetch.io/idhQlYRiX2/w/400/h/400/theme/dark/icon.png?c=1dxbfHSJFAPEGdCLU4o5B",
       borderColor: "#113CCF",
       isFeatured: false,
       displayOrder: 4,
@@ -433,7 +409,6 @@ async function main() {
             "All Disney content",
           ],
           isPopular: false,
-
         },
       ],
     },
@@ -443,7 +418,6 @@ async function main() {
       description: "Stream the largest collection of anime with Crunchyroll.",
       categoryId: categoryMap['streaming-media'],
       logoName: "crunchyroll.png",
-      logoUrl: "https://cdn.brandfetch.io/id0XKwSDEq/w/200/h/200/theme/dark/icon.jpeg?c=1dxbfHSJFAPEGdCLU4o5B",
       borderColor: "#FF6500",
       isFeatured: false,
       displayOrder: 5,
@@ -461,7 +435,6 @@ async function main() {
             "Offline viewing",
           ],
           isPopular: false,
-
         },
         {
           name: "Mega Fan 12 Month",
@@ -476,7 +449,6 @@ async function main() {
             "Offline viewing",
           ],
           isPopular: true,
-
         },
       ],
     },
@@ -488,7 +460,6 @@ async function main() {
       description: "Enhanced Discord experience with Nitro features.",
       categoryId: categoryMap['social-communication'],
       logoName: "discord.png",
-      logoUrl: "https://cdn.brandfetch.io/idM8Hlme1a/w/400/h/400/theme/dark/icon.png?c=1dxbfHSJFAPEGdCLU4o5B",
       borderColor: "#5865F2",
       isFeatured: true,
       displayOrder: 6,
@@ -508,7 +479,6 @@ async function main() {
             "Custom emoji",
           ],
           isPopular: true,
-
         },
         {
           name: "Yearly Nitro Classic",
@@ -522,7 +492,6 @@ async function main() {
             "HD video streaming",
           ],
           isPopular: false,
-
         },
         {
           name: "1 Month 14X Boost",
@@ -532,7 +501,6 @@ async function main() {
           duration: 30,
           features: ["14 Server boosts", "Enhanced server features"],
           isPopular: false,
-
         },
         {
           name: "3 Month 14X Boost",
@@ -542,7 +510,6 @@ async function main() {
           duration: 90,
           features: ["14 Server boosts", "Enhanced server features"],
           isPopular: false,
-
         },
       ],
     },
@@ -552,7 +519,6 @@ async function main() {
       description: "Premium Telegram features with enhanced functionality.",
       categoryId: categoryMap['social-communication'],
       logoName: "telegram.png",
-      logoUrl: "https://cdn.brandfetch.io/id68S6e-Gp/w/400/h/400/theme/dark/icon.jpeg?c=1dxbfHSJFAPEGdCLU4o5B",
       borderColor: "#0088CC",
       isFeatured: true,
       displayOrder: 7,
@@ -573,7 +539,6 @@ async function main() {
             "Advanced features",
           ],
           isPopular: true,
-
         },
         {
           name: "Gift Premium 6M",
@@ -588,7 +553,6 @@ async function main() {
             "Advanced features",
           ],
           isPopular: false,
-
         },
         {
           name: "Gift Premium 3M",
@@ -603,7 +567,6 @@ async function main() {
             "Advanced features",
           ],
           isPopular: false,
-
         },
         {
           name: "Gift Membership 3 Month",
@@ -613,7 +576,6 @@ async function main() {
           duration: 90,
           features: ["Premium features", "Enhanced limits"],
           isPopular: false,
-
         },
         {
           name: "Gift Membership 6 Month",
@@ -623,7 +585,6 @@ async function main() {
           duration: 180,
           features: ["Premium features", "Enhanced limits"],
           isPopular: false,
-
         },
         {
           name: "Gift Membership 12 Month",
@@ -633,7 +594,6 @@ async function main() {
           duration: 365,
           features: ["Premium features", "Enhanced limits"],
           isPopular: false,
-
         },
       ],
     },
@@ -643,7 +603,6 @@ async function main() {
       description: "Enhanced Twitter/X experience with premium features.",
       categoryId: categoryMap['social-communication'],
       logoName: "twitter.png",
-      logoUrl: "https://cdn.brandfetch.io/idS5WhqBbM/w/400/h/400/theme/dark/icon.jpeg?c=1dxbfHSJFAPEGdCLU4o5B",
       borderColor: "#1DA1F2",
       isFeatured: false,
       displayOrder: 8,
@@ -664,7 +623,6 @@ async function main() {
             "Own Account Upgrade",
           ],
           isPopular: false,
-
         },
         {
           name: "Premium 12M Individual Own Account Upgrade",
@@ -679,7 +637,6 @@ async function main() {
             "Own Account Upgrade",
           ],
           isPopular: true,
-
         },
         {
           name: "Premium Plus 12M Individual Own Account Upgrade",
@@ -694,7 +651,6 @@ async function main() {
             "Own Account Upgrade",
           ],
           isPopular: false,
-
         },
       ],
     },
@@ -706,7 +662,6 @@ async function main() {
       description: "Enhanced Tinder experience with premium dating features.",
       categoryId: categoryMap['social-communication'],
       logoName: "tinder.png",
-      logoUrl: "https://cdn.brandfetch.io/id2Hf2OMju/w/400/h/400/theme/dark/icon.jpeg?c=1dxbfHSJFAPEGdCLU4o5B",
       borderColor: "#FE3C72",
       isFeatured: false,
       displayOrder: 9,
@@ -726,7 +681,6 @@ async function main() {
             "5 Super Likes per day",
           ],
           isPopular: false,
-
         },
         {
           name: "Plus 6 Month",
@@ -741,7 +695,6 @@ async function main() {
             "5 Super Likes per day",
           ],
           isPopular: false,
-
         },
         {
           name: "Gold 1 Month",
@@ -751,7 +704,6 @@ async function main() {
           duration: 30,
           features: ["All Plus features", "See who likes you", "Top Picks"],
           isPopular: true,
-
         },
         {
           name: "Gold 3 Month",
@@ -761,7 +713,6 @@ async function main() {
           duration: 90,
           features: ["All Plus features", "See who likes you", "Top Picks"],
           isPopular: false,
-
         },
         {
           name: "Gold 6 Month",
@@ -771,7 +722,6 @@ async function main() {
           duration: 180,
           features: ["All Plus features", "See who likes you", "Top Picks"],
           isPopular: false,
-
         },
         {
           name: "Gold 12 Month",
@@ -781,7 +731,6 @@ async function main() {
           duration: 365,
           features: ["All Plus features", "See who likes you", "Top Picks"],
           isPopular: false,
-
         },
         {
           name: "Platinum 6 Month",
@@ -795,7 +744,6 @@ async function main() {
             "Priority likes",
           ],
           isPopular: false,
-
         },
       ],
     },
@@ -807,7 +755,6 @@ async function main() {
       description: "Learn languages with Duolingo Plus premium features.",
       categoryId: categoryMap['learning-education'],
       logoName: "duolingo.png",
-      logoUrl: "https://cdn.brandfetch.io/id4D-_pnvt/w/400/h/400/theme/dark/icon.png?c=1dxbfHSJFAPEGdCLU4o5B",
       borderColor: "#58CC02",
       isFeatured: true,
       displayOrder: 10,
@@ -827,7 +774,6 @@ async function main() {
             "Own Account Upgrade",
           ],
           isPopular: true,
-
         },
         {
           name: "Individual 12 Month",
@@ -837,7 +783,6 @@ async function main() {
           duration: 365,
           features: ["Ad-free learning", "Offline lessons", "Unlimited hearts"],
           isPopular: false,
-
         },
         {
           name: "Family 12 Month",
@@ -852,7 +797,6 @@ async function main() {
             "Unlimited hearts",
           ],
           isPopular: false,
-
         },
       ],
     },
@@ -862,7 +806,6 @@ async function main() {
       description: "Learn languages with AI-powered lessons and feedback.",
       categoryId: categoryMap['learning-education'],
       logoName: "busuu.png",
-      logoUrl: "https://cdn.brandfetch.io/id-_d9IzaF/w/400/h/400/theme/dark/icon.png?c=1dxbfHSJFAPEGdCLU4o5B",
       borderColor: "#1FB6E5",
       isFeatured: false,
       displayOrder: 11,
@@ -880,7 +823,6 @@ async function main() {
             "Own Account Upgrade",
           ],
           isPopular: false,
-
         },
         {
           name: "12M Individual New Account Upgrade",
@@ -895,7 +837,6 @@ async function main() {
             "New Account",
           ],
           isPopular: true,
-
         },
       ],
     },
@@ -905,7 +846,6 @@ async function main() {
       description: "Learn languages with immersive Rosetta Stone method.",
       categoryId: categoryMap['learning-education'],
       logoName: "rosettastone.png",
-      logoUrl: "https://cdn.brandfetch.io/idaUY35oPh/w/400/h/400/theme/dark/icon.jpeg?c=1dxbfHSJFAPEGdCLU4o5B",
       borderColor: "#FFCC00",
       isFeatured: false,
       displayOrder: 12,
@@ -923,7 +863,6 @@ async function main() {
             "Own Account Upgrade",
           ],
           isPopular: false,
-
         },
         {
           name: "12M Individual Own Account Upgrade",
@@ -938,7 +877,6 @@ async function main() {
             "Own Account Upgrade",
           ],
           isPopular: true,
-
         },
         {
           name: "Lifetime Individual Own Account Upgrade",
@@ -954,7 +892,6 @@ async function main() {
             "Own Account Upgrade",
           ],
           isPopular: false,
-
         },
       ],
     },
@@ -964,7 +901,6 @@ async function main() {
       description: "Learn coding with interactive lessons and challenges.",
       categoryId: categoryMap['learning-education'],
       logoName: "sololearn.png",
-      logoUrl: "https://cdn.brandfetch.io/idLioNtcc7/theme/dark/symbol.svg?c=1dxbfHSJFAPEGdCLU4o5B",
       borderColor: "#2E8B57",
       isFeatured: false,
       displayOrder: 13,
@@ -983,7 +919,6 @@ async function main() {
             "Own Account Upgrade",
           ],
           isPopular: false,
-
         },
       ],
     },
@@ -993,7 +928,6 @@ async function main() {
       description: "Improve your chess skills with premium features.",
       categoryId: categoryMap['learning-education'],
       logoName: "chess.png",
-      logoUrl: "https://cdn.brandfetch.io/id3xkMkAED/w/400/h/400/theme/dark/icon.png?c=1dxbfHSJFAPEGdCLU4o5B",
       borderColor: "#769656",
       isFeatured: false,
       displayOrder: 14,
@@ -1011,7 +945,6 @@ async function main() {
             "No ads",
           ],
           isPopular: true,
-
         },
         {
           name: "Platinum",
@@ -1021,7 +954,6 @@ async function main() {
           duration: 365,
           features: ["All Gold features", "Video lessons", "Premium analysis"],
           isPopular: false,
-
         },
         {
           name: "Diamond",
@@ -1035,7 +967,6 @@ async function main() {
             "Premium support",
           ],
           isPopular: false,
-
         },
       ],
     },
@@ -1047,7 +978,6 @@ async function main() {
       description: "Professional networking with LinkedIn Premium features.",
       categoryId: categoryMap['productivity-tools'],
       logoName: "linkedin.png",
-      logoUrl: "https://cdn.brandfetch.io/idJFz6sAsl/w/400/h/400/theme/dark/icon.png?c=1dxbfHSJFAPEGdCLU4o5B",
       borderColor: "#0077B5",
       isFeatured: false,
       displayOrder: 15,
@@ -1067,7 +997,6 @@ async function main() {
             "Advanced search",
           ],
           isPopular: false,
-
         },
         {
           name: "Career 12 Months",
@@ -1081,7 +1010,6 @@ async function main() {
             "Advanced search",
           ],
           isPopular: true,
-
         },
         {
           name: "Business 1 month",
@@ -1095,7 +1023,6 @@ async function main() {
             "Unlimited people browsing",
           ],
           isPopular: false,
-
         },
         {
           name: "Business 12 Months",
@@ -1109,7 +1036,6 @@ async function main() {
             "Unlimited people browsing",
           ],
           isPopular: false,
-
         },
         {
           name: "Sales Navigator 1 month",
@@ -1123,7 +1049,6 @@ async function main() {
             "Real-time insights",
           ],
           isPopular: false,
-
         },
         {
           name: "Sales Navigator 12 Months",
@@ -1137,7 +1062,6 @@ async function main() {
             "Real-time insights",
           ],
           isPopular: false,
-
         },
         {
           name: "Recruiter Lite 1 month",
@@ -1151,7 +1075,6 @@ async function main() {
             "Talent insights",
           ],
           isPopular: false,
-
         },
         {
           name: "Recruiter Lite 12 Months",
@@ -1165,7 +1088,6 @@ async function main() {
             "Talent insights",
           ],
           isPopular: false,
-
         },
       ],
     },
@@ -1175,7 +1097,6 @@ async function main() {
       description: "SSH client and terminal with premium features.",
       categoryId: categoryMap['productivity-tools'],
       logoName: "termius.png",
-      logoUrl: "https://cdn.brandfetch.io/id821vPAob/w/200/h/200/theme/dark/icon.jpeg?c=1dxbfHSJFAPEGdCLU4o5B",
       borderColor: "#000000",
       isFeatured: false,
       displayOrder: 16,
@@ -1193,7 +1114,6 @@ async function main() {
             "Own Account Upgrade",
           ],
           isPopular: false,
-
         },
       ],
     },
@@ -1206,7 +1126,6 @@ async function main() {
         "Professional design tools with premium templates and features.",
       categoryId: categoryMap['creative-design'],
       logoName: "canva.png",
-      logoUrl: "https://cdn.brandfetch.io/id9mVQlyB1/w/400/h/400/theme/dark/icon.jpeg?c=1dxbfHSJFAPEGdCLU4o5B",
       borderColor: "#00C4CC",
       isFeatured: true,
       displayOrder: 17,
@@ -1224,7 +1143,6 @@ async function main() {
             "Own Account Upgrade",
           ],
           isPopular: true,
-
         },
       ],
     },
@@ -1234,7 +1152,6 @@ async function main() {
       description: "Photo editing and design with premium features.",
       categoryId: categoryMap['creative-design'],
       logoName: "picsart.png",
-      logoUrl: "https://cdn.brandfetch.io/idunI7Cam3/w/1024/h/1024/idvZ5-klGz.png?c=1dxbfHSJFAPEGdCLU4o5B",
       borderColor: "#FF3997",
       isFeatured: false,
       displayOrder: 18,
@@ -1252,7 +1169,6 @@ async function main() {
             "Own Account Upgrade",
           ],
           isPopular: true,
-
         },
         {
           name: "Pro 12M Individual Own Account Upgrade",
@@ -1267,7 +1183,6 @@ async function main() {
             "Own Account Upgrade",
           ],
           isPopular: false,
-
         },
       ],
     },
@@ -1277,7 +1192,6 @@ async function main() {
       description: "Professional photo editing and organization.",
       categoryId: categoryMap['creative-design'],
       logoName: "lightroom.png",
-      logoUrl: "https://cdn.brandfetch.io/id_KsyK7J9/w/400/h/400/theme/dark/icon.png?c=1dxbfHSJFAPEGdCLU4o5B",
       borderColor: "#31A8FF",
       isFeatured: false,
       displayOrder: 19,
@@ -1295,7 +1209,6 @@ async function main() {
             "Own Account Upgrade",
           ],
           isPopular: false,
-
         },
       ],
     },
@@ -1305,7 +1218,6 @@ async function main() {
       description: "Video editing with professional features.",
       categoryId: categoryMap['creative-design'],
       logoName: "capcut.png",
-      logoUrl: "https://cdn.brandfetch.io/idUmqKFgE3/w/400/h/400/theme/dark/icon.jpeg?c=1dxbfHSJFAPEGdCLU4o5B",
       borderColor: "#000000",
       isFeatured: false,
       displayOrder: 20,
@@ -1323,7 +1235,6 @@ async function main() {
             "Own Account Upgrade",
           ],
           isPopular: false,
-
         },
       ],
     },
@@ -1335,7 +1246,6 @@ async function main() {
       description: "Fitness tracking and social features for athletes.",
       categoryId: categoryMap['health-fitness'],
       logoName: "strava.png",
-      logoUrl: "https://cdn.brandfetch.io/idTLzKLmej/w/400/h/400/theme/dark/icon.jpeg?c=1dxbfHSJFAPEGdCLU4o5B",
       borderColor: "#FC4C02",
       isFeatured: false,
       displayOrder: 21,
@@ -1353,7 +1263,6 @@ async function main() {
             "Own Account Upgrade",
           ],
           isPopular: false,
-
         },
       ],
     },
@@ -1370,7 +1279,6 @@ async function main() {
         description: productData.description,
         categoryId: productData.categoryId,
         logoName: productData.logoName,
-        logoUrl: productData.logoUrl,
         borderColor: productData.borderColor,
         isFeatured: productData.isFeatured,
         displayOrder: productData.displayOrder,
@@ -1383,7 +1291,6 @@ async function main() {
         description: productData.description,
         categoryId: productData.categoryId,
         logoName: productData.logoName,
-        logoUrl: productData.logoUrl,
         borderColor: productData.borderColor,
         isFeatured: productData.isFeatured,
         displayOrder: productData.displayOrder,
@@ -1427,12 +1334,12 @@ async function main() {
     }
   }
 
-  console.log("✅ Database seeded successfully!");
+  console.log("âœ… Database seeded successfully!");
 }
 
 main()
   .catch((e) => {
-    console.error("❌ Error seeding database:", e);
+    console.error("âŒ Error seeding database:", e);
     process.exit(1);
   })
   .finally(async () => {

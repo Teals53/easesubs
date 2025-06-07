@@ -374,19 +374,39 @@ export default function TicketDetailPage() {
           <div className="p-6 border-t border-gray-700">
             <form onSubmit={handleSubmitMessage} className="flex gap-3">
               <div className="flex-1">
-                <textarea
-                  value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
-                  placeholder="Type your message..."
-                  rows={3}
-                  className="w-full px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
-                  disabled={isSubmitting}
-                />
+                <div className="relative">
+                  <textarea
+                    value={newMessage}
+                    onChange={(e) => setNewMessage(e.target.value)}
+                    placeholder="Type your message..."
+                    rows={3}
+                    maxLength={5000}
+                    className={`w-full px-4 py-3 bg-gray-700/50 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none ${
+                      newMessage.length > 5000 
+                        ? "border-red-500" 
+                        : "border-gray-600"
+                    }`}
+                    disabled={isSubmitting}
+                  />
+                  <div className="absolute bottom-2 right-2 text-xs text-gray-400">
+                    <span className={newMessage.length > 4500 ? "text-yellow-400" : ""}>
+                      {newMessage.length}
+                    </span>
+                    <span className={newMessage.length > 5000 ? "text-red-400" : ""}>
+                      /5000
+                    </span>
+                  </div>
+                </div>
+                {newMessage.length > 5000 && (
+                  <p className="text-red-400 text-xs mt-1">
+                    Message cannot exceed 5000 characters
+                  </p>
+                )}
               </div>
               <div className="flex flex-col gap-2">
                 <button
                   type="submit"
-                  disabled={!newMessage.trim() || isSubmitting}
+                  disabled={!newMessage.trim() || newMessage.length > 5000 || isSubmitting}
                   className="px-4 py-3 bg-purple-600 hover:bg-purple-700 disabled:bg-purple-600/50 disabled:cursor-not-allowed text-white rounded-lg transition-colors flex items-center gap-2"
                 >
                   <Send className="h-4 w-4" />

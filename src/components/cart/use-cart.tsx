@@ -20,17 +20,18 @@ export function useCart() {
   // Get tRPC utils outside of callbacks
   const utils = trpc.useUtils();
 
-  // Get server cart data with better caching strategy
+  // Get server cart data with real-time stock validation
   const {
     data: serverCart,
     refetch: refetchCart,
     isLoading: isLoadingCart,
-  } = trpc.cart.get.useQuery(undefined, {
+  } = trpc.cart.getItems.useQuery(undefined, {
     enabled: !!session?.user?.id && isHydrated && status === "authenticated",
-    staleTime: 0, // Always fetch fresh data
+    staleTime: 0, // Always fetch fresh data for stock validation
     gcTime: 5 * 60 * 1000, // 5 minutes cache
-    refetchOnWindowFocus: false,
+    refetchOnWindowFocus: true, // Refetch when window gains focus to check stock
     refetchOnMount: true,
+    refetchInterval: 30000, // Refetch every 30 seconds for stock updates
     retry: (failureCount, error) => {
       // Don't retry on auth errors
       if (error.data?.code === "UNAUTHORIZED") {
@@ -44,7 +45,7 @@ export function useCart() {
   const addMutation = trpc.cart.add.useMutation({
     onMutate: async () => {
       // Cancel any outgoing refetches
-      await utils.cart.get.cancel();
+      await utils.cart.getItems.cancel();
 
       // Snapshot the previous value
       const previousItems = items;
@@ -78,7 +79,7 @@ export function useCart() {
 
   const updateMutation = trpc.cart.updateQuantity.useMutation({
     onMutate: async () => {
-      await utils.cart.get.cancel();
+      await utils.cart.getItems.cancel();
       const previousItems = items;
 
       return { previousItems };
@@ -99,7 +100,7 @@ export function useCart() {
 
   const removeMutation = trpc.cart.remove.useMutation({
     onMutate: async () => {
-      await utils.cart.get.cancel();
+      await utils.cart.getItems.cancel();
       const previousItems = items;
 
       return { previousItems };
@@ -120,7 +121,7 @@ export function useCart() {
 
   const clearMutation = trpc.cart.clear.useMutation({
     onMutate: async () => {
-      await utils.cart.get.cancel();
+      await utils.cart.getItems.cancel();
       const previousItems = items;
 
       return { previousItems };
@@ -140,10 +141,10 @@ export function useCart() {
     },
   });
 
-  // Sync server cart with local state
+  // Sync server cart with local state and handle stock adjustments
   useEffect(() => {
-    if (serverCart?.items && isHydrated) {
-      const formattedItems = serverCart.items.map((serverItem) => ({
+    if (serverCart && isHydrated && Array.isArray(serverCart)) {
+      const formattedItems = serverCart.map((serverItem) => ({
         id: serverItem.id,
         productId: serverItem.plan.product.id,
         planId: serverItem.plan.id,
@@ -158,9 +159,24 @@ export function useCart() {
         borderColor: serverItem.plan.product.borderColor || undefined,
         logoUrl: serverItem.plan.product.logoUrl || undefined,
         quantity: serverItem.quantity,
+        availableStock: serverItem.availableStock,
+        stockAdjusted: serverItem.stockAdjusted,
+        previousQuantity: 'previousQuantity' in serverItem ? serverItem.previousQuantity : undefined,
       }));
 
       setItems(formattedItems);
+
+      // Show notifications for stock adjustments
+      const adjustedItems = serverCart.filter((item) => item.stockAdjusted);
+      if (adjustedItems.length > 0) {
+        adjustedItems.forEach((item) => {
+          const previousQty = 'previousQuantity' in item ? item.previousQuantity : item.quantity;
+          toast.warning(
+            `${item.plan.product.name} quantity adjusted from ${previousQty} to ${item.quantity} due to limited stock`,
+            { duration: 5000 }
+          );
+        });
+      }
     }
   }, [serverCart, isHydrated, setItems]);
 
@@ -182,62 +198,61 @@ export function useCart() {
       quantity: number = 1,
     ) => {
       if (!session?.user?.id || status !== "authenticated") {
-        toast.error("Please sign in to add items to cart");
-        return;
+        toast.error("Please sign in to add items to your cart. You'll be redirected to the sign-in page.", {
+          duration: 3000,
+        });
+        // Redirect to sign in page after a short delay
+        setTimeout(() => {
+          window.location.href = "/auth/signin";
+        }, 1500);
+        throw new Error("User not authenticated");
       }
 
       // Call the mutation directly without optimistic updates
-      try {
-        await addMutation.mutateAsync({
-          planId: item.planId,
-          quantity,
-        });
-      } catch (error) {
-        // Error is already handled in onError callback
-        console.error("Add to cart error:", error);
-      }
+      // Let the error propagate so the calling component can handle success/failure
+      await addMutation.mutateAsync({
+        planId: item.planId,
+        quantity,
+      });
     },
     [session?.user?.id, status, addMutation],
   );
 
   const removeItem = useCallback(
     async (planId: string) => {
-      if (!session?.user?.id || status !== "authenticated") return;
-
-      try {
-        await removeMutation.mutateAsync({ planId });
-      } catch (error) {
-        console.error("Remove from cart error:", error);
+      if (!session?.user?.id || status !== "authenticated") {
+        throw new Error("User not authenticated");
       }
+
+      // Let the error propagate so the calling component can handle success/failure
+      await removeMutation.mutateAsync({ planId });
     },
     [session?.user?.id, status, removeMutation],
   );
 
   const updateQuantity = useCallback(
     async (planId: string, quantity: number) => {
-      if (!session?.user?.id || status !== "authenticated") return;
+      if (!session?.user?.id || status !== "authenticated") {
+        throw new Error("User not authenticated");
+      }
 
       if (quantity <= 0) {
         return removeItem(planId);
       }
 
-      try {
-        await updateMutation.mutateAsync({ planId, quantity });
-      } catch (error) {
-        console.error("Update quantity error:", error);
-      }
+      // Let the error propagate so the calling component can handle success/failure
+      await updateMutation.mutateAsync({ planId, quantity });
     },
     [session?.user?.id, status, updateMutation, removeItem],
   );
 
   const clearCart = useCallback(async () => {
-    if (!session?.user?.id || status !== "authenticated") return;
-
-    try {
-      await clearMutation.mutateAsync();
-    } catch (error) {
-      console.error("Clear cart error:", error);
+    if (!session?.user?.id || status !== "authenticated") {
+      throw new Error("User not authenticated");
     }
+
+    // Let the error propagate so the calling component can handle success/failure
+    await clearMutation.mutateAsync();
   }, [session?.user?.id, status, clearMutation]);
 
   return {

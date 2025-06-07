@@ -12,10 +12,13 @@ export const ticketRouter = createTRPCRouter({
   create: protectedProcedure
     .input(
       z.object({
-        title: z.string().min(5, "Title must be at least 5 characters"),
+        title: z.string()
+          .min(5, "Title must be at least 5 characters")
+          .max(200, "Title cannot exceed 200 characters"),
         description: z
           .string()
-          .min(10, "Description must be at least 10 characters"),
+          .min(10, "Description must be at least 10 characters")
+          .max(5000, "Description cannot exceed 5000 characters"),
         category: z.enum([
           "GENERAL",
           "ORDER_ISSUES",
@@ -104,7 +107,7 @@ export const ticketRouter = createTRPCRouter({
           },
         },
         orderBy: {
-          lastActivityAt: "desc",
+          createdAt: "desc",
         },
         take: input.limit,
         ...(input.cursor && {
@@ -181,7 +184,9 @@ export const ticketRouter = createTRPCRouter({
     .input(
       z.object({
         ticketId: z.string(),
-        message: z.string().min(1, "Message cannot be empty"),
+        message: z.string()
+          .min(1, "Message cannot be empty")
+          .max(5000, "Message cannot exceed 5000 characters"),
       }),
     )
     .mutation(async ({ ctx, input }) => {

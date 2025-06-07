@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import { useParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { redirect } from "next/navigation";
@@ -8,29 +9,46 @@ import {
   ArrowLeft,
   Calendar,
   CreditCard,
-  Download,
   CheckCircle,
   Clock,
   AlertTriangle,
   XCircle,
   Package,
   Receipt,
+  Copy,
+  Ticket,
 } from "lucide-react";
 import Link from "next/link";
 import { trpc } from "@/lib/trpc";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 
 // Type for order item with relations
 interface OrderItemWithRelations {
   id: string;
   quantity: number;
   price: { toString: () => string };
+  deliveryType: "MANUAL" | "AUTOMATIC";
+  deliveredAt?: Date | null;
+  ticketId?: string | null;
+  stockItemId?: string | null;
   plan: {
     planType: string;
+    deliveryType: "MANUAL" | "AUTOMATIC";
     product: {
       name: string;
+      logoUrl?: string | null;
     };
   };
+  ticket?: {
+    id: string;
+    ticketNumber: string;
+    status: string;
+  } | null;
+  stockItem?: {
+    id: string;
+    content: string;
+  } | null;
 }
 
 interface ExtendedUser {
@@ -45,6 +63,163 @@ interface OrderWithUser {
     name?: string | null;
     email?: string | null;
   };
+}
+
+// Component to display delivery details for each order item
+function DeliveryItemCard({ item }: { item: OrderItemWithRelations }) {
+  const [copied, setCopied] = React.useState(false);
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  if (item.deliveryType === "AUTOMATIC" && item.stockItem) {
+    // Automatic delivery - show the actual content
+    return (
+      <div className="p-4 bg-gray-700/30 rounded-lg border border-gray-600">
+        <div className="flex items-start justify-between mb-3">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center">
+              <CheckCircle className="w-4 h-4 text-white" />
+            </div>
+            <div>
+              <p className="text-white font-medium">
+                {item.plan.product.name}
+              </p>
+              <p className="text-gray-400 text-sm">
+                {item.plan.planType} Plan • Automatic Delivery
+              </p>
+            </div>
+          </div>
+          <span className="text-green-400 text-sm font-medium flex items-center gap-1">
+            <CheckCircle className="h-3 w-3" />
+            Delivered
+          </span>
+        </div>
+        
+        <div className="bg-gray-800/50 p-3 rounded border">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-gray-300 text-sm font-medium">Product Content:</span>
+            <button
+              onClick={() => copyToClipboard(item.stockItem!.content)}
+              className="flex items-center gap-1 px-2 py-1 text-xs bg-purple-600 hover:bg-purple-700 text-white rounded transition-colors"
+            >
+              <Copy className="h-3 w-3" />
+              {copied ? "Copied!" : "Copy"}
+            </button>
+          </div>
+          <div className="bg-gray-900/50 p-2 rounded font-mono text-sm text-gray-300 break-all">
+            {item.stockItem.content}
+          </div>
+        </div>
+        
+        {item.deliveredAt && (
+          <p className="text-gray-400 text-xs mt-2">
+            Delivered on {new Date(item.deliveredAt).toLocaleString()}
+          </p>
+        )}
+      </div>
+    );
+  } else if (item.deliveryType === "MANUAL" && item.ticket) {
+    // Manual delivery - show ticket information with button
+    const isDelivered = item.ticket.status === "RESOLVED" || item.ticket.status === "CLOSED";
+    
+    return (
+      <div className="p-4 bg-gray-700/30 rounded-lg border border-gray-600">
+        <div className="flex items-start justify-between mb-3">
+          <div className="flex items-center gap-3">
+            <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+              isDelivered ? "bg-green-600" : "bg-yellow-600"
+            }`}>
+              {isDelivered ? (
+                <CheckCircle className="w-4 h-4 text-white" />
+              ) : (
+                <Clock className="w-4 h-4 text-white" />
+              )}
+            </div>
+            <div>
+              <p className="text-white font-medium">
+                {item.plan.product.name}
+              </p>
+              <p className="text-gray-400 text-sm">
+                {item.plan.planType} Plan • Manual Delivery
+              </p>
+            </div>
+          </div>
+          <span className={`text-sm font-medium flex items-center gap-1 ${
+            isDelivered ? "text-green-400" : "text-yellow-400"
+          }`}>
+            {isDelivered ? (
+              <>
+                <CheckCircle className="h-3 w-3" />
+                Delivered
+              </>
+            ) : (
+              <>
+                <Clock className="h-3 w-3" />
+                Processing
+              </>
+            )}
+          </span>
+        </div>
+        
+        <div className="bg-gray-800/50 p-3 rounded border">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-gray-300 text-sm font-medium">Support Ticket: #{item.ticket.ticketNumber}</p>
+              <p className="text-gray-400 text-xs">
+                Status: <span className={`font-medium ${
+                  isDelivered ? "text-green-400" : "text-yellow-400"
+                }`}>
+                  {item.ticket.status.replace("_", " ")}
+                </span>
+              </p>
+            </div>
+            <Link
+              href={`/dashboard/support/${item.ticket.id}`}
+              className="flex items-center gap-1 px-3 py-1 text-sm bg-purple-600 hover:bg-purple-700 text-white rounded transition-colors"
+            >
+              <Ticket className="h-3 w-3" />
+              View Ticket
+            </Link>
+          </div>
+        </div>
+        
+        {item.deliveredAt && (
+          <p className="text-gray-400 text-xs mt-2">
+            Delivered on {new Date(item.deliveredAt).toLocaleString()}
+          </p>
+        )}
+      </div>
+    );
+  } else {
+    // Fallback for items without delivery info yet
+    return (
+      <div className="p-4 bg-gray-700/30 rounded-lg border border-gray-600">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-yellow-600 rounded-lg flex items-center justify-center">
+              <Clock className="w-4 h-4 text-white" />
+            </div>
+            <div>
+              <p className="text-white font-medium">
+                {item.plan.product.name}
+              </p>
+              <p className="text-gray-400 text-sm">
+                {item.plan.planType} Plan • {item.deliveryType} Delivery
+              </p>
+            </div>
+          </div>
+          <span className="text-yellow-400 text-sm font-medium flex items-center gap-1">
+            <Clock className="h-3 w-3" />
+            Processing
+          </span>
+        </div>
+      </div>
+    );
+  }
 }
 
 export default function OrderDetailPage() {
@@ -271,9 +446,27 @@ export default function OrderDetailPage() {
             <div key={item.id} className="p-6">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-4">
-                  <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-blue-500 rounded-lg flex items-center justify-center">
-                    <Package className="w-6 h-6 text-white" />
-                  </div>
+                  {item.plan.product.logoUrl ? (
+                    <Image
+                      src={item.plan.product.logoUrl}
+                      alt={item.plan.product.name}
+                      width={48}
+                      height={48}
+                      className="w-12 h-12 object-contain rounded-lg"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = "none";
+                        const fallback = target.nextElementSibling as HTMLElement;
+                        if (fallback) fallback.style.display = "flex";
+                      }}
+                      unoptimized
+                    />
+                  ) : null}
+                  {!item.plan.product.logoUrl && (
+                    <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-blue-500 rounded-lg flex items-center justify-center">
+                      <Package className="w-6 h-6 text-white" />
+                    </div>
+                  )}
                   <div>
                     <h3 className="text-white font-semibold">
                       {item.plan.product.name}
@@ -302,7 +495,7 @@ export default function OrderDetailPage() {
 
       {/* Order Summary & Payment Info */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Payment Information */}
+        {/* Payment Information & Order Summary */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -311,9 +504,10 @@ export default function OrderDetailPage() {
         >
           <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
             <CreditCard className="h-5 w-5" />
-            Payment Information
+            Payment & Order Summary
           </h3>
 
+          {/* Payment Information */}
           <div className="space-y-3 mb-6">
             <div className="flex justify-between">
               <span className="text-gray-400">Payment Method</span>
@@ -334,6 +528,30 @@ export default function OrderDetailPage() {
               <span className="text-white font-mono text-sm">
                 {order.id.slice(-8)}
               </span>
+            </div>
+          </div>
+
+          {/* Order Summary */}
+          <div className="border-t border-gray-700 pt-4 mb-6">
+            <div className="space-y-3">
+              <div className="flex justify-between text-gray-400">
+                <span>Subtotal</span>
+                <span>{formatCurrency(Number(order.total))}</span>
+              </div>
+              <div className="flex justify-between text-gray-400">
+                <span>Tax</span>
+                <span>$0.00</span>
+              </div>
+              <div className="flex justify-between text-gray-400">
+                <span>Shipping</span>
+                <span>Free</span>
+              </div>
+              <div className="border-t border-gray-700 pt-3">
+                <div className="flex justify-between text-white font-semibold text-lg">
+                  <span>Total</span>
+                  <span>{formatCurrency(Number(order.total))}</span>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -394,29 +612,9 @@ export default function OrderDetailPage() {
           </h3>
 
           {order.status === "COMPLETED" ? (
-            <div className="space-y-3">
+            <div className="max-h-96 overflow-y-auto space-y-4 pr-2">
               {order.items.map((item: OrderItemWithRelations) => (
-                <div
-                  key={item.id}
-                  className="flex items-center justify-between p-3 bg-gray-700/30 rounded-lg"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center">
-                      <CheckCircle className="w-4 h-4 text-white" />
-                    </div>
-                    <div>
-                      <p className="text-white font-medium">
-                        {item.plan.product.name}
-                      </p>
-                      <p className="text-gray-400 text-sm">
-                        {item.plan.planType} Plan
-                      </p>
-                    </div>
-                  </div>
-                  <span className="text-green-400 text-sm font-medium">
-                    Delivered
-                  </span>
-                </div>
+                <DeliveryItemCard key={item.id} item={item} />
               ))}
               <div className="mt-4 p-3 bg-green-900/20 border border-green-500/30 rounded-lg">
                 <p className="text-green-400 text-sm flex items-center gap-2">
@@ -431,7 +629,7 @@ export default function OrderDetailPage() {
               <p className="text-gray-400 text-sm">
                 Products will be delivered after payment is completed
               </p>
-              <div className="mt-4 space-y-2">
+              <div className="mt-4 space-y-2 max-h-48 overflow-y-auto">
                 {order.items.map((item: OrderItemWithRelations) => (
                   <div
                     key={item.id}
@@ -449,51 +647,7 @@ export default function OrderDetailPage() {
         </motion.div>
       </div>
 
-      {/* Order Total Breakdown */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.4 }}
-        className="bg-gray-800/50 backdrop-blur-lg p-6 rounded-2xl border border-gray-700"
-      >
-        <h3 className="text-lg font-semibold text-white mb-4">Order Summary</h3>
 
-        <div className="space-y-3">
-          <div className="flex justify-between text-gray-400">
-            <span>Subtotal</span>
-            <span>{formatCurrency(Number(order.total))}</span>
-          </div>
-          <div className="flex justify-between text-gray-400">
-            <span>Tax</span>
-            <span>$0.00</span>
-          </div>
-          <div className="flex justify-between text-gray-400">
-            <span>Shipping</span>
-            <span>Free</span>
-          </div>
-          <div className="border-t border-gray-700 pt-3">
-            <div className="flex justify-between text-white font-semibold text-lg">
-              <span>Total</span>
-              <span>{formatCurrency(Number(order.total))}</span>
-            </div>
-          </div>
-        </div>
-      </motion.div>
-
-      {/* Actions */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.5 }}
-        className="flex flex-col sm:flex-row gap-4"
-      >
-        {order.status === "COMPLETED" && (
-          <button className="flex items-center justify-center gap-2 px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors">
-            <Download className="h-4 w-4" />
-            Download Invoice
-          </button>
-        )}
-      </motion.div>
     </div>
   );
 }

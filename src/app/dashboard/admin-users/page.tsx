@@ -21,6 +21,7 @@ import { trpc, invalidatePatterns } from "@/lib/trpc";
 import { useState } from "react";
 import { UserRole } from "@prisma/client";
 
+
 interface ExtendedUser {
   id: string;
   name?: string | null;
@@ -443,14 +444,16 @@ export default function AdminUsersPage() {
                           >
                             <Edit className="h-4 w-4 text-white" />
                           </button>
-                          <button
-                            onClick={() => handleDeleteUser(user.id)}
-                            disabled={deleteUserMutation.isPending}
-                            className="p-2 bg-red-600 hover:bg-red-700 disabled:bg-red-600/50 rounded-lg transition-colors"
-                            title="Delete User"
-                          >
-                            <Trash2 className="h-4 w-4 text-white" />
-                          </button>
+                          {session?.user?.id !== user.id && (
+                            <button
+                              onClick={() => handleDeleteUser(user.id)}
+                              disabled={deleteUserMutation.isPending}
+                              className="p-2 bg-red-600 hover:bg-red-700 disabled:bg-red-600/50 rounded-lg transition-colors"
+                              title="Delete User"
+                            >
+                              <Trash2 className="h-4 w-4 text-white" />
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -553,14 +556,16 @@ export default function AdminUsersPage() {
                       >
                         <Edit className="h-4 w-4 text-white" />
                       </button>
-                      <button
-                        onClick={() => handleDeleteUser(user.id)}
-                        disabled={deleteUserMutation.isPending}
-                        className="p-2 bg-red-600 hover:bg-red-700 disabled:bg-red-600/50 rounded-lg transition-colors"
-                        title="Delete User"
-                      >
-                        <Trash2 className="h-4 w-4 text-white" />
-                      </button>
+                      {session?.user?.id !== user.id && (
+                        <button
+                          onClick={() => handleDeleteUser(user.id)}
+                          disabled={deleteUserMutation.isPending}
+                          className="p-2 bg-red-600 hover:bg-red-700 disabled:bg-red-600/50 rounded-lg transition-colors"
+                          title="Delete User"
+                        >
+                          <Trash2 className="h-4 w-4 text-white" />
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -602,11 +607,19 @@ export default function AdminUsersPage() {
 
       {/* Edit User Modal */}
       {editingUser && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div 
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setEditingUser(null);
+            }
+          }}
+        >
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             className="bg-gray-800 rounded-2xl border border-gray-700 p-6 w-full max-w-md"
+            onClick={(e) => e.stopPropagation()}
           >
             <h3 className="text-xl font-bold text-white mb-4">Edit User</h3>
 
@@ -660,20 +673,18 @@ export default function AdminUsersPage() {
                 </select>
               </div>
 
-              <div className="flex items-center">
+              <label className="flex items-center space-x-2">
                 <input
-                  type="checkbox"
                   id="isActive"
+                  type="checkbox"
                   checked={editForm.isActive}
                   onChange={(e) =>
                     setEditForm({ ...editForm, isActive: e.target.checked })
                   }
-                  className="mr-2"
+                  className="w-4 h-4 text-purple-600 bg-gray-700 border-gray-600 rounded focus:ring-purple-500 focus:ring-2"
                 />
-                <label htmlFor="isActive" className="text-sm text-gray-300">
-                  Active
-                </label>
-              </div>
+                <span className="text-sm text-gray-300">Active</span>
+              </label>
             </div>
 
             <div className="flex space-x-3 mt-6">

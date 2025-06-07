@@ -16,11 +16,14 @@ import {
   Eye,
 } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import { trpc } from "@/lib/trpc";
+import ReviewableItems from "@/components/dashboard/ReviewableItems";
 
 interface OrderPlan {
   product: {
     name: string;
+    logoUrl?: string | null;
   };
   planType: string;
 }
@@ -196,6 +199,9 @@ export default function OrdersPage() {
         </div>
       )}
 
+      {/* Reviewable Items */}
+      <ReviewableItems />
+
       {/* Orders List */}
       {ordersLoading ? (
         Array.from({ length: 3 }).map((_, i) => (
@@ -262,7 +268,25 @@ export default function OrdersPage() {
                   className="flex items-center justify-between p-3 bg-gray-700/30 rounded-lg"
                 >
                   <div className="flex items-center space-x-3">
-                    <Package className="w-4 h-4 text-purple-400" />
+                    {item.plan.product.logoUrl ? (
+                      <Image
+                        src={item.plan.product.logoUrl}
+                        alt={item.plan.product.name}
+                        width={24}
+                        height={24}
+                        className="w-6 h-6 object-contain rounded"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.style.display = "none";
+                          const fallback = target.nextElementSibling as HTMLElement;
+                          if (fallback) fallback.style.display = "inline-block";
+                        }}
+                        unoptimized
+                      />
+                    ) : null}
+                    {!item.plan.product.logoUrl && (
+                      <Package className="w-6 h-6 text-purple-400" />
+                    )}
                     <div>
                       <p className="text-white text-sm font-medium">
                         {item.plan.product.name}

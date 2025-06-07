@@ -131,6 +131,14 @@ export function Footer() {
               </li>
               <li>
                 <Link
+                  href="/dashboard/support/faq"
+                  className="text-gray-400 hover:text-white transition-colors"
+                >
+                  FAQ
+                </Link>
+              </li>
+              <li>
+                <Link
                   href="https://discord.gg/QWbHNAq9Dw"
                   target="_blank"
                   className="text-gray-400 hover:text-white transition-colors"

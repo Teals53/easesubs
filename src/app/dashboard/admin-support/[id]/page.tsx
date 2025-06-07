@@ -1,24 +1,23 @@
 "use client";
 
+import React, { useState } from "react";
 import { redirect } from "next/navigation";
-import { useState } from "react";
 import { motion } from "framer-motion";
 import {
   ArrowLeft,
   MessageCircle,
-  Clock,
-  AlertCircle,
-  CheckCircle,
   Edit,
-  Save,
-  X,
-  Send,
+  AlertTriangle,
+  Clock,
+  CheckCircle,
   Trash2,
+  Send,
 } from "lucide-react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { useParams, useRouter } from "next/navigation";
 import { trpc, invalidatePatterns } from "@/lib/trpc";
+
 
 interface ExtendedUser {
   id: string;
@@ -191,7 +190,7 @@ export default function AdminTicketDetailPage() {
       case "IN_PROGRESS":
         return <Clock className="h-5 w-5 text-blue-400" />;
       case "OPEN":
-        return <AlertCircle className="h-5 w-5 text-yellow-400" />;
+        return <AlertTriangle className="h-5 w-5 text-yellow-400" />;
       case "CLOSED":
         return <CheckCircle className="h-5 w-5 text-green-400" />;
       default:
@@ -315,34 +314,36 @@ export default function AdminTicketDetailPage() {
                   <select
                     value={newStatus}
                     onChange={(e) => setNewStatus(e.target.value)}
-                    className="px-3 py-1 bg-gray-700 border border-gray-600 rounded text-white text-sm"
+                    className="px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent min-w-[180px]"
                   >
                     <option value="">Select Status</option>
                     <option value="OPEN">Open</option>
                     <option value="IN_PROGRESS">In Progress</option>
+                    <option value="WAITING_FOR_CUSTOMER">Waiting for Customer</option>
+                    <option value="RESOLVED">Resolved</option>
                     <option value="CLOSED">Closed</option>
                   </select>
                   <button
                     onClick={handleStatusUpdate}
                     disabled={!newStatus || updateStatusMutation.isPending}
-                    className="p-1 text-green-400 hover:text-green-300 disabled:opacity-50"
+                    className="px-3 py-2 bg-green-600 hover:bg-green-700 disabled:bg-green-800 text-white rounded-lg transition-colors text-sm disabled:opacity-50"
                   >
-                    <Save className="h-4 w-4" />
+                    {updateStatusMutation.isPending ? "..." : "Save"}
                   </button>
                   <button
                     onClick={() => {
                       setEditingStatus(false);
                       setNewStatus("");
                     }}
-                    className="p-1 text-gray-400 hover:text-gray-300"
+                    className="px-3 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors text-sm"
                   >
-                    <X className="h-4 w-4" />
+                    Cancel
                   </button>
                 </div>
               ) : (
                 <div className="flex items-center gap-2">
                   <span
-                    className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium border ${getStatusColor(ticket.status)}`}
+                    className={`inline-flex items-center gap-2 px-3 py-1 rounded-lg text-sm font-medium border ${getStatusColor(ticket.status)}`}
                   >
                     {getStatusIcon(ticket.status)}
                     {ticket.status.replace("_", " ")}
@@ -352,7 +353,8 @@ export default function AdminTicketDetailPage() {
                       setEditingStatus(true);
                       setNewStatus(ticket.status);
                     }}
-                    className="p-1 text-gray-400 hover:text-gray-300"
+                    className="p-1 text-gray-400 hover:text-white rounded transition-colors"
+                    title="Change Status"
                   >
                     <Edit className="h-4 w-4" />
                   </button>
@@ -477,21 +479,23 @@ export default function AdminTicketDetailPage() {
 
         {/* Add Message Form */}
         <div className="p-4 md:p-6 border-t border-gray-700 bg-gray-800/30">
-          <form onSubmit={handleAddMessage} className="space-y-4">
-            <div className="flex items-center gap-2 mb-3">
-              <label className="flex items-center gap-2 text-sm text-gray-400">
-                <input
-                  type="checkbox"
-                  checked={isInternal}
-                  onChange={(e) => setIsInternal(e.target.checked)}
-                  className="rounded border-gray-600 bg-gray-700 text-blue-600 focus:ring-blue-500"
-                />
-                <span className="hidden sm:inline">
-                  Internal message (not visible to customer)
-                </span>
-                <span className="sm:hidden">Internal</span>
-              </label>
-            </div>
+                      <form onSubmit={handleAddMessage} className="space-y-4">
+              <div className="flex items-center gap-3 mb-3">
+                <label className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    checked={isInternal}
+                    onChange={(e) => setIsInternal(e.target.checked)}
+                    className="w-4 h-4 text-yellow-600 bg-gray-700 border-gray-600 rounded focus:ring-yellow-500 focus:ring-2"
+                  />
+                  <span className="text-sm text-gray-300">
+                    <span className="hidden sm:inline">
+                      Internal message (not visible to customer)
+                    </span>
+                    <span className="sm:hidden">Internal</span>
+                  </span>
+                </label>
+              </div>
 
             <div className="relative">
               <textarea
@@ -499,12 +503,25 @@ export default function AdminTicketDetailPage() {
                 onChange={(e) => setNewMessage(e.target.value)}
                 placeholder="Type your message..."
                 rows={3}
-                className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
+                maxLength={5000}
+                className={`w-full px-4 py-3 bg-gray-700 border rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none pr-20 ${
+                  newMessage.length > 5000 
+                    ? "border-red-500" 
+                    : "border-gray-600"
+                }`}
               />
+              <div className="absolute top-2 right-2 text-xs text-gray-400">
+                <span className={newMessage.length > 4500 ? "text-yellow-400" : ""}>
+                  {newMessage.length}
+                </span>
+                <span className={newMessage.length > 5000 ? "text-red-400" : ""}>
+                  /5000
+                </span>
+              </div>
               <div className="absolute bottom-3 right-3">
                 <button
                   type="submit"
-                  disabled={!newMessage.trim() || addMessageMutation.isPending}
+                  disabled={!newMessage.trim() || newMessage.length > 5000 || addMessageMutation.isPending}
                   className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-600 disabled:text-gray-400 text-white rounded-lg transition-colors"
                 >
                   <Send className="h-4 w-4" />
@@ -514,6 +531,11 @@ export default function AdminTicketDetailPage() {
                 </button>
               </div>
             </div>
+            {newMessage.length > 5000 && (
+              <p className="text-red-400 text-xs mt-1">
+                Message cannot exceed 5000 characters
+              </p>
+            )}
           </form>
         </div>
       </motion.div>

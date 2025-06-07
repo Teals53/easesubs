@@ -2,6 +2,7 @@ import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 
+
 export const orderRouter = createTRPCRouter({
   create: protectedProcedure
     .input(
@@ -62,9 +63,10 @@ export const orderRouter = createTRPCRouter({
           });
         }
 
-        // Check stock availability
+        // Enhanced stock availability check with detailed error messages
+        const stockValidationErrors = [];
         for (const item of input.items) {
-          const plan = plans.find((p) => p.id === item.planId);
+          const plan = plans.find((p: typeof plans[0]) => p.id === item.planId);
           if (!plan) {
             throw new TRPCError({
               code: "BAD_REQUEST",
@@ -72,21 +74,52 @@ export const orderRouter = createTRPCRouter({
             });
           }
 
-          if (
-            plan.stockQuantity !== null &&
-            plan.stockQuantity < item.quantity
-          ) {
-            throw new TRPCError({
-              code: "BAD_REQUEST",
-              message: `Insufficient stock for ${plan.product.name}. Available: ${plan.stockQuantity}, Requested: ${item.quantity}`,
+          // For AUTOMATIC delivery, check stock availability
+          if (plan.deliveryType === "AUTOMATIC") {
+            const availableStock = await ctx.db.stockItem.count({
+              where: {
+                planId: item.planId,
+                isUsed: false,
+              },
             });
+
+            if (availableStock === 0) {
+              stockValidationErrors.push({
+                productName: plan.product.name,
+                planType: plan.planType,
+                requested: item.quantity,
+                available: 0,
+                error: "Out of stock",
+              });
+            } else if (availableStock < item.quantity) {
+              stockValidationErrors.push({
+                productName: plan.product.name,
+                planType: plan.planType,
+                requested: item.quantity,
+                available: availableStock,
+                error: `Only ${availableStock} available`,
+              });
+            }
           }
+          // MANUAL delivery plans have unlimited stock
+        }
+
+        // If there are stock validation errors, throw detailed error
+        if (stockValidationErrors.length > 0) {
+          const errorMessages = stockValidationErrors.map(
+            (error) => `${error.productName} (${error.planType}): ${error.error}`
+          );
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: `Stock validation failed:\n${errorMessages.join('\n')}`,
+            cause: { stockErrors: stockValidationErrors },
+          });
         }
 
         // Calculate totals
         let subtotal = 0;
         const orderItems = input.items.map((item) => {
-          const plan = plans.find((p) => p.id === item.planId);
+          const plan = plans.find((p: typeof plans[0]) => p.id === item.planId);
           if (!plan) {
             throw new TRPCError({
               code: "BAD_REQUEST",
@@ -100,6 +133,7 @@ export const orderRouter = createTRPCRouter({
             quantity: item.quantity,
             price: plan.price,
             currency: plan.currency,
+            deliveryType: plan.deliveryType as "MANUAL" | "AUTOMATIC",
           };
         });
 
@@ -110,22 +144,8 @@ export const orderRouter = createTRPCRouter({
         // Generate order number
         const orderNumber = `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 5).toUpperCase()}`;
 
-        // Update stock quantities for non-admin orders
-        if (input.paymentMethod !== "ADMIN_BYPASS") {
-          for (const item of input.items) {
-            const plan = plans.find((p) => p.id === item.planId);
-            if (plan && plan.stockQuantity !== null) {
-              await ctx.db.productPlan.update({
-                where: { id: item.planId },
-                data: {
-                  stockQuantity: {
-                    decrement: item.quantity,
-                  },
-                },
-              });
-            }
-          }
-        }
+        // Stock is now managed through the StockItem system for AUTOMATIC delivery
+        // MANUAL delivery plans don't require stock management
 
         // Create order
         const order = await ctx.db.order.create({
@@ -154,13 +174,17 @@ export const orderRouter = createTRPCRouter({
           include: {
             items: {
               include: {
-                plan: true,
+                plan: {
+                  include: {
+                    product: true,
+                  },
+                },
               },
             },
           },
         });
 
-        // If ADMIN_BYPASS, create subscriptions immediately
+        // If ADMIN_BYPASS, create subscriptions immediately and auto ticket
         if (input.paymentMethod === "ADMIN_BYPASS" && orderWithItems) {
           for (const item of orderWithItems.items) {
             const startDate = new Date();
@@ -183,6 +207,21 @@ export const orderRouter = createTRPCRouter({
                 autoRenew: true,
               },
             });
+          }
+
+          // Process deliveries for admin bypass orders
+          try {
+            const { DeliveryService } = await import("@/lib/delivery-service");
+            for (const item of orderWithItems.items) {
+              const deliveryResult = await DeliveryService.processDelivery({
+                orderId: orderWithItems.id,
+                orderItemId: item.id,
+              });
+              console.log(`✅ Processed delivery for admin bypass order item ${item.id}:`, deliveryResult);
+            }
+          } catch (deliveryError) {
+            console.error("Failed to process deliveries for admin bypass order:", deliveryError);
+            // Don't fail the order creation for delivery errors
           }
         }
 
@@ -241,6 +280,19 @@ export const orderRouter = createTRPCRouter({
                   product: true,
                 },
               },
+              ticket: {
+                select: {
+                  id: true,
+                  ticketNumber: true,
+                  status: true,
+                },
+              },
+              stockItem: {
+                select: {
+                  id: true,
+                  content: true,
+                },
+              },
             },
           },
           payments: {
@@ -283,6 +335,19 @@ export const orderRouter = createTRPCRouter({
               plan: {
                 include: {
                   product: true,
+                },
+              },
+              ticket: {
+                select: {
+                  id: true,
+                  ticketNumber: true,
+                  status: true,
+                },
+              },
+              stockItem: {
+                select: {
+                  id: true,
+                  content: true,
                 },
               },
             },
@@ -341,17 +406,9 @@ export const orderRouter = createTRPCRouter({
         data: { status: "CANCELLED" },
       });
 
-      // Restore stock quantities
-      for (const item of order.items) {
-        await ctx.db.productPlan.update({
-          where: { id: item.planId },
-          data: {
-            stockQuantity: {
-              increment: item.quantity,
-            },
-          },
-        });
-      }
+      // Restore stock quantities - Note: Stock is managed through StockItem table, not ProductPlan
+      // The stock restoration is handled automatically when StockItems are marked as unused
+      // This section is kept for reference but the stockQuantity field doesn't exist
 
       return updatedOrder;
     }),
@@ -390,4 +447,307 @@ export const orderRouter = createTRPCRouter({
       totalSpent: totalSpent._sum.total || 0,
     };
   }),
+
+  // New endpoint to handle order conflicts and stock validation during payment
+  validateOrderForPayment: protectedProcedure
+    .input(z.object({ orderId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const order = await ctx.db.order.findFirst({
+        where: {
+          id: input.orderId,
+          userId: ctx.session.user.id,
+          status: "PENDING", // Only validate pending orders
+        },
+        include: {
+          items: {
+            include: {
+              plan: {
+                include: {
+                  product: true,
+                },
+              },
+            },
+          },
+        },
+      });
+
+      if (!order) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Order not found or already processed",
+        });
+      }
+
+      const validationResults = [];
+      let hasStockIssues = false;
+
+      for (const item of order.items) {
+        if (item.plan.deliveryType === "AUTOMATIC") {
+          const availableStock = await ctx.db.stockItem.count({
+            where: {
+              planId: item.planId,
+              isUsed: false,
+            },
+          });
+
+          if (availableStock === 0) {
+            validationResults.push({
+              orderItemId: item.id,
+              planId: item.planId,
+              productName: item.plan.product.name,
+              planType: item.plan.planType,
+              requestedQuantity: item.quantity,
+              availableStock: 0,
+              valid: false,
+              error: "Out of stock",
+            });
+            hasStockIssues = true;
+          } else if (availableStock < item.quantity) {
+            validationResults.push({
+              orderItemId: item.id,
+              planId: item.planId,
+              productName: item.plan.product.name,
+              planType: item.plan.planType,
+              requestedQuantity: item.quantity,
+              availableStock,
+              valid: false,
+              error: `Only ${availableStock} available`,
+            });
+            hasStockIssues = true;
+          } else {
+            validationResults.push({
+              orderItemId: item.id,
+              planId: item.planId,
+              productName: item.plan.product.name,
+              planType: item.plan.planType,
+              requestedQuantity: item.quantity,
+              availableStock,
+              valid: true,
+              error: null,
+            });
+          }
+        } else {
+          // MANUAL delivery is always valid
+          validationResults.push({
+            orderItemId: item.id,
+            planId: item.planId,
+            productName: item.plan.product.name,
+            planType: item.plan.planType,
+            requestedQuantity: item.quantity,
+            availableStock: null,
+            valid: true,
+            error: null,
+          });
+        }
+      }
+
+      return {
+        orderId: order.id,
+        orderNumber: order.orderNumber,
+        valid: !hasStockIssues,
+        items: validationResults,
+        canProceedWithPayment: !hasStockIssues,
+      };
+    }),
+
+  // New endpoint to cancel order due to stock conflicts
+  cancelDueToStockConflict: protectedProcedure
+    .input(z.object({ 
+      orderId: z.string(),
+      reason: z.string().optional().default("Stock no longer available")
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const order = await ctx.db.order.findFirst({
+        where: {
+          id: input.orderId,
+          userId: ctx.session.user.id,
+          status: "PENDING",
+        },
+        include: {
+          items: {
+            include: {
+              plan: {
+                include: {
+                  product: true,
+                },
+              },
+            },
+          },
+        },
+      });
+
+      if (!order) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Order not found or cannot be cancelled",
+        });
+      }
+
+      // Update order status to cancelled
+      const cancelledOrder = await ctx.db.order.update({
+        where: { id: input.orderId },
+        data: {
+          status: "CANCELLED",
+          completedAt: new Date(),
+        },
+        include: {
+          items: {
+            include: {
+              plan: {
+                include: {
+                  product: true,
+                },
+              },
+            },
+          },
+        },
+      });
+
+             // Clear user's cart items for the cancelled products
+       const planIds = order.items.map((item: typeof order.items[0]) => item.planId);
+      await ctx.db.cartItem.deleteMany({
+        where: {
+          userId: ctx.session.user.id,
+          planId: { in: planIds },
+        },
+      });
+
+      return {
+        orderId: cancelledOrder.id,
+        orderNumber: cancelledOrder.orderNumber,
+        status: cancelledOrder.status,
+        reason: input.reason,
+                 cancelledItems: cancelledOrder.items.map((item: typeof cancelledOrder.items[0]) => ({
+          productName: item.plan.product.name,
+          planType: item.plan.planType,
+          quantity: item.quantity,
+        })),
+      };
+    }),
+
+  // New endpoint to cancel conflicting orders when stock is consumed
+  cancelConflictingOrders: protectedProcedure
+    .input(z.object({ 
+      completedOrderId: z.string(),
+      planIds: z.array(z.string()),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      // This endpoint is called when an order is completed to cancel other pending orders for the same products
+      
+      const conflictingOrders = await ctx.db.order.findMany({
+        where: {
+          id: { not: input.completedOrderId }, // Exclude the completed order
+          status: "PENDING",
+          items: {
+            some: {
+              planId: { in: input.planIds },
+              plan: {
+                deliveryType: "AUTOMATIC", // Only check automatic delivery items
+              },
+            },
+          },
+        },
+        include: {
+          items: {
+            include: {
+              plan: {
+                include: {
+                  product: true,
+                },
+              },
+            },
+          },
+          user: true,
+          payments: true,
+        },
+      });
+
+      const cancelledOrders = [];
+
+      for (const order of conflictingOrders) {
+        // Check if this order has stock conflicts
+        const stockConflicts: Array<{
+          planId: string;
+          productName: string;
+          planType: string;
+          requested: number;
+          available: number;
+        }> = [];
+        
+        for (const item of order.items) {
+          if (item.plan.deliveryType === "AUTOMATIC") {
+            const availableStock = await ctx.db.stockItem.count({
+              where: {
+                planId: item.planId,
+                isUsed: false,
+              },
+            });
+
+            if (availableStock < item.quantity) {
+              stockConflicts.push({
+                planId: item.planId,
+                productName: item.plan.product.name,
+                planType: item.plan.planType,
+                requested: item.quantity,
+                available: availableStock,
+              });
+            }
+          }
+        }
+
+        // If there are stock conflicts, cancel this order
+        if (stockConflicts.length > 0) {
+          const cancelledOrder = await ctx.db.$transaction(async (tx) => {
+            // Update order status
+            const updatedOrder = await tx.order.update({
+              where: { id: order.id },
+              data: {
+                status: "CANCELLED",
+                completedAt: new Date(),
+              },
+            });
+
+            // Update any pending payments for this order
+            await tx.payment.updateMany({
+              where: {
+                orderId: order.id,
+                status: "PENDING",
+              },
+              data: {
+                status: "CANCELLED",
+                failureReason: `Order cancelled due to stock conflict: ${stockConflicts.map(c => `${c.productName} (${c.available}/${c.requested})`).join(', ')}`,
+                completedAt: new Date(),
+              },
+            });
+
+            // Clear user's cart items for the cancelled products
+            const conflictPlanIds = stockConflicts.map(c => c.planId);
+            await tx.cartItem.deleteMany({
+              where: {
+                userId: order.userId,
+                planId: { in: conflictPlanIds },
+              },
+            });
+
+            return updatedOrder;
+          });
+
+          cancelledOrders.push({
+            orderId: cancelledOrder.id,
+            orderNumber: order.orderNumber,
+            userId: order.userId,
+            userEmail: order.user.email,
+            stockConflicts,
+            cancelledAt: new Date(),
+          });
+
+          console.log(`🚫 Cancelled conflicting order ${order.orderNumber} due to stock conflicts:`, stockConflicts);
+        }
+      }
+
+      return {
+        cancelledCount: cancelledOrders.length,
+        cancelledOrders,
+      };
+    }),
 });

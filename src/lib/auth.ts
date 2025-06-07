@@ -9,6 +9,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(db),
   session: {
     strategy: "jwt",
+    maxAge: 30 * 24 * 60 * 60, // 30 days
+    updateAge: 24 * 60 * 60, // 24 hours
   },
   pages: {
     signIn: "/auth/signin",
@@ -26,6 +28,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         sameSite: "lax",
         path: "/",
         secure: process.env.NODE_ENV === "production",
+        maxAge: 30 * 24 * 60 * 60, // 30 days
       },
     },
   },
@@ -89,33 +92,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
     async session({ session, token }) {
       if (token && token.sub) {
-        // Set the basic session data first
+        // Set the basic session data - no database queries here
         session.user.id = token.sub;
         session.user.role = token.role as string;
-
-        // Validate that the user still exists in the database (optional check)
-        try {
-          const dbUser = await db.user.findUnique({
-            where: { id: token.sub },
-            select: { id: true, isActive: true },
-          });
-
-          if (!dbUser || !dbUser.isActive) {
-            console.log(
-              "Session validation warning - user not found or inactive:",
-              {
-                tokenSub: token.sub,
-                userExists: !!dbUser,
-                isActive: dbUser?.isActive,
-              },
-            );
-            // Note: We're not expiring the session immediately, just logging the issue
-            // The user will be handled at the API level if needed
-          }
-        } catch (error) {
-          console.error("Error validating user session (non-critical):", error);
-          // Continue with the session anyway - don't break user experience
-        }
+        
+        // Remove the database validation from here to prevent repeated queries
+        // User validation will be handled at the API/middleware level when needed
       }
       return session;
     },

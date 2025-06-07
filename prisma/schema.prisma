@@ -94,7 +94,7 @@ model Product {
   name           String
   slug           String          @unique
   description    String?
-  category       ProductCategory
+  categoryId     String          @map("category_id")
   logoUrl        String?         @map("logo_url")
   logoName       String?         @map("logo_name")
   borderColor    String?         @map("border_color")
@@ -107,8 +107,25 @@ model Product {
   updatedAt      DateTime        @updatedAt @map("updated_at")
   plans          ProductPlan[]
   reviews        Review[]
+  category       Category        @relation(fields: [categoryId], references: [id])
 
   @@map("products")
+}
+
+model Category {
+  id           String    @id @default(cuid())
+  name         String    @unique
+  slug         String    @unique
+  description  String?
+  color        String?   // Hex color code for UI theming
+  icon         String?   // Icon name or URL
+  isActive     Boolean   @default(true) @map("is_active")
+  displayOrder Int?      @map("display_order")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  products     Product[]
+
+  @@map("categories")
 }
 
 model ProductPlan {
@@ -124,14 +141,15 @@ model ProductPlan {
   features         Json?
   isPopular        Boolean            @default(false) @map("is_popular")
   isAvailable      Boolean            @default(true) @map("is_available")
-  stockQuantity    Int?               @map("stock_quantity")
   maxSubscriptions Int?               @map("max_subscriptions")
+  deliveryType     DeliveryType       @map("delivery_type")
   createdAt        DateTime           @default(now()) @map("created_at")
   updatedAt        DateTime           @updatedAt @map("updated_at")
   cartItems        CartItem[]
   orderItems       OrderItem[]
   product          Product            @relation(fields: [productId], references: [id], onDelete: Cascade)
   subscriptions    UserSubscription[]
+  stockItems       StockItem[]
 
   @@unique([productId, planType])
   @@map("product_plans")
@@ -188,15 +206,22 @@ model Order {
 }
 
 model OrderItem {
-  id        String      @id @default(cuid())
-  orderId   String      @map("order_id")
-  planId    String      @map("plan_id")
-  quantity  Int         @default(1)
-  price     Decimal     @db.Decimal(10, 2)
-  currency  String      @default("USD")
-  createdAt DateTime    @default(now()) @map("created_at")
-  order     Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  plan      ProductPlan @relation(fields: [planId], references: [id])
+  id           String           @id @default(cuid())
+  orderId      String           @map("order_id")
+  planId       String           @map("plan_id")
+  quantity     Int              @default(1)
+  price        Decimal          @db.Decimal(10, 2)
+  currency     String           @default("USD")
+  deliveryType DeliveryType     @map("delivery_type")
+  deliveredAt  DateTime?        @map("delivered_at")
+  ticketId     String?          @map("ticket_id")
+  stockItemId  String?          @map("stock_item_id")
+  createdAt    DateTime         @default(now()) @map("created_at")
+  order        Order            @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  plan         ProductPlan      @relation(fields: [planId], references: [id])
+  ticket       SupportTicket?   @relation(fields: [ticketId], references: [id])
+  stockItem    StockItem?       @relation(fields: [stockItemId], references: [id])
+  reviews      Review[]
 
   @@map("order_items")
 }
@@ -259,20 +284,23 @@ model Address {
 }
 
 model Review {
-  id         String   @id @default(cuid())
-  userId     String   @map("user_id")
-  productId  String   @map("product_id")
-  rating     Int
-  title      String?
-  comment    String?
-  isVerified Boolean  @default(false) @map("is_verified")
-  isApproved Boolean  @default(false) @map("is_approved")
-  createdAt  DateTime @default(now()) @map("created_at")
-  updatedAt  DateTime @updatedAt @map("updated_at")
-  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id          String    @id @default(cuid())
+  userId      String    @map("user_id")
+  productId   String    @map("product_id")
+  orderItemId String    @map("order_item_id")
+  rating      Int       @db.SmallInt // 1-5 rating
+  title       String?
+  comment     String?
+  isVerified  Boolean   @default(true) @map("is_verified") // Always true since only buyers can review
+  isApproved  Boolean   @default(true) @map("is_approved") // Auto-approve verified purchases
+  helpfulCount Int      @default(0) @map("helpful_count")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  product     Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orderItem   OrderItem @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
 
-  @@unique([userId, productId])
+  @@unique([userId, orderItemId]) // One review per order item per user
   @@map("reviews")
 }
 
@@ -281,6 +309,7 @@ model SupportTicket {
   ticketNumber    String                    @unique @map("ticket_number")
   userId          String                    @map("user_id")
   assignedAgentId String?                   @map("assigned_agent_id")
+  orderId         String?                   @map("order_id")
   title           String
   description     String
   status          TicketStatus              @default(OPEN)
@@ -288,6 +317,7 @@ model SupportTicket {
   category        TicketCategory            @default(GENERAL)
   tags            String[]                  @default([])
   isInternal      Boolean                   @default(false) @map("is_internal")
+  isAutoCreated   Boolean                   @default(false) @map("is_auto_created")
   resolvedAt      DateTime?                 @map("resolved_at")
   closedAt        DateTime?                 @map("closed_at")
   firstResponseAt DateTime?                 @map("first_response_at")
@@ -298,6 +328,7 @@ model SupportTicket {
   messages        SupportTicketMessage[]
   assignedAgent   User?                     @relation("AssignedAgent", fields: [assignedAgentId], references: [id])
   user            User                      @relation(fields: [userId], references: [id])
+  orderItems      OrderItem[]
 
   @@map("support_tickets")
 }
@@ -373,6 +404,20 @@ model ProductView {
   @@map("product_views")
 }
 
+model StockItem {
+  id         String      @id @default(cuid())
+  planId     String      @map("plan_id")
+  content    String      // The actual product content (license key, credentials, etc.)
+  isUsed     Boolean     @default(false) @map("is_used")
+  usedAt     DateTime?   @map("used_at")
+  createdAt  DateTime    @default(now()) @map("created_at")
+  updatedAt  DateTime    @updatedAt @map("updated_at")
+  plan       ProductPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+  orderItems OrderItem[]
+
+  @@map("stock_items")
+}
+
 enum UserRole {
   USER
   ADMIN
@@ -380,16 +425,7 @@ enum UserRole {
   MANAGER
 }
 
-enum ProductCategory {
-  STREAMING_MEDIA
-  PRODUCTIVITY_TOOLS
-  CREATIVE_DESIGN
-  LEARNING_EDUCATION
-  SOCIAL_COMMUNICATION
-  GAMING
-  BUSINESS_FINANCE
-  HEALTH_FITNESS
-}
+
 
 enum BillingPeriod {
   MONTHLY
@@ -467,4 +503,9 @@ enum CouponType {
   PERCENTAGE
   FIXED_AMOUNT
   FREE_SHIPPING
+}
+
+enum DeliveryType {
+  MANUAL
+  AUTOMATIC
 }

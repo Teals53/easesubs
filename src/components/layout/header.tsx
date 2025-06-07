@@ -3,7 +3,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Menu, X, User, ShoppingCart } from "lucide-react";
 import Link from "next/link";
-import { useSession, signOut } from "next-auth/react";
+import { signOut } from "next-auth/react";
+import { useSessionContext } from "@/lib/session-context";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCartStore } from "@/components/cart/cart-provider";
 import { useCart } from "@/components/cart/use-cart";
@@ -12,7 +13,7 @@ export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
-  const { data: session } = useSession();
+  const { session } = useSessionContext();
   const { toggleCart } = useCartStore();
   const { totalItems, isHydrated } = useCart();
   const userMenuRef = useRef<HTMLDivElement>(null);

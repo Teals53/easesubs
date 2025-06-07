@@ -130,7 +130,7 @@ export const adminRouter = createTRPCRouter({
 
     // Recent orders
     const recentOrders = await ctx.db.order.findMany({
-      take: 10,
+      take: 15,
       orderBy: { createdAt: "desc" },
       include: {
         user: { select: { name: true, email: true } },
@@ -146,7 +146,7 @@ export const adminRouter = createTRPCRouter({
 
     // Recent users
     const recentUsers = await ctx.db.user.findMany({
-      take: 10,
+      take: 15,
       orderBy: { createdAt: "desc" },
       select: {
         id: true,
@@ -160,17 +160,38 @@ export const adminRouter = createTRPCRouter({
 
     // Recent support tickets
     const recentTickets = await ctx.db.supportTicket.findMany({
-      take: 10,
+      take: 15,
       orderBy: { createdAt: "desc" },
       include: {
         user: { select: { name: true, email: true } },
       },
     });
 
+    // Combine all activities and sort by creation date
+    const allActivities = [
+      ...recentOrders.map(order => ({
+        type: 'order' as const,
+        data: order,
+        createdAt: order.createdAt,
+      })),
+      ...recentUsers.map(user => ({
+        type: 'user' as const,
+        data: user,
+        createdAt: user.createdAt,
+      })),
+      ...recentTickets.map(ticket => ({
+        type: 'ticket' as const,
+        data: ticket,
+        createdAt: ticket.createdAt,
+      })),
+    ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+     .slice(0, 10); // Take the 10 most recent activities
+
     return {
       orders: recentOrders,
       users: recentUsers,
       tickets: recentTickets,
+      combinedActivities: allActivities,
     };
   }),
 
@@ -459,18 +480,7 @@ export const adminRouter = createTRPCRouter({
     .input(
       z.object({
         search: z.string().optional(),
-        category: z
-          .enum([
-            "STREAMING_MEDIA",
-            "PRODUCTIVITY_TOOLS",
-            "CREATIVE_DESIGN",
-            "LEARNING_EDUCATION",
-            "SOCIAL_COMMUNICATION",
-            "GAMING",
-            "BUSINESS_FINANCE",
-            "HEALTH_FITNESS",
-          ])
-          .optional(),
+        categoryId: z.string().optional(),
         page: z.number().min(1).default(1),
         limit: z.number().min(1).max(100).default(20),
       }),
@@ -484,7 +494,7 @@ export const adminRouter = createTRPCRouter({
         });
       }
 
-      const { page, limit, search, category } = input;
+      const { page, limit, search, categoryId } = input;
       const skip = (page - 1) * limit;
 
       const where: Prisma.ProductWhereInput = {};
@@ -493,11 +503,12 @@ export const adminRouter = createTRPCRouter({
         where.OR = [
           { name: { contains: search, mode: "insensitive" as const } },
           { description: { contains: search, mode: "insensitive" as const } },
+          { category: { name: { contains: search, mode: "insensitive" as const } } },
         ];
       }
 
-      if (category) {
-        where.category = category;
+      if (categoryId) {
+        where.categoryId = categoryId;
       }
 
       const [products, total, stats] = await Promise.all([
@@ -506,6 +517,7 @@ export const adminRouter = createTRPCRouter({
           skip,
           take: limit,
           include: {
+            category: true,
             plans: {
               orderBy: { price: "asc" },
               take: 1, // Get cheapest plan for pricing display
@@ -548,16 +560,7 @@ export const adminRouter = createTRPCRouter({
         name: z.string().min(1, "Product name is required"),
         slug: z.string().min(1, "Slug is required"),
         description: z.string().optional(),
-        category: z.enum([
-          "STREAMING_MEDIA",
-          "PRODUCTIVITY_TOOLS",
-          "CREATIVE_DESIGN",
-          "LEARNING_EDUCATION",
-          "SOCIAL_COMMUNICATION",
-          "GAMING",
-          "BUSINESS_FINANCE",
-          "HEALTH_FITNESS",
-        ]),
+        categoryId: z.string().min(1, "Category is required"),
         logoUrl: z.string().optional(),
         logoName: z.string().optional(),
         borderColor: z.string().optional(),
@@ -583,8 +586,8 @@ export const adminRouter = createTRPCRouter({
               features: z.array(z.string()).optional(),
               isPopular: z.boolean().default(false),
               isAvailable: z.boolean().default(true),
-              stockQuantity: z.number().nullable().optional(),
               maxSubscriptions: z.number().optional(),
+              deliveryType: z.enum(["MANUAL", "AUTOMATIC"]).default("MANUAL"),
             }),
           )
           .min(1, "At least one plan is required"),
@@ -620,6 +623,7 @@ export const adminRouter = createTRPCRouter({
             create: plans.map((plan) => ({
               ...plan,
               features: plan.features ? plan.features : undefined,
+              deliveryType: plan.deliveryType,
             })),
           },
         },
@@ -638,18 +642,7 @@ export const adminRouter = createTRPCRouter({
         name: z.string().min(1, "Product name is required").optional(),
         slug: z.string().min(1, "Slug is required").optional(),
         description: z.string().optional(),
-        category: z
-          .enum([
-            "STREAMING_MEDIA",
-            "PRODUCTIVITY_TOOLS",
-            "CREATIVE_DESIGN",
-            "LEARNING_EDUCATION",
-            "SOCIAL_COMMUNICATION",
-            "GAMING",
-            "BUSINESS_FINANCE",
-            "HEALTH_FITNESS",
-          ])
-          .optional(),
+        categoryId: z.string().optional(),
         logoUrl: z.string().optional(),
         logoName: z.string().optional(),
         borderColor: z.string().optional(),
@@ -676,8 +669,8 @@ export const adminRouter = createTRPCRouter({
               features: z.array(z.string()).optional(),
               isPopular: z.boolean().default(false),
               isAvailable: z.boolean().default(true),
-              stockQuantity: z.number().nullable().optional(),
               maxSubscriptions: z.number().optional(),
+              deliveryType: z.enum(["MANUAL", "AUTOMATIC"]).optional(),
             }),
           )
           .optional(),
@@ -767,8 +760,8 @@ export const adminRouter = createTRPCRouter({
                   features: plan.features || [],
                   isPopular: plan.isPopular,
                   isAvailable: plan.isAvailable,
-                  stockQuantity: plan.stockQuantity,
                   maxSubscriptions: plan.maxSubscriptions,
+                  deliveryType: plan.deliveryType || "MANUAL",
                 },
               });
             } else {
@@ -785,8 +778,8 @@ export const adminRouter = createTRPCRouter({
                   features: plan.features || [],
                   isPopular: plan.isPopular,
                   isAvailable: plan.isAvailable,
-                  stockQuantity: plan.stockQuantity,
                   maxSubscriptions: plan.maxSubscriptions,
+                  deliveryType: "MANUAL",
                 },
               });
             }
@@ -846,30 +839,218 @@ export const adminRouter = createTRPCRouter({
       });
     }
 
-    const categories = [
-      { key: "STREAMING_MEDIA", label: "Streaming & Media" },
-      { key: "PRODUCTIVITY_TOOLS", label: "Productivity & Tools" },
-      { key: "CREATIVE_DESIGN", label: "Creative & Design" },
-      { key: "LEARNING_EDUCATION", label: "Learning & Education" },
-      { key: "SOCIAL_COMMUNICATION", label: "Social & Communication" },
-      { key: "GAMING", label: "Gaming" },
-      { key: "BUSINESS_FINANCE", label: "Business & Finance" },
-      { key: "HEALTH_FITNESS", label: "Health & Fitness" },
-    ];
-
-    // Get product counts per category
-    const categoryCounts = await ctx.db.product.groupBy({
-      by: ["category"],
+    const categories = await ctx.db.category.findMany({
+      orderBy: [
+        { displayOrder: "asc" },
+        { name: "asc" }
+      ],
+      include: {
       _count: {
-        id: true,
-      },
+          select: {
+            products: true
+          }
+        }
+      }
     });
 
     return categories.map((category) => ({
-      ...category,
-      count:
-        categoryCounts.find((c) => c.category === category.key)?._count.id || 0,
+      id: category.id,
+      name: category.name,
+      slug: category.slug,
+      description: category.description,
+      color: category.color,
+      icon: category.icon,
+      isActive: category.isActive,
+      displayOrder: category.displayOrder,
+      createdAt: category.createdAt,
+      updatedAt: category.updatedAt,
+      count: category._count.products,
     }));
+  }),
+
+  createCategory: protectedProcedure
+    .input(
+      z.object({
+        name: z.string().min(1, "Category name is required"),
+        slug: z.string().min(1, "Category slug is required"),
+        description: z.string().optional(),
+        color: z.string().optional(),
+        icon: z.string().optional(),
+        displayOrder: z.number().optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      // Check if user is admin
+      if (ctx.session.user.role !== "ADMIN") {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Admin access required",
+        });
+      }
+
+      // Check if category with this name or slug already exists
+      const existingCategory = await ctx.db.category.findFirst({
+        where: {
+          OR: [
+            { name: input.name },
+            { slug: input.slug },
+          ],
+        },
+      });
+
+      if (existingCategory) {
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: "Category with this name or slug already exists",
+        });
+      }
+
+      const category = await ctx.db.category.create({
+        data: input,
+      });
+
+      return category;
+    }),
+
+  updateCategory: protectedProcedure
+    .input(
+      z.object({
+        id: z.string(),
+        name: z.string().min(1, "Category name is required"),
+        slug: z.string().min(1, "Category slug is required"),
+        description: z.string().optional(),
+        color: z.string().optional(),
+        icon: z.string().optional(),
+        displayOrder: z.number().optional(),
+        isActive: z.boolean().optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      // Check if user is admin
+      if (ctx.session.user.role !== "ADMIN") {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Admin access required",
+        });
+      }
+
+      const { id, ...updateData } = input;
+
+      // Check if category exists
+      const existingCategory = await ctx.db.category.findUnique({
+        where: { id },
+      });
+
+      if (!existingCategory) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Category not found",
+        });
+      }
+
+      // Check if another category with this name or slug already exists
+      const duplicateCategory = await ctx.db.category.findFirst({
+        where: {
+          AND: [
+            { id: { not: id } },
+            {
+              OR: [
+                { name: updateData.name },
+                { slug: updateData.slug },
+              ],
+            },
+          ],
+        },
+      });
+
+      if (duplicateCategory) {
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: "Category with this name or slug already exists",
+        });
+      }
+
+      const updatedCategory = await ctx.db.category.update({
+        where: { id },
+        data: updateData,
+      });
+
+      return updatedCategory;
+    }),
+
+  deleteCategory: protectedProcedure
+    .input(z.object({ id: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      // Check if user is admin
+      if (ctx.session.user.role !== "ADMIN") {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Admin access required",
+        });
+      }
+
+      // Check if category exists
+      const category = await ctx.db.category.findUnique({
+        where: { id: input.id },
+        include: {
+          _count: {
+            select: {
+              products: true
+            }
+          }
+        }
+      });
+
+      if (!category) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Category not found",
+        });
+      }
+
+      // Check if category has associated products
+      if (category._count.products > 0) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Cannot delete category with associated products",
+        });
+      }
+
+      await ctx.db.category.delete({
+        where: { id: input.id },
+      });
+
+      return { success: true };
+    }),
+
+  toggleCategoryStatus: protectedProcedure
+    .input(z.object({ id: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      // Check if user is admin
+      if (ctx.session.user.role !== "ADMIN") {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Admin access required",
+        });
+      }
+
+      const category = await ctx.db.category.findUnique({
+        where: { id: input.id },
+      });
+
+      if (!category) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Category not found",
+        });
+      }
+
+      const updatedCategory = await ctx.db.category.update({
+        where: { id: input.id },
+        data: { isActive: !category.isActive },
+      });
+
+      return updatedCategory;
   }),
 
   toggleProductStatus: protectedProcedure
@@ -1207,7 +1388,9 @@ export const adminRouter = createTRPCRouter({
     .input(
       z.object({
         ticketId: z.string(),
-        message: z.string().min(1, "Message cannot be empty"),
+        message: z.string()
+          .min(1, "Message cannot be empty")
+          .max(5000, "Message cannot exceed 5000 characters"),
         isInternal: z.boolean().default(false),
       }),
     )
@@ -1328,6 +1511,19 @@ export const adminRouter = createTRPCRouter({
                   product: true,
                 },
               },
+              ticket: {
+                select: {
+                  id: true,
+                  ticketNumber: true,
+                  status: true,
+                },
+              },
+              stockItem: {
+                select: {
+                  id: true,
+                  content: true,
+                },
+              },
             },
           },
           payments: {
@@ -1355,5 +1551,159 @@ export const adminRouter = createTRPCRouter({
       }
 
       return order;
+    }),
+
+  // Stock management routes
+  getStockItems: protectedProcedure
+    .input(
+      z.object({
+        planId: z.string().optional(),
+        search: z.string().optional(),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      if (ctx.session.user.role !== "ADMIN") {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Admin access required",
+        });
+      }
+
+      const where: Prisma.StockItemWhereInput = {};
+      if (input.planId) {
+        where.planId = input.planId;
+      }
+      if (input.search) {
+        where.content = {
+          contains: input.search,
+          mode: "insensitive",
+        };
+      }
+
+      return await ctx.db.stockItem.findMany({
+        where,
+        include: {
+          plan: {
+            include: {
+              product: true,
+            },
+          },
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+      });
+    }),
+
+  addStockItem: protectedProcedure
+    .input(
+      z.object({
+        planId: z.string(),
+        content: z.string(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      if (ctx.session.user.role !== "ADMIN") {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Admin access required",
+        });
+      }
+
+      return await ctx.db.stockItem.create({
+        data: {
+          planId: input.planId,
+          content: input.content,
+        },
+      });
+    }),
+
+  deleteStockItem: protectedProcedure
+    .input(z.object({ id: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      if (ctx.session.user.role !== "ADMIN") {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Admin access required",
+        });
+      }
+
+      const stockItem = await ctx.db.stockItem.findUnique({
+        where: { id: input.id },
+      });
+
+      if (!stockItem) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Stock item not found",
+        });
+      }
+
+      if (stockItem.isUsed) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Cannot delete used stock item",
+        });
+      }
+
+      return await ctx.db.stockItem.delete({
+        where: { id: input.id },
+      });
+    }),
+
+  // Get delivery status for order items
+  getOrderItemDeliveryStatus: protectedProcedure
+    .input(z.object({ orderItemId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const orderItem = await ctx.db.orderItem.findFirst({
+        where: { id: input.orderItemId },
+        include: {
+          plan: {
+            include: {
+              product: true,
+            },
+          },
+          order: {
+            include: {
+              user: true,
+            },
+          },
+          stockItem: {
+            select: { id: true, content: true },
+          },
+          ticket: {
+            select: { id: true, ticketNumber: true, status: true },
+          },
+        },
+      });
+
+      if (!orderItem) {
+        return { status: "NOT_FOUND" };
+      }
+
+      if (orderItem.deliveryType === "AUTOMATIC") {
+        if (orderItem.deliveredAt && orderItem.stockItem) {
+          return {
+            status: "DELIVERED",
+            type: "AUTOMATIC",
+            deliveredAt: orderItem.deliveredAt,
+            stockItem: orderItem.stockItem,
+          };
+        } else {
+          return { status: "PENDING", type: "AUTOMATIC" };
+        }
+      } else {
+        if (orderItem.ticket) {
+          const isDelivered = orderItem.ticket.status === "RESOLVED" || orderItem.ticket.status === "CLOSED";
+          return {
+            status: isDelivered ? "DELIVERED" : "PENDING",
+            type: "MANUAL",
+            ticket: orderItem.ticket,
+            deliveredAt: isDelivered ? orderItem.deliveredAt : null,
+          };
+        } else {
+          return { status: "PENDING", type: "MANUAL" };
+        }
+      }
     }),
 });

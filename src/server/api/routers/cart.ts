@@ -3,8 +3,7 @@ import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 
 export const cartRouter = createTRPCRouter({
-  get: protectedProcedure.query(async ({ ctx }) => {
-    // Validate user session and ID
+  getItems: protectedProcedure.query(async ({ ctx }) => {
     if (!ctx.session?.user?.id || ctx.session.user.id === "") {
       throw new TRPCError({
         code: "UNAUTHORIZED",
@@ -28,15 +27,118 @@ export const cartRouter = createTRPCRouter({
       },
     });
 
-    return {
-      items: cartItems,
-      totalItems: cartItems.reduce((sum, item) => sum + item.quantity, 0),
-      totalPrice: cartItems.reduce(
-        (sum, item) => sum + Number(item.plan.price) * item.quantity,
-        0,
-      ),
-    };
+    const validatedItems = [];
+    const stockUpdates = [];
+
+    for (const item of cartItems) {
+      if (item.plan.deliveryType === "AUTOMATIC") {
+        const availableStock = await ctx.db.stockItem.count({
+          where: {
+            planId: item.planId,
+            isUsed: false,
+          },
+        });
+
+        if (availableStock === 0) {
+          stockUpdates.push(
+            ctx.db.cartItem.delete({
+              where: { id: item.id },
+            })
+          );
+          continue;
+        } else if (availableStock < item.quantity) {
+          const updatedItem = await ctx.db.cartItem.update({
+            where: { id: item.id },
+            data: { quantity: availableStock },
+            include: {
+              plan: {
+                include: {
+                  product: true,
+                },
+              },
+            },
+          });
+          validatedItems.push({
+            ...updatedItem,
+            stockAdjusted: true,
+            previousQuantity: item.quantity,
+            availableStock,
+          });
+        } else {
+          validatedItems.push({
+            ...item,
+            stockAdjusted: false,
+            availableStock,
+          });
+        }
+      } else {
+        validatedItems.push({
+          ...item,
+          stockAdjusted: false,
+          availableStock: null,
+        });
+      }
+    }
+
+    if (stockUpdates.length > 0) {
+      await ctx.db.$transaction(stockUpdates);
+    }
+
+    return validatedItems;
   }),
+
+  getStockAvailability: protectedProcedure
+    .input(z.object({ planId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const plan = await ctx.db.productPlan.findUnique({
+        where: { id: input.planId },
+        select: { deliveryType: true, product: { select: { name: true } } },
+      });
+
+      if (!plan) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Plan not found",
+        });
+      }
+
+      if (plan.deliveryType === "MANUAL") {
+        return {
+          available: true,
+          count: null,
+          deliveryType: "MANUAL",
+          maxCartQuantity: 999,
+        };
+      }
+
+      const stockCount = await ctx.db.stockItem.count({
+        where: {
+          planId: input.planId,
+          isUsed: false,
+        },
+      });
+
+      const cartQuantity = await ctx.db.cartItem.findUnique({
+        where: {
+          userId_planId: {
+            userId: ctx.session.user.id,
+            planId: input.planId,
+          },
+        },
+        select: { quantity: true },
+      });
+
+      const currentCartQuantity = cartQuantity?.quantity || 0;
+      const maxCartQuantity = Math.max(0, stockCount - currentCartQuantity);
+
+      return {
+        available: stockCount > 0,
+        count: stockCount,
+        deliveryType: "AUTOMATIC",
+        currentCartQuantity,
+        maxCartQuantity,
+      };
+    }),
 
   add: protectedProcedure
     .input(
@@ -46,7 +148,6 @@ export const cartRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      // Validate user session and ID
       if (!ctx.session?.user?.id || ctx.session.user.id === "") {
         throw new TRPCError({
           code: "UNAUTHORIZED",
@@ -54,7 +155,6 @@ export const cartRouter = createTRPCRouter({
         });
       }
 
-      // Check if plan exists and is available
       const plan = await ctx.db.productPlan.findUnique({
         where: {
           id: input.planId,
@@ -72,15 +172,6 @@ export const cartRouter = createTRPCRouter({
         });
       }
 
-      // Check stock quantity if limited
-      if (plan.stockQuantity !== null && plan.stockQuantity < input.quantity) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "Insufficient stock",
-        });
-      }
-
-      // Verify user exists in database
       const userExists = await ctx.db.user.findUnique({
         where: { id: ctx.session.user.id },
         select: { id: true, isActive: true },
@@ -93,9 +184,24 @@ export const cartRouter = createTRPCRouter({
         });
       }
 
-      // Upsert cart item (add or update quantity) with atomic operation
       const cartItem = await ctx.db.$transaction(async (tx) => {
-        // First, try to find existing item
+        let availableStock = null;
+        if (plan.deliveryType === "AUTOMATIC") {
+          availableStock = await tx.stockItem.count({
+            where: {
+              planId: input.planId,
+              isUsed: false,
+            },
+          });
+
+          if (availableStock === 0) {
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message: `${plan.product.name} is currently out of stock`,
+            });
+          }
+        }
+
         const existingItem = await tx.cartItem.findUnique({
           where: {
             userId_planId: {
@@ -103,23 +209,22 @@ export const cartRouter = createTRPCRouter({
               planId: input.planId,
             },
           },
-          include: {
-            plan: true,
-          },
         });
 
-        // Check total quantity against stock if item exists
-        if (existingItem && plan.stockQuantity !== null) {
-          const totalQuantity = existingItem.quantity + input.quantity;
-          if (plan.stockQuantity < totalQuantity) {
+        const newTotalQuantity = (existingItem?.quantity || 0) + input.quantity;
+
+        if (plan.deliveryType === "AUTOMATIC" && availableStock !== null) {
+          if (newTotalQuantity > availableStock) {
+            const maxAddable = availableStock - (existingItem?.quantity || 0);
             throw new TRPCError({
               code: "BAD_REQUEST",
-              message: `Only ${plan.stockQuantity - existingItem.quantity} more items available in stock`,
+              message: maxAddable > 0 
+                ? `Only ${maxAddable} more items can be added to cart. ${availableStock} total available.`
+                : `Cannot add more items. Maximum ${availableStock} items available and you already have ${existingItem?.quantity || 0} in cart.`,
             });
           }
         }
 
-        // Perform the upsert operation
         return await tx.cartItem.upsert({
           where: {
             userId_planId: {
@@ -128,9 +233,7 @@ export const cartRouter = createTRPCRouter({
             },
           },
           update: {
-            quantity: {
-              increment: input.quantity,
-            },
+            quantity: newTotalQuantity,
           },
           create: {
             userId: ctx.session.user.id,
@@ -147,7 +250,15 @@ export const cartRouter = createTRPCRouter({
         });
       });
 
-      return cartItem;
+      return {
+        ...cartItem,
+        availableStock: plan.deliveryType === "AUTOMATIC" ? await ctx.db.stockItem.count({
+          where: {
+            planId: input.planId,
+            isUsed: false,
+          },
+        }) : null,
+      };
     }),
 
   updateQuantity: protectedProcedure
@@ -158,7 +269,6 @@ export const cartRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      // Validate user session and ID
       if (!ctx.session?.user?.id || ctx.session.user.id === "") {
         throw new TRPCError({
           code: "UNAUTHORIZED",
@@ -174,7 +284,11 @@ export const cartRouter = createTRPCRouter({
           },
         },
         include: {
-          plan: true,
+          plan: {
+            include: {
+              product: true,
+            },
+          },
         },
       });
 
@@ -185,26 +299,70 @@ export const cartRouter = createTRPCRouter({
         });
       }
 
-      // Check stock quantity if limited
-      if (
-        cartItem.plan.stockQuantity !== null &&
-        cartItem.plan.stockQuantity < input.quantity
-      ) {
+      const updatedItem = await ctx.db.$transaction(async (tx) => {
+        if (cartItem.plan.deliveryType === "AUTOMATIC") {
+          const availableStock = await tx.stockItem.count({
+            where: {
+              planId: input.planId,
+              isUsed: false,
+            },
+          });
+
+          if (availableStock < input.quantity) {
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message: `Only ${availableStock} items available in stock. Cannot set quantity to ${input.quantity}.`,
+            });
+          }
+        }
+
+        return await tx.cartItem.update({
+          where: {
+            userId_planId: {
+              userId: ctx.session.user.id,
+              planId: input.planId,
+            },
+          },
+          data: {
+            quantity: input.quantity,
+          },
+          include: {
+            plan: {
+              include: {
+                product: true,
+              },
+            },
+          },
+        });
+      });
+
+      return {
+        ...updatedItem,
+        availableStock: cartItem.plan.deliveryType === "AUTOMATIC" ? await ctx.db.stockItem.count({
+          where: {
+            planId: input.planId,
+            isUsed: false,
+          },
+        }) : null,
+      };
+    }),
+
+  remove: protectedProcedure
+    .input(z.object({ planId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      if (!ctx.session?.user?.id || ctx.session.user.id === "") {
         throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "Insufficient stock",
+          code: "UNAUTHORIZED",
+          message: "Invalid user session. Please sign in again.",
         });
       }
 
-      const updatedItem = await ctx.db.cartItem.update({
+      const deletedItem = await ctx.db.cartItem.delete({
         where: {
           userId_planId: {
             userId: ctx.session.user.id,
             planId: input.planId,
           },
-        },
-        data: {
-          quantity: input.quantity,
         },
         include: {
           plan: {
@@ -215,38 +373,10 @@ export const cartRouter = createTRPCRouter({
         },
       });
 
-      return updatedItem;
-    }),
-
-  remove: protectedProcedure
-    .input(
-      z.object({
-        planId: z.string(),
-      }),
-    )
-    .mutation(async ({ ctx, input }) => {
-      // Validate user session and ID
-      if (!ctx.session?.user?.id || ctx.session.user.id === "") {
-        throw new TRPCError({
-          code: "UNAUTHORIZED",
-          message: "Invalid user session. Please sign in again.",
-        });
-      }
-
-      await ctx.db.cartItem.delete({
-        where: {
-          userId_planId: {
-            userId: ctx.session.user.id,
-            planId: input.planId,
-          },
-        },
-      });
-
-      return { success: true };
+      return deletedItem;
     }),
 
   clear: protectedProcedure.mutation(async ({ ctx }) => {
-    // Validate user session and ID
     if (!ctx.session?.user?.id || ctx.session.user.id === "") {
       throw new TRPCError({
         code: "UNAUTHORIZED",
@@ -254,17 +384,16 @@ export const cartRouter = createTRPCRouter({
       });
     }
 
-    await ctx.db.cartItem.deleteMany({
+    const deletedItems = await ctx.db.cartItem.deleteMany({
       where: {
         userId: ctx.session.user.id,
       },
     });
 
-    return { success: true };
+    return { deletedCount: deletedItems.count };
   }),
 
-  getCount: protectedProcedure.query(async ({ ctx }) => {
-    // Validate user session and ID
+  validateForCheckout: protectedProcedure.query(async ({ ctx }) => {
     if (!ctx.session?.user?.id || ctx.session.user.id === "") {
       throw new TRPCError({
         code: "UNAUTHORIZED",
@@ -272,15 +401,81 @@ export const cartRouter = createTRPCRouter({
       });
     }
 
-    const result = await ctx.db.cartItem.aggregate({
+    const cartItems = await ctx.db.cartItem.findMany({
       where: {
         userId: ctx.session.user.id,
       },
-      _sum: {
-        quantity: true,
+      include: {
+        plan: {
+          include: {
+            product: true,
+          },
+        },
       },
     });
 
-    return result._sum.quantity || 0;
+    const validationResults = [];
+    let hasErrors = false;
+
+    for (const item of cartItems) {
+      if (item.plan.deliveryType === "AUTOMATIC") {
+        const availableStock = await ctx.db.stockItem.count({
+          where: {
+            planId: item.planId,
+            isUsed: false,
+          },
+        });
+
+        if (availableStock === 0) {
+          validationResults.push({
+            planId: item.planId,
+            productName: item.plan.product.name,
+            planType: item.plan.planType,
+            requestedQuantity: item.quantity,
+            availableStock: 0,
+            valid: false,
+            error: "Out of stock",
+          });
+          hasErrors = true;
+        } else if (availableStock < item.quantity) {
+          validationResults.push({
+            planId: item.planId,
+            productName: item.plan.product.name,
+            planType: item.plan.planType,
+            requestedQuantity: item.quantity,
+            availableStock,
+            valid: false,
+            error: `Only ${availableStock} available`,
+          });
+          hasErrors = true;
+        } else {
+          validationResults.push({
+            planId: item.planId,
+            productName: item.plan.product.name,
+            planType: item.plan.planType,
+            requestedQuantity: item.quantity,
+            availableStock,
+            valid: true,
+            error: null,
+          });
+        }
+      } else {
+        validationResults.push({
+          planId: item.planId,
+          productName: item.plan.product.name,
+          planType: item.plan.planType,
+          requestedQuantity: item.quantity,
+          availableStock: null,
+          valid: true,
+          error: null,
+        });
+      }
+    }
+
+    return {
+      valid: !hasErrors,
+      items: validationResults,
+      totalItems: cartItems.length,
+    };
   }),
 });

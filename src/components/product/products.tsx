@@ -1,11 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
-import { Loader2, Star, Package } from "lucide-react";
+import { Loader2, Package, ChevronRight, Star } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import Link from "next/link";
 import Image from "next/image";
+import ProductRating from "./ProductRating";
+import * as LucideIcons from "lucide-react";
 
 // Internal types for display
 interface ProductPlan {
@@ -19,14 +21,17 @@ interface ProductPlan {
   features?: string[];
   isPopular?: boolean;
   isAvailable: boolean;
-  stockQuantity?: number;
 }
 
 interface Product {
   id: string;
   name: string;
   description?: string | null;
-  category: string;
+  category: {
+    id: string;
+    name: string;
+    slug: string;
+  };
   borderColor?: string | null;
   logoUrl?: string | null;
   logoName?: string | null;
@@ -40,7 +45,25 @@ interface Category {
   key: string;
   label: string;
   count: number;
+  color?: string;
+  icon?: string;
+  description?: string;
 }
+
+interface ExtendedCategory extends Category {
+  color: string;
+  icon: string;
+  description: string;
+}
+
+// Dynamic icon component
+const DynamicIcon = ({ name, className = "", size = 20 }: { name: string; className?: string; size?: number }) => {
+  const IconComponent = LucideIcons[name as keyof typeof LucideIcons] as React.ComponentType<{ className?: string; size?: number }>;
+  if (!IconComponent) {
+    return <Package className={className} size={size} />;
+  }
+  return <IconComponent className={className} size={size} />;
+};
 
 const fadeIn = (direction: string, delay = 0) => ({
   hidden: {
@@ -60,12 +83,28 @@ const fadeIn = (direction: string, delay = 0) => ({
   },
 });
 
+const slideIn = (direction: string, delay = 0) => ({
+  hidden: {
+    opacity: 0,
+    x: direction === "left" ? -100 : direction === "right" ? 100 : 0,
+  },
+  show: {
+    opacity: 1,
+    x: 0,
+    transition: {
+      duration: 0.6,
+      delay,
+      ease: "easeOut",
+    },
+  },
+});
+
 export function Products() {
   const [activeCategory, setActiveCategory] = useState<string>("");
 
-  // Fetch categories from database
+  // Fetch categories from database with full details
   const { data: categoriesData, isLoading: categoriesLoading } =
-    trpc.product.getCategories.useQuery();
+    trpc.admin.getCategories.useQuery();
 
   // Fetch products from database
   const {
@@ -76,17 +115,31 @@ export function Products() {
     limit: 50,
   });
 
+  // Transform categories data to include full details
+  const extendedCategories: ExtendedCategory[] = useMemo(() => {
+    return categoriesData
+      ?.filter(cat => cat.isActive && cat.count > 0)
+      .map(cat => ({
+        key: cat.slug,
+        label: cat.name,
+        count: cat.count,
+        color: cat.color || "#8B5CF6",
+        icon: cat.icon || "Package",
+        description: cat.description || `Explore ${cat.name.toLowerCase()} products`
+      })) || [];
+  }, [categoriesData]);
+
   // Set the first category as active when categories are loaded
   useEffect(() => {
-    if (categoriesData && categoriesData.length > 0 && !activeCategory) {
-      setActiveCategory(categoriesData[0].key);
+    if (extendedCategories.length > 0 && !activeCategory) {
+      setActiveCategory(extendedCategories[0].key);
     }
-  }, [categoriesData, activeCategory]);
+  }, [extendedCategories, activeCategory]);
 
   // Filter products by active category and sort by display order
   const filteredProducts =
     productsData?.products
-      ?.filter((product) => product.category === activeCategory)
+      ?.filter((product) => product.category.slug === activeCategory)
       .sort((a, b) => {
         // Sort by displayOrder first (lower numbers first), then by name
         const orderA = a.displayOrder ?? 999999;
@@ -104,7 +157,11 @@ export function Products() {
     id: dbProduct.id,
     name: dbProduct.name,
     description: dbProduct.description,
-    category: dbProduct.category,
+    category: {
+      id: dbProduct.category.id,
+      name: dbProduct.category.name,
+      slug: dbProduct.category.slug,
+    },
     borderColor: dbProduct.borderColor,
     logoUrl: dbProduct.logoUrl,
     logoName: dbProduct.logoName,
@@ -132,7 +189,6 @@ export function Products() {
           : [],
         isPopular: plan.isPopular,
         isAvailable: plan.isAvailable,
-        stockQuantity: plan.stockQuantity || undefined,
       }))
       .sort((a, b) => a.price - b.price), // Sort plans by price (cheapest first)
   });
@@ -162,7 +218,7 @@ export function Products() {
     );
   }
 
-  if (!categoriesData || categoriesData.length === 0) {
+  if (!extendedCategories || extendedCategories.length === 0) {
     return (
       <section id="products" className="py-20 bg-gray-900">
         <div className="container mx-auto px-4">
@@ -178,14 +234,17 @@ export function Products() {
     if (!borderColor) return {};
     return {
       borderColor,
-      borderWidth: "3px",
-      boxShadow: `0 0 10px ${borderColor}40`,
+      borderWidth: "2px",
+      boxShadow: `0 0 20px ${borderColor}20`,
     };
   };
 
+  const activeExtendedCategory = extendedCategories.find(cat => cat.key === activeCategory);
+
   return (
-    <section id="products" className="py-16 bg-gray-900">
+    <section id="products" className="py-16 bg-gray-900 min-h-screen">
       <div className="container mx-auto px-4">
+        {/* Header */}
         <motion.div
           variants={fadeIn("up")}
           initial="hidden"
@@ -193,256 +252,282 @@ export function Products() {
           viewport={{ once: true, amount: 0.1 }}
           className="text-center mb-12"
         >
-          <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+          <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
             <span className="bg-gradient-to-r from-purple-400 to-purple-600 bg-clip-text text-transparent">
               Premium
             </span>{" "}
             Products
           </h2>
-          <p className="text-gray-400 max-w-2xl mx-auto">
+          <p className="text-gray-400 max-w-3xl mx-auto text-lg">
             Browse our selection of premium products at significantly reduced
             prices. All products are 100% authentic and backed by our
             satisfaction guarantee.
           </p>
         </motion.div>
 
-        {/* Category tabs */}
-        <div className="flex flex-wrap justify-center mb-8 gap-2">
-          {categoriesData.map((category: Category, index: number) => (
-            <motion.button
-              key={category.key}
-              variants={fadeIn("up", 0.1 * index)}
-              initial="hidden"
-              animate="show"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => setActiveCategory(category.key)}
-              className={`px-6 py-3 rounded-xl text-sm font-medium transition-colors ${
-                activeCategory === category.key
-                  ? "bg-purple-600 text-white"
-                  : "bg-gray-800 text-gray-300 hover:bg-gray-700"
-              }`}
-            >
-              {category.label}
-              {category.count > 0 && (
-                <span className="ml-2 text-xs opacity-75">
-                  ({category.count})
-                </span>
-              )}
-            </motion.button>
-          ))}
-        </div>
-
-        {/* Products grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {filteredProducts.length > 0 ? (
-            filteredProducts.map((dbProduct, index: number) => {
-              const product = convertProduct(dbProduct);
-              // Get the primary plan (prioritize popular plans, then cheapest available plan that is in stock)
-              const primaryPlan =
-                product.plans.find(
-                  (plan) =>
-                    plan.isPopular &&
-                    plan.isAvailable &&
-                    (plan.stockQuantity === undefined ||
-                      plan.stockQuantity === null ||
-                      plan.stockQuantity > 0),
-                ) ||
-                product.plans.find(
-                  (plan) =>
-                    plan.isAvailable &&
-                    (plan.stockQuantity === undefined ||
-                      plan.stockQuantity === null ||
-                      plan.stockQuantity > 0),
-                ) ||
-                product.plans[0];
-
-              if (!primaryPlan) return null;
-
-              const isOutOfStock =
-                primaryPlan.stockQuantity !== null &&
-                primaryPlan.stockQuantity !== undefined &&
-                primaryPlan.stockQuantity <= 0;
-
-              return (
-                <motion.div
-                  key={product.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{
-                    duration: 0.4,
-                    delay: index * 0.1,
-                    ease: "easeOut",
-                  }}
-                  whileHover={{
-                    y: -8,
-                    boxShadow: product.borderColor
-                      ? `0 10px 25px -5px ${product.borderColor}40`
-                      : "0 10px 25px -5px rgba(139, 92, 246, 0.3)",
-                  }}
-                  className={`bg-gray-800 border-2 rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-all relative cursor-pointer ${"border-gray-700"} ${
-                    product.isFeatured
-                      ? "ring-2 ring-offset-2 ring-offset-gray-900 ring-yellow-500"
-                      : ""
-                  }`}
-                  style={getProductStyle(product.borderColor)}
-                >
-                  {/* Featured badge */}
-                  {product.isFeatured && (
-                    <div className="absolute top-3 left-3 z-10">
-                      <div className="bg-gradient-to-r from-yellow-400 to-yellow-500 text-black text-xs font-bold px-3 py-1.5 rounded-full flex items-center shadow-lg">
-                        <svg
-                          className="w-3 h-3 mr-1"
-                          fill="currentColor"
-                          viewBox="0 0 20 20"
+        {/* Main Content Layout */}
+        <div className="flex flex-col lg:flex-row gap-8">
+          {/* Categories Sidebar */}
+          <motion.div
+            variants={slideIn("left")}
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true, amount: 0.1 }}
+            className="lg:w-80 flex-shrink-0"
+          >
+            <div className="bg-gray-800/50 backdrop-blur-lg rounded-2xl border border-gray-700 p-6 sticky top-6">
+              <h3 className="text-xl font-bold text-white mb-6 flex items-center">
+                <Package className="h-5 w-5 mr-2 text-purple-400" />
+                Categories
+              </h3>
+              
+              <div className="space-y-3">
+                {extendedCategories.map((category, index) => (
+                  <motion.button
+                    key={category.key}
+                    variants={fadeIn("up", 0.1 * index)}
+                    initial="hidden"
+                    animate="show"
+                    whileHover={{ scale: 1.02, x: 4 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => setActiveCategory(category.key)}
+                    className={`w-full p-4 rounded-xl text-left transition-all duration-300 group ${
+                      activeCategory === category.key
+                        ? "bg-gradient-to-r from-purple-600/20 to-purple-500/20 border-2 border-purple-500/50 shadow-lg shadow-purple-500/20"
+                        : "bg-gray-700/50 border-2 border-transparent hover:bg-gray-700/70 hover:border-gray-600"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <div
+                          className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-300 ${
+                            activeCategory === category.key
+                              ? "shadow-lg"
+                              : "group-hover:scale-110"
+                          }`}
+                          style={{ 
+                            backgroundColor: category.color,
+                            boxShadow: activeCategory === category.key 
+                              ? `0 8px 25px ${category.color}40` 
+                              : `0 4px 15px ${category.color}20`
+                          }}
                         >
-                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                        </svg>
-                        FEATURED
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Out of stock overlay */}
-                  {isOutOfStock && (
-                    <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-20">
-                      <div className="bg-red-600 text-white text-sm font-semibold px-4 py-2 rounded-lg">
-                        Out of Stock
-                      </div>
-                    </div>
-                  )}
-
-                  <Link href={`/product/${product.slug}`}>
-                    <div className="p-6 h-full flex flex-col">
-                      {/* Logo */}
-                      <div className="flex items-center justify-center mb-4">
-                        {product.logoUrl ? (
-                          <div className="w-16 h-16 flex items-center justify-center">
-                            <Image
-                              src={product.logoUrl}
-                              alt={product.logoName || product.name}
-                              width={64}
-                              height={64}
-                              className="max-w-full max-h-full object-contain rounded-lg"
-                              onError={(e) => {
-                                // Fallback to Package icon if logo fails to load
-                                const target = e.target as HTMLImageElement;
-                                target.style.display = "none";
-                                target.parentElement!.innerHTML =
-                                  '<div class="w-16 h-16 bg-gray-700 rounded-lg flex items-center justify-center"><svg class="h-8 w-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg></div>';
-                              }}
-                              unoptimized
-                            />
-                          </div>
-                        ) : (
-                          <div
-                            className="w-16 h-16 rounded-lg flex items-center justify-center text-white font-bold text-xl"
-                            style={{
-                              backgroundColor: product.borderColor || "#9333EA",
-                            }}
-                          >
-                            {product.name?.[0] || (
-                              <Package className="h-8 w-8 text-purple-400" />
-                            )}
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Product info */}
-                      <h3 className="text-lg font-semibold text-white mb-2 text-center">
-                        {product.name}
-                      </h3>
-
-                      {product.description && (
-                        <p className="text-gray-400 text-sm mb-4 text-center line-clamp-2 flex-grow">
-                          {product.description}
-                        </p>
-                      )}
-
-                      {/* Pricing */}
-                      <div className="text-center mb-4">
-                        <div className="flex items-center justify-center gap-2 mb-2">
-                          <span className="text-2xl font-bold text-white">
-                            ${primaryPlan.price}
-                          </span>
-                          {primaryPlan.originalPrice &&
-                            primaryPlan.originalPrice > primaryPlan.price && (
-                              <span className="text-lg text-gray-400 line-through">
-                                ${primaryPlan.originalPrice}
-                              </span>
-                            )}
+                          <DynamicIcon 
+                            name={category.icon} 
+                            className="text-white" 
+                            size={20} 
+                          />
                         </div>
-                        <p className="text-gray-400 text-sm mb-2">
-                          {primaryPlan.planType} •{" "}
-                          {primaryPlan.billingPeriod.toLowerCase()}
-                        </p>
-                        {primaryPlan.originalPrice &&
-                          primaryPlan.originalPrice > primaryPlan.price && (
-                            <div className="bg-green-500/20 text-green-400 text-sm font-medium px-3 py-1 rounded-full inline-block mb-2">
-                              Save{" "}
-                              {Math.round(
-                                (1 -
-                                  Number(primaryPlan.price) /
-                                    Number(primaryPlan.originalPrice)) *
-                                  100,
-                              )}
-                              %
-                            </div>
-                          )}
-                      </div>
-
-                      {/* Plans count and rating */}
-                      <div className="grid grid-cols-2 gap-4 mb-4">
-                        <div className="text-center">
-                          <div className="flex items-center justify-center space-x-1">
-                            <Package className="h-4 w-4 text-purple-400" />
-                            <span className="text-gray-400 text-xs">Plans</span>
-                          </div>
-                          <p className="text-lg font-bold text-white">
-                            {product.plans.length}
+                        <div className="flex-1">
+                          <h4 className={`font-semibold transition-colors ${
+                            activeCategory === category.key
+                              ? "text-white"
+                              : "text-gray-300 group-hover:text-white"
+                          }`}>
+                            {category.label}
+                          </h4>
+                          <p className={`text-sm transition-colors ${
+                            activeCategory === category.key
+                              ? "text-purple-200"
+                              : "text-gray-500 group-hover:text-gray-400"
+                          }`}>
+                            {category.count} products
                           </p>
                         </div>
-                        <div className="text-center">
-                          <div className="flex items-center justify-center space-x-1">
-                            <Star className="h-4 w-4 text-yellow-400" />
-                            <span className="text-gray-400 text-xs">
-                              Rating
-                            </span>
-                          </div>
-                          <p className="text-lg font-bold text-white">4.8</p>
-                        </div>
                       </div>
-
-                      {/* View Details button */}
-                      <div className="mt-auto">
-                        <div
-                          className={`w-full font-semibold py-3 px-4 rounded-lg shadow transition-all text-center ${
-                            isOutOfStock
-                              ? "bg-gray-600 text-gray-400"
-                              : "bg-purple-600 hover:bg-purple-700 text-white shadow-purple-600/30"
-                          }`}
-                        >
-                          {isOutOfStock
-                            ? "Out of Stock"
-                            : "View Details & Plans"}
-                        </div>
-                      </div>
+                      <ChevronRight 
+                        className={`h-5 w-5 transition-all duration-300 ${
+                          activeCategory === category.key
+                            ? "text-purple-400 rotate-90"
+                            : "text-gray-500 group-hover:text-gray-300 group-hover:translate-x-1"
+                        }`}
+                      />
                     </div>
-                  </Link>
-                </motion.div>
-              );
-            })
-          ) : (
-            <div className="col-span-full text-center py-12">
-              <Package className="h-12 w-12 text-gray-600 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-400 mb-2">
-                No products found
-              </h3>
-              <p className="text-gray-500">
-                There are no products available in this category.
-              </p>
+                  </motion.button>
+                ))}
+              </div>
             </div>
-          )}
+          </motion.div>
+
+                     {/* Products Content */}
+           <motion.div
+             variants={slideIn("right")}
+             initial="hidden"
+             whileInView="show"
+             viewport={{ once: true, amount: 0.1 }}
+             className="flex-1"
+           >
+             {/* Products Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+              {filteredProducts.length > 0 ? (
+                filteredProducts.map((dbProduct, index: number) => {
+                  const product = convertProduct(dbProduct);
+                  // Get the primary plan (prioritize popular plans, then cheapest available plan that is in stock)
+                  const primaryPlan =
+                    product.plans.find(
+                      (plan) => plan.isPopular && plan.isAvailable,
+                    ) ||
+                    product.plans.find((plan) => plan.isAvailable) ||
+                    product.plans[0];
+
+                  if (!primaryPlan) return null;
+
+                  return (
+                    <motion.div
+                      key={product.id}
+                      initial={{ opacity: 0, y: 30 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{
+                        duration: 0.5,
+                        delay: index * 0.1,
+                        ease: "easeOut",
+                      }}
+                      whileHover={{
+                        y: -8,
+                        boxShadow: product.borderColor
+                          ? `0 20px 40px -10px ${product.borderColor}30`
+                          : "0 20px 40px -10px rgba(139, 92, 246, 0.3)",
+                      }}
+                      className={`bg-gray-800/60 backdrop-blur-lg border-2 rounded-2xl overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-300 relative cursor-pointer group ${
+                        product.borderColor ? "" : "border-gray-700 hover:border-gray-600"
+                      } ${
+                        product.isFeatured
+                          ? "ring-2 ring-offset-2 ring-offset-gray-900 ring-yellow-500"
+                          : ""
+                      }`}
+                      style={getProductStyle(product.borderColor)}
+                    >
+                      {/* Featured badge */}
+                      {product.isFeatured && (
+                        <div className="absolute top-4 left-4 z-10">
+                          <div className="bg-gradient-to-r from-yellow-400 to-yellow-500 text-black text-xs font-bold px-3 py-1.5 rounded-full flex items-center shadow-lg">
+                            <Star className="w-3 h-3 mr-1 fill-current" />
+                            FEATURED
+                          </div>
+                        </div>
+                      )}
+
+                      <Link href={`/product/${product.slug}`}>
+                        <div className="p-6 h-full flex flex-col">
+                          {/* Logo */}
+                          <div className="flex items-center justify-center mb-6">
+                            {product.logoUrl ? (
+                              <div className="w-20 h-20 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                                <Image
+                                  src={product.logoUrl}
+                                  alt={product.logoName || product.name}
+                                  width={80}
+                                  height={80}
+                                  className="max-w-full max-h-full object-contain rounded-xl shadow-lg"
+                                  onError={(e) => {
+                                    // Fallback to Package icon if logo fails to load
+                                    const target = e.target as HTMLImageElement;
+                                    target.style.display = "none";
+                                    target.parentElement!.innerHTML =
+                                      '<div class="w-20 h-20 bg-gray-700 rounded-xl flex items-center justify-center shadow-lg"><svg class="h-10 w-10 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg></div>';
+                                  }}
+                                  unoptimized
+                                />
+                              </div>
+                            ) : (
+                              <div
+                                className="w-20 h-20 rounded-xl flex items-center justify-center text-white font-bold text-2xl shadow-lg group-hover:scale-110 transition-transform duration-300"
+                                style={{
+                                  backgroundColor: product.borderColor || "#9333EA",
+                                }}
+                              >
+                                {product.name?.[0] || (
+                                  <Package className="h-10 w-10 text-white" />
+                                )}
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Product info */}
+                          <h3 className="text-xl font-bold text-white mb-3 text-center group-hover:text-purple-200 transition-colors">
+                            {product.name}
+                          </h3>
+
+                          {product.description && (
+                            <p className="text-gray-400 text-sm mb-4 text-center line-clamp-2 flex-grow">
+                              {product.description}
+                            </p>
+                          )}
+
+                          {/* Pricing */}
+                          <div className="text-center mb-6">
+                            <div className="flex items-center justify-center gap-3 mb-2">
+                              <span className="text-3xl font-bold text-white">
+                                ${primaryPlan.price}
+                              </span>
+                              {primaryPlan.originalPrice &&
+                                primaryPlan.originalPrice > primaryPlan.price && (
+                                  <span className="text-lg text-gray-400 line-through">
+                                    ${primaryPlan.originalPrice}
+                                  </span>
+                                )}
+                            </div>
+                            <p className="text-gray-400 text-sm mb-3">
+                              {primaryPlan.planType} • {primaryPlan.billingPeriod.toLowerCase()}
+                            </p>
+                            {primaryPlan.originalPrice &&
+                              primaryPlan.originalPrice > primaryPlan.price && (
+                                <div className="bg-green-500/20 text-green-400 text-sm font-medium px-4 py-2 rounded-full inline-block">
+                                  Save{" "}
+                                  {Math.round(
+                                    (1 -
+                                      Number(primaryPlan.price) /
+                                        Number(primaryPlan.originalPrice)) *
+                                      100,
+                                  )}
+                                  %
+                                </div>
+                              )}
+                          </div>
+
+                          {/* Plans count and rating */}
+                          <div className="grid grid-cols-2 gap-4 mb-6">
+                            <div className="text-center">
+                              <div className="flex items-center justify-center space-x-1 mb-1">
+                                <Package className="h-4 w-4 text-purple-400" />
+                                <span className="text-gray-400 text-xs">Plans</span>
+                              </div>
+                              <p className="text-lg font-bold text-white">
+                                {product.plans.length}
+                              </p>
+                            </div>
+                            <ProductRating productId={product.id} />
+                          </div>
+
+                          {/* View Details button */}
+                          <div className="mt-auto">
+                            <div className="w-full font-semibold py-3 px-6 rounded-xl shadow-lg transition-all text-center bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white shadow-purple-600/30 group-hover:shadow-purple-600/50 transform group-hover:scale-105">
+                              View Details & Plans
+                            </div>
+                          </div>
+                        </div>
+                      </Link>
+                    </motion.div>
+                  );
+                })
+              ) : (
+                <div className="col-span-full text-center py-16">
+                  <div
+                    className="w-24 h-24 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg"
+                    style={{ backgroundColor: activeExtendedCategory?.color || "#6B7280" }}
+                  >
+                    <Package className="h-12 w-12 text-white" />
+                  </div>
+                  <h3 className="text-xl font-semibold text-gray-300 mb-2">
+                    No products found
+                  </h3>
+                  <p className="text-gray-500">
+                    There are no products available in this category yet.
+                  </p>
+                </div>
+              )}
+            </div>
+          </motion.div>
         </div>
       </div>
     </section>

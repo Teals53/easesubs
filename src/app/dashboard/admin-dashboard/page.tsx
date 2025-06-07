@@ -1,27 +1,27 @@
 "use client";
 
+import { useState } from "react";
 import { useSession } from "next-auth/react";
 import { motion } from "framer-motion";
 import {
+  Package,
   Users,
   DollarSign,
-  Package,
   Activity,
+  RefreshCw,
+  Ticket,
   ArrowUpRight,
   ArrowDownRight,
-  Ticket,
-  RefreshCw,
 } from "lucide-react";
-import { UserRole } from "@prisma/client";
 import { trpc } from "@/lib/trpc";
-import { useState } from "react";
+import type { Decimal } from "@prisma/client/runtime/library";
 
 interface ExtendedUser {
   id: string;
   name?: string | null;
   email?: string | null;
   image?: string | null;
-  role: UserRole;
+  role: string;
 }
 
 function AdminStatsCard({
@@ -352,44 +352,78 @@ export default function AdminDashboardPage() {
                 </div>
               ))}
             </div>
-          ) : recentActivity &&
-            (recentActivity.orders?.length > 0 ||
-              recentActivity.users?.length > 0) ? (
+          ) : recentActivity && recentActivity.combinedActivities && recentActivity.combinedActivities.length > 0 ? (
             <div className="space-y-4 max-h-80 overflow-y-auto">
-              {/* Recent Orders */}
-              {recentActivity.orders?.slice(0, 3).map((order) => (
-                <div
-                  key={`order-${order.id}`}
-                  className="flex items-center space-x-3 p-3 bg-gray-700/30 rounded-lg"
-                >
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <Package className="w-4 h-4 text-gray-400" />
-                  <p className="text-gray-300 text-sm flex-1">
-                    New order #{order.orderNumber} -{" "}
-                    {formatCurrency(Number(order.total || 0))}
-                  </p>
-                  <span className="text-gray-500 text-xs">
-                    {formatDate(order.createdAt)}
-                  </span>
-                </div>
-              ))}
-
-              {/* Recent Users */}
-              {recentActivity.users?.slice(0, 3).map((user) => (
-                <div
-                  key={`user-${user.id}`}
-                  className="flex items-center space-x-3 p-3 bg-gray-700/30 rounded-lg"
-                >
-                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                  <Users className="w-4 h-4 text-gray-400" />
-                  <p className="text-gray-300 text-sm flex-1">
-                    New user registered: {user.name || user.email}
-                  </p>
-                  <span className="text-gray-500 text-xs">
-                    {formatDate(user.createdAt)}
-                  </span>
-                </div>
-              ))}
+              {recentActivity.combinedActivities.map((activity, index) => {
+                if (activity.type === 'order') {
+                  const order = activity.data as {
+                    id: string;
+                    orderNumber: string;
+                    total: Decimal;
+                    createdAt: Date | string;
+                  };
+                  return (
+                    <div
+                      key={`activity-order-${order.id}-${index}`}
+                      className="flex items-center space-x-3 p-3 bg-gray-700/30 rounded-lg"
+                    >
+                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                      <Package className="w-4 h-4 text-gray-400" />
+                      <p className="text-gray-300 text-sm flex-1">
+                        New order #{order.orderNumber} -{" "}
+                        {formatCurrency(Number(order.total || 0))}
+                      </p>
+                      <span className="text-gray-500 text-xs">
+                        {formatDate(order.createdAt)}
+                      </span>
+                    </div>
+                  );
+                } else if (activity.type === 'user') {
+                  const user = activity.data as {
+                    id: string;
+                    name?: string | null;
+                    email?: string | null;
+                    createdAt: Date | string;
+                  };
+                  return (
+                    <div
+                      key={`activity-user-${user.id}-${index}`}
+                      className="flex items-center space-x-3 p-3 bg-gray-700/30 rounded-lg"
+                    >
+                      <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                      <Users className="w-4 h-4 text-gray-400" />
+                      <p className="text-gray-300 text-sm flex-1">
+                        New user registered: {user.name || user.email}
+                      </p>
+                      <span className="text-gray-500 text-xs">
+                        {formatDate(user.createdAt)}
+                      </span>
+                    </div>
+                  );
+                } else if (activity.type === 'ticket') {
+                  const ticket = activity.data as {
+                    id: string;
+                    title: string;
+                    createdAt: Date | string;
+                  };
+                  return (
+                    <div
+                      key={`activity-ticket-${ticket.id}-${index}`}
+                      className="flex items-center space-x-3 p-3 bg-gray-700/30 rounded-lg"
+                    >
+                      <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                      <Ticket className="w-4 h-4 text-gray-400" />
+                      <p className="text-gray-300 text-sm flex-1">
+                        New ticket: {ticket.title.length > 30 ? ticket.title.substring(0, 30) + '...' : ticket.title}
+                      </p>
+                      <span className="text-gray-500 text-xs">
+                        {formatDate(ticket.createdAt)}
+                      </span>
+                    </div>
+                  );
+                }
+                return null;
+              })}
             </div>
           ) : (
             <div className="text-center py-8">

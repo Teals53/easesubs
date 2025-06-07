@@ -6,6 +6,7 @@ import { X, Plus, Minus, Package, Save } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import type { BillingPeriod } from "@prisma/client";
 
+
 interface Product {
   id?: string;
   name?: string;
@@ -33,8 +34,8 @@ interface ProductPlan {
   features: string | string[];
   isPopular: boolean;
   isAvailable: boolean;
-  stockQuantity?: number;
   maxSubscriptions?: number;
+  deliveryType: "MANUAL" | "AUTOMATIC";
 }
 
 interface ProductModalProps {
@@ -55,8 +56,8 @@ interface PlanData {
   features: string[];
   isPopular: boolean;
   isAvailable: boolean;
-  stockQuantity?: number;
   maxSubscriptions?: number;
+  deliveryType: "MANUAL" | "AUTOMATIC";
 }
 
 export function ProductModal({
@@ -74,19 +75,16 @@ export function ProductModal({
     },
   );
 
+  // Fetch categories for the dropdown
+  const { data: categories = [] } = trpc.admin.getCategories.useQuery(undefined, {
+    enabled: isOpen,
+  });
+
   const [formData, setFormData] = useState({
     name: "",
     slug: "",
     description: "",
-    category: "STREAMING_MEDIA" as
-      | "STREAMING_MEDIA"
-      | "PRODUCTIVITY_TOOLS"
-      | "CREATIVE_DESIGN"
-      | "LEARNING_EDUCATION"
-      | "SOCIAL_COMMUNICATION"
-      | "GAMING"
-      | "BUSINESS_FINANCE"
-      | "HEALTH_FITNESS",
+    categoryId: "",
     logoUrl: "",
     logoName: "",
     borderColor: "",
@@ -107,6 +105,7 @@ export function ProductModal({
       features: [],
       isPopular: false,
       isAvailable: true,
+      deliveryType: "MANUAL" as const,
     },
   ]);
 
@@ -118,15 +117,7 @@ export function ProductModal({
         name: fullProductData.name || "",
         slug: fullProductData.slug || "",
         description: fullProductData.description || "",
-        category: (fullProductData.category || "STREAMING_MEDIA") as
-          | "STREAMING_MEDIA"
-          | "PRODUCTIVITY_TOOLS"
-          | "CREATIVE_DESIGN"
-          | "LEARNING_EDUCATION"
-          | "SOCIAL_COMMUNICATION"
-          | "GAMING"
-          | "BUSINESS_FINANCE"
-          | "HEALTH_FITNESS",
+        categoryId: fullProductData.categoryId || "",
         logoUrl: fullProductData.logoUrl || "",
         logoName: fullProductData.logoName || "",
         borderColor: fullProductData.borderColor || "",
@@ -157,8 +148,8 @@ export function ProductModal({
                   : [],
             isPopular: plan.isPopular,
             isAvailable: plan.isAvailable,
-            stockQuantity: plan.stockQuantity || undefined,
             maxSubscriptions: plan.maxSubscriptions || undefined,
+            deliveryType: (plan.deliveryType as "MANUAL" | "AUTOMATIC") || "MANUAL",
           })),
         );
       }
@@ -169,7 +160,7 @@ export function ProductModal({
         name: "",
         slug: "",
         description: "",
-        category: "STREAMING_MEDIA",
+        categoryId: "",
         logoUrl: "",
         logoName: "",
         borderColor: "",
@@ -189,6 +180,7 @@ export function ProductModal({
           features: [],
           isPopular: false,
           isAvailable: true,
+          deliveryType: "MANUAL" as const,
         },
       ]);
     }
@@ -221,16 +213,7 @@ export function ProductModal({
     },
   });
 
-  const categories = [
-    { key: "STREAMING_MEDIA", label: "Streaming & Media" },
-    { key: "PRODUCTIVITY_TOOLS", label: "Productivity & Tools" },
-    { key: "CREATIVE_DESIGN", label: "Creative & Design" },
-    { key: "LEARNING_EDUCATION", label: "Learning & Education" },
-    { key: "SOCIAL_COMMUNICATION", label: "Social & Communication" },
-    { key: "GAMING", label: "Gaming" },
-    { key: "BUSINESS_FINANCE", label: "Business & Finance" },
-    { key: "HEALTH_FITNESS", label: "Health & Fitness" },
-  ];
+
 
   const billingPeriods = [
     { key: "MONTHLY", label: "Monthly" },
@@ -272,6 +255,7 @@ export function ProductModal({
         features: [],
         isPopular: false,
         isAvailable: true,
+        deliveryType: "MANUAL",
       },
     ]);
   };
@@ -455,16 +439,17 @@ export function ProductModal({
                       Category *
                     </label>
                     <select
-                      value={formData.category}
+                      value={formData.categoryId}
                       onChange={(e) =>
-                        handleInputChange("category", e.target.value)
+                        handleInputChange("categoryId", e.target.value)
                       }
                       className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
                       required
                     >
+                      <option value="">Select a category</option>
                       {categories.map((category) => (
-                        <option key={category.key} value={category.key}>
-                          {category.label}
+                        <option key={category.id} value={category.id}>
+                          {category.name}
                         </option>
                       ))}
                     </select>
@@ -589,10 +574,8 @@ export function ProductModal({
                     <input
                       type="checkbox"
                       checked={formData.isActive}
-                      onChange={(e) =>
-                        handleInputChange("isActive", e.target.checked)
-                      }
-                      className="w-4 h-4 text-purple-600 bg-gray-700 border-gray-600 rounded"
+                      onChange={(e) => handleInputChange("isActive", e.target.checked)}
+                      className="w-4 h-4 text-purple-600 bg-gray-700 border-gray-600 rounded focus:ring-purple-500 focus:ring-2"
                     />
                     <span className="text-sm text-gray-300">Active</span>
                   </label>
@@ -601,10 +584,8 @@ export function ProductModal({
                     <input
                       type="checkbox"
                       checked={formData.isFeatured}
-                      onChange={(e) =>
-                        handleInputChange("isFeatured", e.target.checked)
-                      }
-                      className="w-4 h-4 text-purple-600 bg-gray-700 border-gray-600 rounded"
+                      onChange={(e) => handleInputChange("isFeatured", e.target.checked)}
+                      className="w-4 h-4 text-purple-600 bg-gray-700 border-gray-600 rounded focus:ring-purple-500 focus:ring-2"
                     />
                     <span className="text-sm text-gray-300">Featured</span>
                   </label>
@@ -772,19 +753,39 @@ export function ProductModal({
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-300 mb-2">
+                          Delivery Type *
+                        </label>
+                        <select
+                          value={plan.deliveryType}
+                          onChange={(e) =>
+                            handlePlanChange(
+                              planIndex,
+                              "deliveryType",
+                              e.target.value as "MANUAL" | "AUTOMATIC",
+                            )
+                          }
+                          className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                          required
+                        >
+                          <option value="MANUAL">Manual</option>
+                          <option value="AUTOMATIC">Automatic</option>
+                        </select>
+                        <p className="text-xs text-gray-400 mt-1">
+                          {plan.deliveryType === "AUTOMATIC" 
+                            ? "Products delivered automatically from stock" 
+                            : "Products delivered manually via support tickets"}
+                        </p>
+                      </div>
+
                       <label className="flex items-center space-x-2">
                         <input
                           type="checkbox"
                           checked={plan.isPopular}
-                          onChange={(e) =>
-                            handlePlanChange(
-                              planIndex,
-                              "isPopular",
-                              e.target.checked,
-                            )
-                          }
-                          className="w-4 h-4 text-purple-600 bg-gray-700 border-gray-600 rounded"
+                          onChange={(e) => handlePlanChange(planIndex, "isPopular", e.target.checked)}
+                          className="w-4 h-4 text-yellow-600 bg-gray-700 border-gray-600 rounded focus:ring-yellow-500 focus:ring-2"
                         />
                         <span className="text-sm text-gray-300">Popular</span>
                       </label>
@@ -793,105 +794,59 @@ export function ProductModal({
                         <input
                           type="checkbox"
                           checked={plan.isAvailable}
-                          onChange={(e) =>
-                            handlePlanChange(
-                              planIndex,
-                              "isAvailable",
-                              e.target.checked,
-                            )
-                          }
-                          className="w-4 h-4 text-purple-600 bg-gray-700 border-gray-600 rounded"
+                          onChange={(e) => handlePlanChange(planIndex, "isAvailable", e.target.checked)}
+                          className="w-4 h-4 text-green-600 bg-gray-700 border-gray-600 rounded focus:ring-green-500 focus:ring-2"
                         />
                         <span className="text-sm text-gray-300">Available</span>
                       </label>
                     </div>
 
-                    {/* Stock Management Section */}
+                    {/* Delivery Information */}
                     <div className="mb-4">
-                      <h5 className="text-sm font-medium text-gray-300 mb-3">
-                        Stock Management
-                      </h5>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <label className="flex items-center space-x-2 mb-2">
-                            <input
-                              type="checkbox"
-                              checked={
-                                plan.stockQuantity === null ||
-                                plan.stockQuantity === undefined
-                              }
-                              onChange={(e) => {
-                                if (e.target.checked) {
-                                  handlePlanChange(
-                                    planIndex,
-                                    "stockQuantity",
-                                    null,
-                                  );
-                                } else {
-                                  handlePlanChange(
-                                    planIndex,
-                                    "stockQuantity",
-                                    100,
-                                  );
-                                }
-                              }}
-                              className="w-4 h-4 text-purple-600 bg-gray-700 border-gray-600 rounded"
-                            />
-                            <span className="text-sm text-gray-300">
-                              Infinite Stock
-                            </span>
-                          </label>
-                          {plan.stockQuantity !== null &&
-                            plan.stockQuantity !== undefined && (
-                              <div>
-                                <label className="block text-sm font-medium text-gray-300 mb-2">
-                                  Stock Quantity
-                                </label>
-                                <input
-                                  type="number"
-                                  min="0"
-                                  value={plan.stockQuantity || 0}
-                                  onChange={(e) =>
-                                    handlePlanChange(
-                                      planIndex,
-                                      "stockQuantity",
-                                      parseInt(e.target.value) || 0,
-                                    )
-                                  }
-                                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                                  placeholder="100"
-                                />
-                                <p className="text-xs text-gray-400 mt-1">
-                                  Set to 0 to mark as out of stock
-                                </p>
-                              </div>
-                            )}
-                        </div>
+                      <div className="bg-gray-800/30 p-4 rounded-lg border border-gray-700">
+                        <h5 className="text-sm font-medium text-gray-300 mb-2">
+                          Stock & Delivery Information
+                        </h5>
+                                                 <div className="text-xs text-gray-400 space-y-1">
+                           {plan.deliveryType === "AUTOMATIC" ? (
+                             <>
+                               <p>• <span className="text-green-400">Automatic Delivery:</span> Stock managed through Stock Management system</p>
+                               <p>• Products delivered automatically when stock is available</p>
+                               <p>• If no stock available, product cannot be purchased</p>
+                             </>
+                           ) : (
+                             <>
+                               <p>• <span className="text-blue-400">Manual Delivery:</span> Unlimited stock (stockless)</p>
+                               <p>• Products delivered manually via support tickets</p>
+                               <p>• No stock limitations apply</p>
+                             </>
+                           )}
+                         </div>
+                      </div>
 
-                        <div>
-                          <label className="block text-sm font-medium text-gray-300 mb-2">
-                            Max Subscriptions (Optional)
-                          </label>
-                          <input
-                            type="number"
-                            min="0"
-                            value={plan.maxSubscriptions || ""}
-                            onChange={(e) =>
-                              handlePlanChange(
-                                planIndex,
-                                "maxSubscriptions",
-                                e.target.value
-                                  ? parseInt(e.target.value)
-                                  : undefined,
-                              )
-                            }
-                            className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                            placeholder="Leave empty for unlimited"
-                          />
-                          <p className="text-xs text-gray-400 mt-1">
-                            Maximum concurrent subscriptions for this plan
-                          </p>
-                        </div>
+                      <div className="mt-4">
+                        <label className="block text-sm font-medium text-gray-300 mb-2">
+                          Max Subscriptions (Optional)
+                        </label>
+                        <input
+                          type="number"
+                          min="0"
+                          value={plan.maxSubscriptions || ""}
+                          onChange={(e) =>
+                            handlePlanChange(
+                              planIndex,
+                              "maxSubscriptions",
+                              e.target.value
+                                ? parseInt(e.target.value)
+                                : undefined,
+                            )
+                          }
+                          className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                          placeholder="Leave empty for unlimited"
+                        />
+                        <p className="text-xs text-gray-400 mt-1">
+                          Maximum concurrent subscriptions for this plan
+                        </p>
                       </div>
                     </div>
 

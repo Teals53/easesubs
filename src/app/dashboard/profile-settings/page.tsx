@@ -6,7 +6,6 @@ import { redirect } from "next/navigation";
 import { motion } from "framer-motion";
 import {
   User,
-  Bell,
   Shield,
   Key,
   Trash2,
@@ -16,6 +15,8 @@ import {
   EyeOff,
   Crown,
   UserCheck,
+  Clock,
+  Download,
 } from "lucide-react";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
@@ -40,12 +41,6 @@ export default function ProfileSettingsPage() {
   });
   const [formData, setFormData] = useState({
     name: "",
-  });
-  const [notifications, setNotifications] = useState({
-    email: true,
-    push: false,
-    sms: false,
-    marketing: true,
   });
 
   // Fetch user profile
@@ -234,6 +229,10 @@ export default function ProfileSettingsPage() {
     }
   };
 
+  const handleDownloadData = () => {
+    toast.info("Data export feature coming soon!");
+  };
+
   const getRoleIcon = (role: string) => {
     switch (role) {
       case "ADMIN":
@@ -383,7 +382,7 @@ export default function ProfileSettingsPage() {
         </div>
       </motion.div>
 
-      {/* Notification Settings */}
+      {/* Security & Account Management */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -391,114 +390,93 @@ export default function ProfileSettingsPage() {
         className="bg-gray-800/50 backdrop-blur-lg p-6 rounded-2xl border border-gray-700"
       >
         <h2 className="text-xl font-semibold text-white mb-6 flex items-center">
-          <Bell className="w-5 h-5 mr-2" />
-          Notification Preferences
+          <Shield className="w-5 h-5 mr-2" />
+          Security & Account Management
         </h2>
+        
         <div className="space-y-4">
-          {Object.entries(notifications).map(([key, value]) => (
-            <div
-              key={key}
-              className="flex items-center justify-between p-4 bg-gray-700/50 rounded-lg"
-            >
+          {/* Password Management */}
+          <div className="flex items-center justify-between p-4 bg-gray-700/50 rounded-lg">
+            <div className="flex items-center">
+              <Key className="w-5 h-5 text-gray-400 mr-3" />
               <div>
-                <p className="text-white font-medium capitalize">
-                  {key.replace(/([A-Z])/g, " $1").trim()} Notifications
-                </p>
-                <p className="text-gray-400 text-sm">
-                  Receive {key} notifications
-                </p>
+                <p className="text-white font-medium">Change Password</p>
+                <p className="text-gray-400 text-sm">Update your account password</p>
               </div>
-              <button
-                onClick={() =>
-                  setNotifications({ ...notifications, [key]: !value })
-                }
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                  value ? "bg-purple-600" : "bg-gray-600"
-                }`}
-              >
-                <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                    value ? "translate-x-6" : "translate-x-1"
-                  }`}
-                />
-              </button>
-            </div>
-          ))}
-        </div>
-      </motion.div>
-
-      {/* Security & Appearance */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Security Settings */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="bg-gray-800/50 backdrop-blur-lg p-6 rounded-2xl border border-gray-700"
-        >
-          <h2 className="text-xl font-semibold text-white mb-6 flex items-center">
-            <Shield className="w-5 h-5 mr-2" />
-            Security
-          </h2>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between p-4 bg-gray-700/50 rounded-lg">
-              <div className="flex items-center">
-                <Key className="w-5 h-5 text-gray-400 mr-3" />
-                <div>
-                  <p className="text-white font-medium">Change Password</p>
-                  <p className="text-gray-400 text-sm">Update your password</p>
-                </div>
-              </div>
-              <button
-                onClick={() => setShowPasswordModal(true)}
-                className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm transition-colors"
-              >
-                Change
-              </button>
-            </div>
-
-            <div className="flex items-center justify-between p-4 bg-gray-700/50 rounded-lg">
-              <div className="flex items-center">
-                <Shield className="w-5 h-5 text-gray-400 mr-3" />
-                <div>
-                  <p className="text-white font-medium">Two-Factor Auth</p>
-                  <p className="text-gray-400 text-sm">Extra security layer</p>
-                </div>
-              </div>
-              <button className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg text-sm transition-colors">
-                Enable
-              </button>
-            </div>
-          </div>
-        </motion.div>
-
-        {/* Danger Zone */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-          className="bg-red-900/20 backdrop-blur-lg p-6 rounded-2xl border border-red-500/30"
-        >
-          <h2 className="text-xl font-semibold text-red-400 mb-6 flex items-center">
-            <Trash2 className="w-5 h-5 mr-2" />
-            Danger Zone
-          </h2>
-          <div className="flex items-center justify-between p-4 bg-red-900/30 rounded-lg">
-            <div>
-              <p className="text-white font-medium">Delete Account</p>
-              <p className="text-gray-400 text-sm">
-                Permanently delete your account and all data
-              </p>
             </div>
             <button
-              onClick={() => setShowDeleteModal(true)}
-              className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm transition-colors"
+              onClick={() => setShowPasswordModal(true)}
+              className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm transition-colors"
             >
-              Delete
+              Change
             </button>
           </div>
-        </motion.div>
-      </div>
+
+          {/* Two-Factor Authentication */}
+          <div className="flex items-center justify-between p-4 bg-gray-700/50 rounded-lg">
+            <div className="flex items-center">
+              <Shield className="w-5 h-5 text-gray-400 mr-3" />
+              <div>
+                <p className="text-white font-medium">Two-Factor Authentication</p>
+                <p className="text-gray-400 text-sm">Add an extra layer of security to your account</p>
+              </div>
+            </div>
+            <button className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg text-sm transition-colors">
+              Enable
+            </button>
+          </div>
+
+          {/* Login Sessions */}
+          <div className="flex items-center justify-between p-4 bg-gray-700/50 rounded-lg">
+            <div className="flex items-center">
+              <Clock className="w-5 h-5 text-gray-400 mr-3" />
+              <div>
+                <p className="text-white font-medium">Active Sessions</p>
+                <p className="text-gray-400 text-sm">Manage your active login sessions</p>
+              </div>
+            </div>
+            <button className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg text-sm transition-colors">
+              View Sessions
+            </button>
+          </div>
+
+          {/* Data Export */}
+          <div className="flex items-center justify-between p-4 bg-gray-700/50 rounded-lg">
+            <div className="flex items-center">
+              <Download className="w-5 h-5 text-gray-400 mr-3" />
+              <div>
+                <p className="text-white font-medium">Download Your Data</p>
+                <p className="text-gray-400 text-sm">Export all your account data</p>
+              </div>
+            </div>
+            <button
+              onClick={handleDownloadData}
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm transition-colors"
+            >
+              Download
+            </button>
+          </div>
+
+          {/* Danger Zone */}
+          <div className="mt-6 p-4 bg-red-900/20 border border-red-500/30 rounded-lg">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <Trash2 className="w-5 h-5 text-red-400 mr-3" />
+                <div>
+                  <p className="text-red-400 font-medium">Delete Account</p>
+                  <p className="text-gray-400 text-sm">Permanently delete your account and all associated data</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowDeleteModal(true)}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm transition-colors"
+              >
+                Delete Account
+              </button>
+            </div>
+          </div>
+        </div>
+      </motion.div>
 
       {/* Password Change Modal */}
       {showPasswordModal && (

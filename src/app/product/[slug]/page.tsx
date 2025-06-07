@@ -8,8 +8,6 @@ import Image from "next/image";
 import {
   ArrowLeft,
   Clock,
-  Users,
-  Star,
   Check,
   Package,
   ShoppingCart,
@@ -18,6 +16,8 @@ import Link from "next/link";
 import { trpc } from "@/lib/trpc";
 import { useCart } from "@/components/cart/use-cart";
 import { toast } from "sonner";
+import ProductStats from "@/components/product/ProductStats";
+import ProductReviews from "@/components/product/ProductReviews";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
 
@@ -41,6 +41,20 @@ export default function ProductPage() {
         if (!slug) return false;
         return failureCount < 2;
       },
+    },
+  );
+
+  // Get the selected plan
+  const selectedPlan =
+    product?.plans.find((plan) => plan.id === selectedPlanId) ||
+    product?.plans[0];
+
+  // Get stock availability for the selected plan
+  const { data: stockData } = trpc.product.getStockAvailability.useQuery(
+    { planId: selectedPlan?.id || "" },
+    {
+      enabled: !!selectedPlan?.id,
+      refetchInterval: 30000, // Refetch every 30 seconds to keep stock info fresh
     },
   );
 
@@ -128,10 +142,6 @@ export default function ProductPage() {
     );
   }
 
-  const selectedPlan =
-    product.plans.find((plan) => plan.id === selectedPlanId) ||
-    product.plans[0];
-
   const handleAddToCart = async () => {
     if (!selectedPlan) {
       toast.error("Please select a plan");
@@ -160,11 +170,13 @@ export default function ProductPage() {
 
     try {
       await addItem(cartItem, quantity);
+      // Only show success animation if the operation actually succeeded
       setAddToCartSuccess(true);
       setTimeout(() => setAddToCartSuccess(false), 2000);
     } catch (error) {
+      // Error handling is already done in the TRPC mutation's onError callback
+      // We don't need to show additional error messages here
       console.error("Error adding to cart:", error);
-      toast.error("Failed to add item to cart. Please try again.");
     }
   };
 
@@ -197,7 +209,7 @@ export default function ProductPage() {
         <meta name="description" content={seoDescription} />
         <meta
           name="keywords"
-          content={`${product.name}, subscription, plans, premium, discount, ${product.category.toLowerCase()}`}
+          content={`${product.name}, subscription, plans, premium, discount, ${product.category.name.toLowerCase()}`}
         />
 
         {/* Open Graph tags */}
@@ -244,12 +256,7 @@ export default function ProductPage() {
                 name: plan.name,
                 price: plan.price,
                 priceCurrency: "USD",
-                availability:
-                  plan.stockQuantity === null ||
-                  plan.stockQuantity === undefined ||
-                  plan.stockQuantity > 0
-                    ? "https://schema.org/InStock"
-                    : "https://schema.org/OutOfStock",
+                availability: "https://schema.org/InStock", // Always in stock now with new system
                 seller: {
                   "@type": "Organization",
                   name: "EaseSubs",
@@ -335,8 +342,8 @@ export default function ProductPage() {
 
                 <div className="flex items-center space-x-2">
                   <span className="text-gray-400 text-sm">Category:</span>
-                  <span className="text-white font-medium capitalize">
-                    {product.category.toLowerCase().replace("_", " ")}
+                  <span className="text-white font-medium">
+                    {product.category.name}
                   </span>
                 </div>
 
@@ -346,32 +353,7 @@ export default function ProductPage() {
                 </div>
 
                 {/* Product Stats */}
-                <div className="grid grid-cols-2 gap-4 pt-4">
-                  <div className="bg-gray-800/50 p-4 rounded-lg">
-                    <div className="flex items-center space-x-2">
-                      <Users className="h-5 w-5 text-purple-400" />
-                      <span className="text-gray-400">Plans Available</span>
-                    </div>
-                    <p className="text-xl font-bold text-white mt-1">
-                      {product.plans.length}
-                    </p>
-                  </div>
-                  <div className="bg-gray-800/50 p-4 rounded-lg">
-                    <div className="flex items-center space-x-2">
-                      <Star className="h-5 w-5 text-yellow-400" />
-                      <span className="text-gray-400">Rating</span>
-                    </div>
-                    <p className="text-xl font-bold text-white mt-1">
-                      {product.plans.some((plan) => plan.isPopular)
-                        ? "4.8"
-                        : "4.5"}
-                      /5
-                    </p>
-                    <p className="text-xs text-gray-500 mt-1">
-                      Based on customer feedback
-                    </p>
-                  </div>
-                </div>
+                <ProductStats productId={product.id} plansCount={product.plans.length} />
               </div>
             </motion.div>
 
@@ -472,18 +454,56 @@ export default function ProductPage() {
                           </div>
                         )}
 
-                      {/* Stock Info */}
-                      {plan.stockQuantity !== null &&
-                        plan.stockQuantity !== undefined && (
-                          <div className="mt-2 flex items-center space-x-2">
-                            <Package className="h-4 w-4 text-orange-400" />
-                            <span className="text-sm text-orange-400">
-                              {plan.stockQuantity > 0
-                                ? `${plan.stockQuantity} left`
-                                : "Out of stock"}
-                            </span>
+                      {/* Delivery Type Info */}
+                      <div className="mt-2 space-y-1">
+                        <div className="flex items-center space-x-2">
+                          {plan.deliveryType === "AUTOMATIC" ? (
+                            <>
+                              <Package className="h-4 w-4 text-green-400" />
+                              <span className="text-sm text-green-400">
+                                Automatic Delivery
+                              </span>
+                            </>
+                          ) : (
+                            <>
+                              <Package className="h-4 w-4 text-blue-400" />
+                              <span className="text-sm text-blue-400">
+                                Manual Delivery
+                              </span>
+                            </>
+                          )}
+                        </div>
+                        
+                        {/* Stock info for selected plan */}
+                        {plan.id === selectedPlan?.id && stockData && (
+                          <div className="flex items-center space-x-2">
+                            {stockData.deliveryType === "AUTOMATIC" ? (
+                              stockData.available ? (
+                                <>
+                                  <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                                  <span className="text-xs text-green-400">
+                                    {stockData.count} in stock
+                                  </span>
+                                </>
+                              ) : (
+                                <>
+                                  <div className="w-2 h-2 bg-red-400 rounded-full"></div>
+                                  <span className="text-xs text-red-400">
+                                    Out of stock
+                                  </span>
+                                </>
+                              )
+                            ) : (
+                              <>
+                                <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
+                                <span className="text-xs text-blue-400">
+                                  Unlimited stock
+                                </span>
+                              </>
+                            )}
                           </div>
                         )}
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -509,7 +529,8 @@ export default function ProductPage() {
                       </span>
                       <button
                         onClick={() => {
-                          const maxQty = selectedPlan?.stockQuantity || 99;
+                          // For manual delivery, no stock limit. For automatic, we'll check at cart level
+                          const maxQty = 99;
                           setQuantity(Math.min(maxQty, quantity + 1));
                         }}
                         className="p-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
@@ -536,14 +557,14 @@ export default function ProductPage() {
                     onClick={handleAddToCart}
                     disabled={
                       isAdding ||
-                      (selectedPlan?.stockQuantity !== null &&
-                        selectedPlan?.stockQuantity !== undefined &&
-                        selectedPlan.stockQuantity <= 0)
+                      (stockData?.deliveryType === "AUTOMATIC" && !stockData?.available)
                     }
                     className={`w-full flex items-center justify-center px-6 py-3 rounded-lg text-white font-semibold transition-colors ${
                       addToCartSuccess
                         ? "bg-green-600 hover:bg-green-700"
-                        : "bg-purple-600 hover:bg-purple-700"
+                        : stockData?.deliveryType === "AUTOMATIC" && !stockData?.available
+                          ? "bg-gray-600 cursor-not-allowed"
+                          : "bg-purple-600 hover:bg-purple-700"
                     } disabled:bg-gray-600 disabled:cursor-not-allowed`}
                     animate={addToCartSuccess ? { scale: [1, 1.05, 1] } : {}}
                     transition={{ duration: 0.3 }}
@@ -557,9 +578,7 @@ export default function ProductPage() {
                     ) : (
                       <ShoppingCart className="h-5 w-5 mr-2" />
                     )}
-                    {selectedPlan?.stockQuantity !== null &&
-                    selectedPlan?.stockQuantity !== undefined &&
-                    selectedPlan.stockQuantity <= 0
+                    {stockData?.deliveryType === "AUTOMATIC" && !stockData?.available
                       ? "Out of Stock"
                       : isAdding
                         ? "Adding..."
@@ -571,6 +590,11 @@ export default function ProductPage() {
               </div>
             </motion.div>
           </div>
+        </div>
+
+        {/* Product Reviews Section */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <ProductReviews productId={product.id} />
         </div>
       </div>
 

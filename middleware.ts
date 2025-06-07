@@ -8,7 +8,10 @@ export default auth((req) => {
   // Redirect authenticated users away from auth pages
   if (
     isAuthenticated &&
-    (pathname === "/auth/signin" || pathname === "/auth/signup")
+    (pathname === "/auth/signin" || 
+     pathname === "/auth/signup" || 
+     pathname === "/auth/forgot-password" || 
+     pathname.startsWith("/auth/reset-password"))
   ) {
     const callbackUrl = searchParams.get("callbackUrl");
     const redirectUrl = callbackUrl || "/dashboard";
@@ -51,5 +54,5 @@ export default auth((req) => {
 });
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/auth/signin", "/auth/signup", "/checkout"],
+  matcher: ["/dashboard/:path*", "/auth/signin", "/auth/signup", "/auth/forgot-password", "/auth/reset-password/:path*", "/checkout"],
 };

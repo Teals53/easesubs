@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { TRPCProvider } from "@/lib/trpc-provider";
 import { SessionProvider } from "next-auth/react";
+import { SessionContextProvider } from "@/lib/session-context";
 import { CartSidebar } from "@/components/cart/cart-sidebar";
 import { GlobalPrefetch } from "@/components/global-prefetch";
 import "./globals.css";
@@ -105,11 +106,13 @@ export default function RootLayout({
       </head>
       <body className={`${inter.variable} font-sans antialiased`}>
         <SessionProvider>
-          <TRPCProvider>
-            <GlobalPrefetch />
-            {children}
-            <CartSidebar />
-          </TRPCProvider>
+          <SessionContextProvider>
+            <TRPCProvider>
+              <GlobalPrefetch />
+              {children}
+              <CartSidebar />
+            </TRPCProvider>
+          </SessionContextProvider>
         </SessionProvider>
       </body>
     </html>

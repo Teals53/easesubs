@@ -15,6 +15,7 @@ import {
   LucideIcon,
   Menu,
   X,
+  Warehouse,
 } from "lucide-react";
 import Link from "next/link";
 import { signOut } from "next-auth/react";
@@ -80,6 +81,12 @@ export default function DashboardNav() {
       label: "Product Management",
       icon: Package,
       href: "/dashboard/admin-products",
+    },
+    {
+      id: "admin-stock",
+      label: "Stock Management",
+      icon: Warehouse,
+      href: "/dashboard/admin-stock",
     },
     {
       id: "admin-orders",
