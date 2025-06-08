@@ -13,7 +13,9 @@
     "db:migrate": "prisma migrate dev",
     "db:reset": "prisma migrate reset",
     "db:seed": "tsx prisma/seed.ts",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "rate-limits:status": "node scripts/clear-rate-limits.js status",
+    "rate-limits:clear": "node scripts/clear-rate-limits.js clear-all"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
@@ -43,6 +45,7 @@
     "lucide-react": "^0.511.0",
     "next": "15.3.3",
     "next-auth": "^5.0.0-beta.28",
+    "node-fetch": "^3.3.2",
     "nodemailer": "^6.10.1",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",

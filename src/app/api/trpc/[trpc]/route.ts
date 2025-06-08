@@ -3,17 +3,27 @@ import { type NextRequest, NextResponse } from "next/server";
 
 import { appRouter } from "@/server/api/root";
 import { createTRPCContext } from "@/server/api/trpc";
-import { apiRateLimit } from "@/lib/enhanced-rate-limit";
+import { apiRateLimit, authRateLimit } from "@/lib/enhanced-rate-limit";
 
 const handler = (req: NextRequest) => {
-  // Apply rate limiting to all tRPC requests
-  const rateLimitResult = apiRateLimit.check(req);
+  // Only apply strict rate limiting to sensitive operations
+  // Check if this is an auth-related request
+  const isAuthRequest = req.url.includes('auth') || 
+                       req.url.includes('login') || 
+                       req.url.includes('register') ||
+                       req.url.includes('password');
+  
+  // Apply different rate limits based on request type
+  const rateLimiter = isAuthRequest ? authRateLimit : apiRateLimit;
+  const rateLimitResult = rateLimiter.check(req);
+  
   if (!rateLimitResult.success) {
     return NextResponse.json(
       { 
         error: "Too many requests", 
         resetTime: rateLimitResult.resetTime,
-        remaining: rateLimitResult.remaining 
+        remaining: rateLimitResult.remaining,
+        retryAfter: Math.ceil((rateLimitResult.resetTime - Date.now()) / 1000)
       },
       { 
         status: 429,
@@ -21,6 +31,7 @@ const handler = (req: NextRequest) => {
           'X-RateLimit-Limit': rateLimitResult.limit.toString(),
           'X-RateLimit-Remaining': rateLimitResult.remaining.toString(),
           'X-RateLimit-Reset': rateLimitResult.resetTime.toString(),
+          'Retry-After': Math.ceil((rateLimitResult.resetTime - Date.now()) / 1000).toString(),
         }
       },
     );
