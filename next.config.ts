@@ -51,7 +51,7 @@ const nextConfig: NextConfig = {
                 ].join("; ")
               : [
                   "default-src 'self'",
-                  "script-src 'self' https://js.jotform.com",
+                  "script-src 'self' 'unsafe-inline' https://js.jotform.com",
                   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
                   "style-src-elem 'self' 'unsafe-inline' https://fonts.googleapis.com",
                   "font-src 'self' data: https://fonts.gstatic.com",

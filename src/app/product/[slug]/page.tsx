@@ -5,7 +5,6 @@ import { useParams } from "next/navigation";
 import { motion } from "framer-motion";
 import Head from "next/head";
 import Image from "next/image";
-import Script from "next/script";
 import { ArrowLeft, Clock, Check, Package, ShoppingCart } from "lucide-react";
 import Link from "next/link";
 import { trpc } from "@/lib/trpc";
@@ -15,6 +14,7 @@ import ProductStats from "@/components/product/ProductStats";
 import ProductReviews from "@/components/product/ProductReviews";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
+import Script from "next/script";
 
 export default function ProductPage() {
   const params = useParams();
@@ -231,12 +231,11 @@ export default function ProductPage() {
           rel="canonical"
           href={`${process.env.NEXT_PUBLIC_APP_URL || "https://easesubs.com"}/product/${product.slug}`}
         />
-
       </Head>
       
       {/* Product specific structured data */}
       <Script
-        id="structured-data-product"
+        id="product-structured-data"
         type="application/ld+json"
         dangerouslySetInnerHTML={{
           __html: JSON.stringify({
