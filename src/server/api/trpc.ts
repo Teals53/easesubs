@@ -14,6 +14,7 @@ import { ZodError } from "zod";
 
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { securityMonitor } from "@/lib/security-monitor";
 
 /**
  * 1. CONTEXT
@@ -109,6 +110,17 @@ export const publicProcedure = t.procedure;
  */
 const enforceUserIsAuthed = t.middleware(({ ctx, next }) => {
   if (!ctx.session || !ctx.session.user) {
+    // Log unauthorized access attempt
+    securityMonitor.analyzeEvent({
+      type: "UNAUTHORIZED_ACCESS",
+      severity: "MEDIUM",
+      source: "tRPC - Authentication Required",
+      details: {
+        reason: "no_session",
+        timestamp: new Date().toISOString()
+      }
+    });
+    
     throw new TRPCError({ code: "UNAUTHORIZED" });
   }
   return next({
@@ -124,6 +136,17 @@ const enforceUserIsAuthed = t.middleware(({ ctx, next }) => {
  */
 const enforceUserIsActive = t.middleware(async ({ ctx, next }) => {
   if (!ctx.session || !ctx.session.user) {
+    // Log unauthorized access attempt
+    await securityMonitor.analyzeEvent({
+      type: "UNAUTHORIZED_ACCESS",
+      severity: "MEDIUM",
+      source: "tRPC - Active User Required",
+      details: {
+        reason: "no_session",
+        timestamp: new Date().toISOString()
+      }
+    });
+    
     throw new TRPCError({ code: "UNAUTHORIZED" });
   }
 
@@ -138,6 +161,19 @@ const enforceUserIsActive = t.middleware(async ({ ctx, next }) => {
     });
 
     if (!user || !user.isActive) {
+      // Log unauthorized access attempt for inactive user
+      await securityMonitor.analyzeEvent({
+        type: "UNAUTHORIZED_ACCESS",
+        severity: "HIGH",
+        source: "tRPC - Inactive User Access",
+        userId,
+        details: {
+          reason: user ? "inactive_user" : "user_not_found",
+          userId,
+          timestamp: new Date().toISOString()
+        }
+      });
+      
       throw new TRPCError({
         code: "FORBIDDEN",
         message: "Account is inactive or not found",
@@ -165,11 +201,38 @@ const enforceUserIsActive = t.middleware(async ({ ctx, next }) => {
  */
 const enforceUserIsAdmin = t.middleware(({ ctx, next }) => {
   if (!ctx.session || !ctx.session.user) {
+    // Log unauthorized access attempt
+    securityMonitor.analyzeEvent({
+      type: "UNAUTHORIZED_ACCESS",
+      severity: "HIGH",
+      source: "tRPC - Admin Access Required",
+      details: {
+        reason: "no_session_admin_required",
+        timestamp: new Date().toISOString()
+      }
+    });
+    
     throw new TRPCError({ code: "UNAUTHORIZED" });
   }
 
   // Check if user has admin role
   if (ctx.session.user.role !== "ADMIN") {
+    // Log privilege escalation attempt
+    securityMonitor.analyzeEvent({
+      type: "PRIVILEGE_ESCALATION",
+      severity: "HIGH",
+      source: "tRPC - Admin Access Denied",
+      userId: ctx.session.user.id,
+      details: {
+        reason: "insufficient_privileges",
+        userRole: ctx.session.user.role,
+        requiredRole: "ADMIN",
+        userId: ctx.session.user.id,
+        userEmail: ctx.session.user.email,
+        timestamp: new Date().toISOString()
+      }
+    });
+    
     throw new TRPCError({
       code: "FORBIDDEN",
       message: "Admin access required",

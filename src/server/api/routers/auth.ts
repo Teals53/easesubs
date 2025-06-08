@@ -10,59 +10,7 @@ import crypto from "crypto";
 import { emailService } from "@/lib/email";
 import { validatePassword, DEFAULT_PASSWORD_POLICY } from "@/lib/password-validator";
 
-// Account lockout configuration
-const LOCKOUT_CONFIG = {
-  maxFailedAttempts: 5,
-  lockoutDuration: 15 * 60 * 1000, // 15 minutes
-  attemptWindow: 15 * 60 * 1000, // 15 minutes
-};
 
-// In-memory store for failed login attempts (use Redis in production)
-const failedAttempts = new Map<string, { count: number; lastAttempt: number; lockedUntil?: number }>();
-
-function checkAccountLockout(email: string): { isLocked: boolean; lockedUntil?: number } {
-  const attempts = failedAttempts.get(email);
-  if (!attempts) return { isLocked: false };
-
-  const now = Date.now();
-  
-  // Check if lockout period has expired
-  if (attempts.lockedUntil && now > attempts.lockedUntil) {
-    failedAttempts.delete(email);
-    return { isLocked: false };
-  }
-
-  // Check if account is currently locked
-  if (attempts.lockedUntil && now <= attempts.lockedUntil) {
-    return { isLocked: true, lockedUntil: attempts.lockedUntil };
-  }
-
-  return { isLocked: false };
-}
-
-function recordFailedAttempt(email: string): void {
-  const now = Date.now();
-  const attempts = failedAttempts.get(email) || { count: 0, lastAttempt: 0 };
-
-  // Reset count if last attempt was outside the window
-  if (now - attempts.lastAttempt > LOCKOUT_CONFIG.attemptWindow) {
-    attempts.count = 0;
-  }
-
-  attempts.count++;
-  attempts.lastAttempt = now;
-
-  // Lock account if max attempts reached
-  if (attempts.count >= LOCKOUT_CONFIG.maxFailedAttempts) {
-    attempts.lockedUntil = now + LOCKOUT_CONFIG.lockoutDuration;
-  }
-
-  failedAttempts.set(email, attempts);
-}
-
-function clearFailedAttempts(email: string): void {
-  failedAttempts.delete(email);
-}
 
 export const authRouter = createTRPCRouter({
   register: publicProcedure
@@ -136,19 +84,7 @@ export const authRouter = createTRPCRouter({
       }
     }),
 
-  // Login attempt validation (for client-side lockout checking)
-  checkLoginAttempts: publicProcedure
-    .input(z.object({ email: z.string().email() }))
-    .query(async ({ input }) => {
-      const lockoutStatus = checkAccountLockout(input.email);
-      return {
-        isLocked: lockoutStatus.isLocked,
-        lockedUntil: lockoutStatus.lockedUntil,
-        remainingTime: lockoutStatus.lockedUntil 
-          ? Math.max(0, lockoutStatus.lockedUntil - Date.now())
-          : 0,
-      };
-    }),
+
 
   requestPasswordReset: publicProcedure
     .input(
@@ -159,14 +95,7 @@ export const authRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const { email } = input;
 
-      // Check for account lockout (also applies to password reset to prevent enumeration)
-      const lockoutStatus = checkAccountLockout(email);
-      if (lockoutStatus.isLocked) {
-        throw new TRPCError({
-          code: "TOO_MANY_REQUESTS",
-          message: "Too many failed attempts. Please try again later.",
-        });
-      }
+
 
       // Find user
       const user = await ctx.db.user.findUnique({
@@ -275,8 +204,7 @@ export const authRouter = createTRPCRouter({
           },
         });
 
-        // Clear any failed login attempts
-        clearFailedAttempts(user.email);
+
 
         return {
           success: true,
@@ -400,21 +328,7 @@ export const authRouter = createTRPCRouter({
       return { success: true };
     }),
 
-  // Endpoint for recording failed login attempts (called by NextAuth)
-  recordFailedLogin: publicProcedure
-    .input(z.object({ email: z.string().email() }))
-    .mutation(async ({ input }) => {
-      recordFailedAttempt(input.email);
-      return { success: true };
-    }),
 
-  // Endpoint for clearing failed login attempts (called by NextAuth on successful login)
-  clearFailedLogin: publicProcedure
-    .input(z.object({ email: z.string().email() }))
-    .mutation(async ({ input }) => {
-      clearFailedAttempts(input.email);
-      return { success: true };
-    }),
 
   deleteAccount: protectedProcedure
     .input(

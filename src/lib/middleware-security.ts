@@ -40,16 +40,89 @@ export class MiddlewareSecurity {
       };
     }
 
+    // Check for rate limiting (simple in-memory tracking)
+    const rateLimitKey = `${ip}:${pathname}`;
+    const now = Date.now();
+    const windowMs = 60 * 1000; // 1 minute window
+    const maxRequests = 100; // Max requests per window
+
+    if (!this.requestCounts) {
+      this.requestCounts = new Map();
+    }
+
+    const requestData = this.requestCounts.get(rateLimitKey) || { count: 0, windowStart: now };
+    
+    // Reset window if expired
+    if (now - requestData.windowStart > windowMs) {
+      requestData.count = 0;
+      requestData.windowStart = now;
+    }
+
+    requestData.count++;
+    this.requestCounts.set(rateLimitKey, requestData);
+
+    // Check if rate limit exceeded
+    if (requestData.count > maxRequests) {
+      await securityMonitor.analyzeEvent({
+        type: "RATE_LIMIT_EXCEEDED",
+        severity: "HIGH",
+        source: "Middleware - Rate Limiting",
+        ip,
+        userAgent,
+        details: {
+          pathname,
+          method,
+          requestCount: requestData.count,
+          windowMs,
+          maxRequests
+        }
+      });
+    }
+
+    // Check for abnormal traffic patterns
+    const totalRequestsFromIP = Array.from(this.requestCounts.entries())
+      .filter(([key]) => key.startsWith(`${ip}:`))
+      .reduce((sum, [, data]) => sum + data.count, 0);
+
+    if (totalRequestsFromIP > 500) { // Abnormal traffic threshold
+      await securityMonitor.analyzeEvent({
+        type: "ABNORMAL_TRAFFIC",
+        severity: "HIGH",
+        source: "Middleware - Traffic Analysis",
+        ip,
+        userAgent,
+        details: {
+          totalRequests: totalRequestsFromIP,
+          timeWindow: windowMs,
+          detectionType: "high_volume_requests"
+        }
+      });
+    }
+
     // Detect suspicious patterns
     const threats = this.detectSuspiciousPatterns(request);
     
     // Calculate risk score
     const riskScore = this.calculateRequestRiskScore(request, threats);
 
-    // Log high-risk requests
+    // Log high-risk requests with appropriate event type
     if (riskScore > 70) {
+      let eventType: "SUSPICIOUS_LOGIN" | "MALICIOUS_PAYLOAD" | "INJECTION_ATTEMPT" | "SUSPICIOUS_FILE_ACCESS" | "POTENTIAL_BOT" | "UNAUTHORIZED_ACCESS" = "SUSPICIOUS_LOGIN";
+      
+      if (threats.includes("MALICIOUS_PAYLOAD")) {
+        eventType = "MALICIOUS_PAYLOAD";
+      } else if (threats.includes("SQL_INJECTION") || threats.includes("XSS_ATTEMPT")) {
+        eventType = "INJECTION_ATTEMPT";
+      } else if (threats.includes("PATH_TRAVERSAL")) {
+        eventType = "SUSPICIOUS_FILE_ACCESS";
+      } else if (threats.includes("POTENTIAL_BOT")) {
+        eventType = "POTENTIAL_BOT";
+      } else if (threats.includes("POTENTIAL_CSRF")) {
+        eventType = "UNAUTHORIZED_ACCESS";
+      }
+        
       await securityMonitor.analyzeEvent({
-        type: "SUSPICIOUS_LOGIN",
+        type: eventType,
         severity: riskScore > 90 ? "CRITICAL" : "HIGH",
         source: `Middleware - ${pathname}`,
         ip,
@@ -58,7 +131,8 @@ export class MiddlewareSecurity {
           path: pathname,
           method,
           threats,
-          riskScore
+          riskScore,
+          detectionType: "high_risk_request"
         }
       });
     }
@@ -158,6 +232,25 @@ export class MiddlewareSecurity {
       }
     }
 
+    // Malicious payload detection in request body (for POST requests)
+    if (request.method === "POST" || request.method === "PUT") {
+      const maliciousPatterns = [
+        /eval\s*\(/i,
+        /exec\s*\(/i,
+        /system\s*\(/i,
+        /shell_exec/i,
+        /base64_decode/i,
+        /file_get_contents/i
+      ];
+
+      // Check URL for malicious patterns (since we can't easily access body in middleware)
+      maliciousPatterns.forEach(pattern => {
+        if (pattern.test(url)) {
+          threats.push("MALICIOUS_PAYLOAD");
+        }
+      });
+    }
+
     return threats;
   }
 
@@ -185,6 +278,9 @@ export class MiddlewareSecurity {
           break;
         case "POTENTIAL_CSRF":
           score += 25;
+          break;
+        case "MALICIOUS_PAYLOAD":
+          score += 50;
           break;
         default:
           score += 10;
@@ -238,6 +334,8 @@ export class MiddlewareSecurity {
 
     return new NextResponse("Security Check Failed", { status: 400 });
   }
+
+  private requestCounts: Map<string, { count: number; windowStart: number }> | undefined;
 }
 
 // Export singleton instance

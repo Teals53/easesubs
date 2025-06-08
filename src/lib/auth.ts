@@ -6,26 +6,6 @@ import bcrypt from "bcryptjs";
 import { db } from "@/lib/db";
 import { secureLogger } from "@/lib/secure-logger";
 
-// Function to call our tRPC endpoint for tracking failed logins
-async function recordFailedLogin(email: string) {
-  try {
-    // In a real implementation, you'd call your tRPC endpoint
-    // For now, we'll just log it
-    secureLogger.auth("Failed login attempt", email);
-  } catch (error) {
-    secureLogger.error("Failed to record login attempt", error);
-  }
-}
-
-async function clearFailedLogin(email: string) {
-  try {
-    // In a real implementation, you'd call your tRPC endpoint
-    secureLogger.auth("Successful login", email);
-  } catch (error) {
-    secureLogger.error("Failed to clear login attempts", error);
-  }
-}
-
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(db),
   session: {
@@ -119,13 +99,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           });
 
           if (!user || !user.password) {
-            await recordFailedLogin(email);
+            // Failed login will be handled by the auth router's recordFailedAttempt
             return null;
           }
 
           // Check if account is active
           if (!user.isActive) {
-            await recordFailedLogin(email);
+            // Failed login will be handled by the auth router's recordFailedAttempt
             return null;
           }
 
@@ -135,13 +115,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           );
 
           if (!isPasswordValid) {
-            await recordFailedLogin(email);
+            // Failed login will be handled by the auth router's recordFailedAttempt
             return null;
           }
 
-          // Clear failed login attempts on successful login
-          await clearFailedLogin(email);
-
+          // Successful login - clear any failed attempts via the auth router
           return {
             id: user.id,
             email: user.email,
@@ -150,7 +128,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           };
         } catch (error) {
           secureLogger.error("Authorization error", error);
-          await recordFailedLogin(email);
           return null;
         }
       },

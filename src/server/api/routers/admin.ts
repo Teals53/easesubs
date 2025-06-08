@@ -221,6 +221,26 @@ export const adminRouter = createTRPCRouter({
       const { page, limit, search, role } = input;
       const skip = (page - 1) * limit;
 
+      // Monitor for potential data exfiltration
+      if (limit > 50) {
+        await securityMonitor.analyzeEvent({
+          type: "DATA_EXFILTRATION",
+          severity: "HIGH",
+          source: "Admin Panel - User Data Access",
+          userId: ctx.session.user.id,
+          details: {
+            action: "bulk_user_data_request",
+            requestedLimit: limit,
+            page,
+            search,
+            role,
+            adminId: ctx.session.user.id,
+            adminEmail: ctx.session.user.email,
+            timestamp: new Date().toISOString()
+          }
+        });
+      }
+
       const where: Prisma.UserWhereInput = {};
 
       if (search) {
@@ -260,6 +280,24 @@ export const adminRouter = createTRPCRouter({
         ctx.db.user.count({ where }),
       ]);
 
+      // Log admin action for user data access
+      await securityMonitor.analyzeEvent({
+        type: "ADMIN_ACTION",
+        severity: "LOW",
+        source: "Admin Panel - User Data Access",
+        userId: ctx.session.user.id,
+        details: {
+          action: "user_data_access",
+          recordsReturned: users.length,
+          totalRecords: total,
+          page,
+          limit,
+          search,
+          role,
+          adminId: ctx.session.user.id
+        }
+      });
+
       return {
         users,
         total,
@@ -284,10 +322,51 @@ export const adminRouter = createTRPCRouter({
         });
       }
 
+      // Get current user data for logging
+      const currentUser = await ctx.db.user.findUnique({
+        where: { id: input.userId },
+        select: { role: true, email: true }
+      });
+
       const user = await ctx.db.user.update({
         where: { id: input.userId },
         data: { role: input.role },
       });
+
+      // Log admin action
+      await securityMonitor.analyzeEvent({
+        type: "ADMIN_ACTION",
+        severity: input.role === "ADMIN" ? "HIGH" : "MEDIUM",
+        source: "Admin Panel - Role Update",
+        userId: ctx.session.user.id,
+        details: {
+          action: "role_change",
+          targetUserId: input.userId,
+          targetUserEmail: currentUser?.email,
+          oldRole: currentUser?.role,
+          newRole: input.role,
+          adminId: ctx.session.user.id,
+          adminEmail: ctx.session.user.email
+        }
+      });
+
+      // Log privilege escalation if promoting to admin
+      if (input.role === "ADMIN" && currentUser?.role !== "ADMIN") {
+        await securityMonitor.analyzeEvent({
+          type: "PRIVILEGE_ESCALATION",
+          severity: "CRITICAL",
+          source: "Admin Panel - Privilege Escalation",
+          userId: ctx.session.user.id,
+          details: {
+            action: "admin_promotion",
+            targetUserId: input.userId,
+            targetUserEmail: currentUser?.email,
+            oldRole: currentUser?.role,
+            newRole: input.role,
+            adminId: ctx.session.user.id
+          }
+        });
+      }
 
       return user;
     }),
@@ -313,6 +392,12 @@ export const adminRouter = createTRPCRouter({
 
       const { userId, ...updateData } = input;
 
+      // Get current user data for logging
+      const currentUser = await ctx.db.user.findUnique({
+        where: { id: userId },
+        select: { role: true, email: true, name: true, isActive: true }
+      });
+
       // Check if email is already taken by another user
       if (updateData.email) {
         const existingUser = await ctx.db.user.findFirst({
@@ -333,6 +418,22 @@ export const adminRouter = createTRPCRouter({
       const user = await ctx.db.user.update({
         where: { id: userId },
         data: updateData,
+      });
+
+      // Log admin action
+      await securityMonitor.analyzeEvent({
+        type: "ADMIN_ACTION",
+        severity: "MEDIUM",
+        source: "Admin Panel - User Update",
+        userId: ctx.session.user.id,
+        details: {
+          action: "user_update",
+          targetUserId: userId,
+          targetUserEmail: currentUser?.email,
+          changes: updateData,
+          adminId: ctx.session.user.id,
+          adminEmail: ctx.session.user.email
+        }
       });
 
       return user;
@@ -365,6 +466,23 @@ export const adminRouter = createTRPCRouter({
         data: { isActive: !user.isActive },
       });
 
+      // Log admin action
+      await securityMonitor.analyzeEvent({
+        type: "ADMIN_ACTION",
+        severity: !user.isActive ? "MEDIUM" : "HIGH", // Deactivating is more severe
+        source: "Admin Panel - User Status",
+        userId: ctx.session.user.id,
+        details: {
+          action: user.isActive ? "user_deactivated" : "user_activated",
+          targetUserId: input.userId,
+          targetUserEmail: user.email,
+          oldStatus: user.isActive,
+          newStatus: !user.isActive,
+          adminId: ctx.session.user.id,
+          adminEmail: ctx.session.user.email
+        }
+      });
+
       return updatedUser;
     }),
 
@@ -386,6 +504,12 @@ export const adminRouter = createTRPCRouter({
           message: "Cannot delete your own account",
         });
       }
+
+      // Get user data for logging before deletion
+      const userToDelete = await ctx.db.user.findUnique({
+        where: { id: input.userId },
+        select: { email: true, role: true, name: true }
+      });
 
       // Delete user and related data
       await ctx.db.$transaction(async (tx) => {
@@ -466,6 +590,24 @@ export const adminRouter = createTRPCRouter({
         await tx.user.delete({
           where: { id: input.userId },
         });
+      });
+
+      // Log critical admin action
+      await securityMonitor.analyzeEvent({
+        type: "ADMIN_ACTION",
+        severity: "CRITICAL",
+        source: "Admin Panel - User Deletion",
+        userId: ctx.session.user.id,
+        details: {
+          action: "user_deleted",
+          targetUserId: input.userId,
+          targetUserEmail: userToDelete?.email,
+          targetUserRole: userToDelete?.role,
+          targetUserName: userToDelete?.name,
+          adminId: ctx.session.user.id,
+          adminEmail: ctx.session.user.email,
+          deletionTimestamp: new Date().toISOString()
+        }
       });
 
       return { success: true };

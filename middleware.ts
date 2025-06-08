@@ -1,9 +1,21 @@
 import { auth } from "@/lib/auth";
 import { NextResponse } from "next/server";
+import { MiddlewareSecurity } from "@/lib/middleware-security";
 
-export default auth((req) => {
+// Initialize security middleware
+const middlewareSecurity = new MiddlewareSecurity();
+
+export default auth(async (req) => {
   const { pathname, searchParams } = req.nextUrl;
   const isAuthenticated = !!req.auth;
+
+  // Analyze request for security threats
+  const securityAnalysis = await middlewareSecurity.analyzeRequest(req);
+  
+  // Block if IP is blocked or high risk
+  if (securityAnalysis.isBlocked || securityAnalysis.riskScore > 95) {
+    return middlewareSecurity.handleBlockedRequest(securityAnalysis);
+  }
 
   // Redirect authenticated users away from auth pages
   if (
@@ -55,11 +67,7 @@ export default auth((req) => {
 
 export const config = {
   matcher: [
-    "/dashboard/:path*",
-    "/auth/signin",
-    "/auth/signup",
-    "/auth/forgot-password",
-    "/auth/reset-password/:path*",
-    "/checkout",
+    // Security monitoring for all routes
+    "/((?!_next/static|_next/image|favicon.ico).*)",
   ],
 };
