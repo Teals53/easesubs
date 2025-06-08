@@ -13,9 +13,7 @@
     "db:migrate": "prisma migrate dev",
     "db:reset": "prisma migrate reset",
     "db:seed": "tsx prisma/seed.ts",
-    "type-check": "tsc --noEmit",
-    "rate-limits:status": "node scripts/clear-rate-limits.js status",
-    "rate-limits:clear": "node scripts/clear-rate-limits.js clear-all"
+    "type-check": "tsc --noEmit"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

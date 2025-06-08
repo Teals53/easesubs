@@ -250,39 +250,4 @@ export const contactRateLimit = createRateLimit({
 export const registrationRateLimit = createRateLimit({
   interval: 60 * 60 * 1000, // 1 hour
   maxRequests: 5,
-});
-
-// Utility functions for debugging and management
-export const rateLimitUtils = {
-  // Clear all rate limit data (for debugging)
-  clearAll: () => {
-    rateLimitStore.clear();
-    suspiciousIPs.clear();
-  },
-  
-  // Clear rate limit for specific identifier
-  clearIdentifier: (identifier: string) => {
-    rateLimitStore.delete(identifier);
-  },
-  
-  // Get all current rate limit entries (for debugging)
-  getAllEntries: () => {
-    return Array.from(rateLimitStore.entries()).map(([key, value]) => ({
-      identifier: key,
-      count: value.count,
-      resetTime: new Date(value.resetTime).toISOString(),
-      blocked: value.blocked,
-      blockUntil: value.blockUntil ? new Date(value.blockUntil).toISOString() : null,
-    }));
-  },
-  
-  // Get suspicious IPs
-  getSuspiciousIPs: () => {
-    return Array.from(suspiciousIPs);
-  },
-  
-  // Clear suspicious IP
-  clearSuspiciousIP: (ip: string) => {
-    suspiciousIPs.delete(ip);
-  },
-}; 
+}); 
