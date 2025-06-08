@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import { motion } from "framer-motion";
 import Head from "next/head";
 import Image from "next/image";
+import Script from "next/script";
 import { ArrowLeft, Clock, Check, Package, ShoppingCart } from "lucide-react";
 import Link from "next/link";
 import { trpc } from "@/lib/trpc";
@@ -231,35 +232,38 @@ export default function ProductPage() {
           href={`${process.env.NEXT_PUBLIC_APP_URL || "https://easesubs.com"}/product/${product.slug}`}
         />
 
-        {/* Product specific structured data */}
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              "@context": "https://schema.org/",
-              "@type": "Product",
-              name: product.name,
-              description: product.description || seoDescription,
-              image: seoImage,
-              brand: {
-                "@type": "Brand",
+      </Head>
+      
+      {/* Product specific structured data */}
+      <Script
+        id="structured-data-product"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org/",
+            "@type": "Product",
+            name: product.name,
+            description: product.description || seoDescription,
+            image: seoImage,
+            brand: {
+              "@type": "Brand",
+              name: "EaseSubs",
+            },
+            offers: product.plans.map((plan) => ({
+              "@type": "Offer",
+              name: plan.name,
+              price: plan.price,
+              priceCurrency: "USD",
+              availability: "https://schema.org/InStock", // Always in stock now with new system
+              seller: {
+                "@type": "Organization",
                 name: "EaseSubs",
               },
-              offers: product.plans.map((plan) => ({
-                "@type": "Offer",
-                name: plan.name,
-                price: plan.price,
-                priceCurrency: "USD",
-                availability: "https://schema.org/InStock", // Always in stock now with new system
-                seller: {
-                  "@type": "Organization",
-                  name: "EaseSubs",
-                },
-              })),
-            }),
-          }}
-        />
-      </Head>
+            })),
+          }),
+        }}
+      />
+      
       <Header />
       <div className="min-h-screen bg-gray-900 pt-20">
         {/* Simple Back Navigation */}

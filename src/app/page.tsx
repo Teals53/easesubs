@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
+import Script from "next/script";
 import { useSession } from "next-auth/react";
 import { Header } from "@/components/layout/header";
 import { Products } from "@/components/product/products";
@@ -34,7 +35,8 @@ export default function HomePage() {
 
   return (
     <>
-      <script
+      <Script
+        id="structured-data-home"
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
       />
