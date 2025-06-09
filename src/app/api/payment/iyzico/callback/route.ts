@@ -12,28 +12,23 @@ interface IyzicoCallbackResult {
   errorMessage?: string;
 }
 
-export async function POST(request: NextRequest): Promise<NextResponse> {
+async function handleIyzicoCallback(token: string): Promise<NextResponse> {
   try {
-    const body: { token?: string } = await request.json();
-    const { token } = body;
-
-    if (!token) {
-      return NextResponse.json(
-        { success: false, error: "Missing payment token" },
-        { status: 400 }
-      );
-    }
+    console.log("🔵 Processing Iyzico callback with token:", token);
 
     const apiKey = process.env.IYZICO_API_KEY;
     const secretKey = process.env.IYZICO_SECRET_KEY;
     const baseUrl = process.env.IYZICO_BASE_URL || "https://sandbox-api.iyzipay.com";
 
     if (!apiKey || !secretKey) {
+      console.log("❌ Missing Iyzico credentials");
       return NextResponse.json(
         { success: false, error: "Payment configuration error" },
         { status: 500 }
       );
     }
+    
+    console.log("🔵 Iyzico credentials found, creating client");
 
     const Iyzipay = await getIyzico();
     const iyzipay = new Iyzipay({
@@ -68,16 +63,25 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           const { db } = await import("@/lib/db");
           const { DeliveryService } = await import("@/lib/delivery-service");
           
-          // Find payment record by conversation ID
-          // The conversationId should now be the payment ID (based on updated create flow)
+          // Find payment record by conversation ID or token
+          // The conversationId should be the payment ID, but also check for token in providerData
           const payment = await db.payment.findFirst({
             where: {
-              OR: [
-                { id: result.conversationId },      // Primary: conversationId is payment ID  
-                { providerPaymentId: result.paymentId },
-                { orderId: result.conversationId }, // Fallback: if conversationId is order ID
-                { order: { id: result.conversationId } },
-                { order: { orderNumber: result.conversationId } },
+              AND: [
+                {
+                  OR: [
+                    { id: result.conversationId },      // Primary: conversationId is payment ID  
+                    { providerPaymentId: result.paymentId },
+                    // Check if token matches the token stored in providerData
+                    {
+                      providerData: {
+                        path: ["token"],
+                        equals: token,
+                      },
+                    },
+                  ],
+                },
+                { method: "IYZICO" }, // Ensure we only match Iyzico payments
               ],
             },
             include: {
@@ -216,14 +220,56 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     });
 
   } catch (error) {
-    console.error("iyzico callback API error:", error);
+    console.error("❌ Iyzico callback API error:", error);
+    console.error("❌ Error stack:", error instanceof Error ? error.stack : "Unknown error");
     
     return NextResponse.json(
       {
         success: false,
         error: "Internal server error during callback processing",
+        debug: error instanceof Error ? error.message : String(error)
       },
       { status: 500 }
     );
   }
-} 
+}
+
+export async function GET(request: NextRequest): Promise<NextResponse> {
+  console.log("🔵 Iyzico callback received via GET");
+  const { searchParams } = new URL(request.url);
+  const token = searchParams.get('token');
+  console.log("🔵 GET Token:", token);
+  
+  if (!token) {
+    return NextResponse.json(
+      { success: false, error: "Missing payment token" },
+      { status: 400 }
+    );
+  }
+
+  return handleIyzicoCallback(token);
+}
+
+export async function POST(request: NextRequest): Promise<NextResponse> {
+  console.log("🔵 Iyzico callback received via POST");
+  try {
+    const body: { token?: string } = await request.json();
+    const { token } = body;
+    console.log("🔵 POST body:", body);
+
+    if (!token) {
+      return NextResponse.json(
+        { success: false, error: "Missing payment token" },
+        { status: 400 }
+      );
+    }
+
+    return handleIyzicoCallback(token);
+  } catch (error) {
+    console.error("❌ Error parsing POST body:", error);
+    return NextResponse.json(
+      { success: false, error: "Invalid request body" },
+      { status: 400 }
+    );
+  }
+}
