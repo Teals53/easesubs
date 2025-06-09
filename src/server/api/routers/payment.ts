@@ -6,141 +6,12 @@ import {
 } from "@/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import crypto from "crypto";
-import { PaymentProviders } from "@/lib/payment-providers";
 
 export const paymentRouter = createTRPCRouter({
-  createPayment: protectedProcedure
-    .input(
-      z.object({
-        orderId: z.string(),
-        method: z.enum(["CRYPTOMUS", "IYZICO"]),
-        amount: z.number().positive(),
-        currency: z.string().default("USD"),
-        returnUrl: z.string().url().optional(),
-        cancelUrl: z.string().url().optional(),
-      }),
-    )
-    .mutation(async ({ ctx, input }) => {
-      // Verify order belongs to user
-      const order = await ctx.db.order.findFirst({
-        where: {
-          id: input.orderId,
-          userId: ctx.session.user.id,
-          status: "PENDING",
-        },
-        include: {
-          items: {
-            include: {
-              plan: {
-                include: {
-                  product: true,
-                },
-              },
-            },
-          },
-        },
-      });
-
-      if (!order) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Order not found or not pending",
-        });
-      }
-
-      // Create payment record
-      const payment = await ctx.db.payment.create({
-        data: {
-          orderId: input.orderId,
-          method: input.method,
-          amount: input.amount,
-          currency: input.currency,
-          status: "PENDING",
-          providerData: {
-            returnUrl: input.returnUrl,
-            cancelUrl: input.cancelUrl,
-          },
-        },
-      });
-
-      // Integrate with payment providers
-      let paymentUrl = "";
-      let paymentInstructions = "";
-      let providerPaymentId = "";
-
-      try {
-        switch (input.method) {
-          case "CRYPTOMUS":
-            const cryptomusResult =
-              await PaymentProviders.createCryptomusPayment({
-                orderId: payment.id,
-                amount: input.amount,
-                currency: input.currency,
-                returnUrl:
-                  input.returnUrl ||
-                  `${process.env.NEXTAUTH_URL}/dashboard/orders/${order.id}`,
-                callbackUrl: `${process.env.NEXTAUTH_URL}/api/webhooks/cryptomus`,
-              });
-
-            if (!cryptomusResult.success) {
-              throw new Error(
-                cryptomusResult.error || "Cryptomus payment creation failed",
-              );
-            }
-
-            paymentUrl = cryptomusResult.paymentUrl || "";
-            providerPaymentId = cryptomusResult.paymentId || "";
-            paymentInstructions =
-              "Redirecting to Cryptomus for secure crypto payment...";
-            break;
-
-          case "IYZICO":
-            // For Iyzico, we need to collect user details first before creating checkout
-            // This should be handled by a separate frontend flow that calls the /api/payment/iyzico/create endpoint
-            throw new Error(
-              "Iyzico payments require user details. Use the dedicated Iyzico checkout flow."
-            );
-        }
-
-        // Update payment with provider data
-        if (providerPaymentId) {
-          await ctx.db.payment.update({
-            where: { id: payment.id },
-            data: {
-              providerPaymentId,
-              providerData: {
-                ...(payment.providerData as Record<string, unknown>),
-                providerPaymentId,
-                paymentUrl,
-              },
-            },
-          });
-        }
-
-        return {
-          paymentId: payment.id,
-          paymentUrl,
-          paymentInstructions,
-          status: payment.status,
-        };
-      } catch (error) {
-        // Update payment status to failed
-        await ctx.db.payment.update({
-          where: { id: payment.id },
-          data: {
-            status: "FAILED",
-            failureReason:
-              error instanceof Error ? error.message : "Unknown error",
-          },
-        });
-
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message:
-            error instanceof Error ? error.message : "Payment creation failed",
-        });
-      }
-    }),
+  // Payment creation is now handled by dedicated API routes:
+  // - /api/payment/cryptomus/create
+  // - /api/payment/iyzico/create
+  // This provides better separation and allows provider-specific logic
 
   getPayment: protectedProcedure
     .input(z.object({ paymentId: z.string() }))
@@ -410,11 +281,22 @@ async function processRefundWithProvider(
       // Use the Iyzico refund function from PaymentProviders
       try {
         const { PaymentProviders } = await import("@/lib/payment-providers");
+        
+        // For Iyzico, we need the provider payment ID (transaction ID) for refunds
+        const { db } = await import("@/lib/db");
+        const payment = await db.payment.findUnique({
+          where: { id: paymentId }
+        });
+        
+        if (!payment?.providerPaymentId) {
+          throw new Error("Provider payment ID not found for Iyzico refund");
+        }
+        
         const result = await PaymentProviders.refundIyzicoPayment(
-          paymentId,
+          payment.providerPaymentId, // Use the actual Iyzico transaction ID
           amount,
           "TRY", // Default currency, could be made dynamic
-          paymentId // Use paymentId as conversationId
+          payment.id // Use internal payment ID as conversationId
         );
         
         if (!result.success) {

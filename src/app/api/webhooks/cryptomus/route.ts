@@ -62,12 +62,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Find payment record
+    // The order_id from Cryptomus should now be the payment ID (based on updated create flow)
     const payment = await db.payment.findFirst({
       where: {
         OR: [
-          { id: uuid },
-          { providerPaymentId: uuid },
-          { order: { orderNumber: order_id } },
+          { id: order_id },               // Primary: order_id is payment ID
+          { providerPaymentId: uuid },    // Secondary: by provider payment ID
+          { id: uuid },                   // Fallback: uuid as payment ID
+          { order: { orderNumber: order_id } }, // Legacy: order number matching
         ],
       },
       include: {

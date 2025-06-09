@@ -112,17 +112,33 @@ export function CheckoutForm() {
     },
   });
 
-  const createPayment = trpc.payment.createPayment.useMutation({
-    onError: (error) => {
-      console.error("Payment creation failed:", error);
-      setIsProcessing(false);
-      setErrorMessage({
-        type: "error",
-        title: "Payment Error",
-        message: error.message || "Failed to create payment. Please try again.",
-      });
-    },
-  });
+  // Handle Cryptomus payment flow
+  const handleCryptomusPayment = async (orderId: string) => {
+    const response = await fetch("/api/payment/cryptomus/create", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        orderId,
+        amount: totalPrice,
+        currency: "USD",
+        returnUrl: `${window.location.origin}/dashboard/orders/${orderId}`,
+        callbackUrl: `${window.location.origin}/api/webhooks/cryptomus`,
+      }),
+    });
+
+    const result = await response.json();
+
+    if (result.success && result.paymentUrl) {
+      // Clear cart before redirecting to payment
+      clearCart();
+      // Redirect to Cryptomus payment page
+      window.location.href = result.paymentUrl;
+    } else {
+      throw new Error(result.error || "Failed to create Cryptomus payment session");
+    }
+  };
 
   // Handle Iyzico payment flow
   const handleIyzicoPayment = async (orderId: string) => {
@@ -263,31 +279,12 @@ export function CheckoutForm() {
 
         // Clear cart after successful order
         clearCart();
-      } else {
-        // Create payment for Cryptomus
-        const paymentResult = await createPayment.mutateAsync({
-          orderId: orderResult.orderId,
-          method: "CRYPTOMUS",
-          amount: totalPrice,
-          currency: "USD",
-          returnUrl: `${window.location.origin}/dashboard/orders/${orderResult.orderId}`,
-          cancelUrl: `${window.location.origin}/checkout`,
-        });
-
-        // Handle payment provider redirection
-        if (selectedPayment === "cryptomus") {
-          // For Cryptomus, redirect to the payment URL
-          if (paymentResult.paymentUrl) {
-            window.location.href = paymentResult.paymentUrl;
-          } else {
-            setErrorMessage({
-              type: "error",
-              title: "Payment Error",
-              message:
-                "Unable to initialize Cryptomus payment. Please try again.",
-            });
-          }
-        }
+      } else if (selectedPayment === "iyzico") {
+        // Handle Iyzico payment flow
+        await handleIyzicoPayment(orderResult.orderId);
+      } else if (selectedPayment === "cryptomus") {
+        // Handle Cryptomus payment flow
+        await handleCryptomusPayment(orderResult.orderId);
       }
     } catch (error) {
       console.error("Payment error:", error);
