@@ -81,17 +81,79 @@ export async function POST(request: NextRequest) {
       },
     };
 
+    // Verify the order exists and belongs to the user
+    const { db } = await import("@/lib/db");
+    
+    const order = await db.order.findFirst({
+      where: {
+        id: body.orderId,
+        userId: session.user.id,
+        status: "PENDING",
+      },
+    });
+
+    if (!order) {
+      return NextResponse.json(
+        { success: false, error: "Order not found or not pending" },
+        { status: 404 }
+      );
+    }
+
+    // Create payment record
+    const payment = await db.payment.create({
+      data: {
+        orderId: body.orderId,
+        method: "IYZICO",
+        amount: body.amount,
+        currency: body.currency,
+        status: "PENDING",
+        providerData: {
+          buyerInfo: body.buyer,
+          billingAddress: body.billingAddress,
+          basketItems: body.basketItems,
+        },
+      },
+    });
+
+    // Update checkout data to use payment ID as conversation ID for tracking
+    const updatedCheckoutData = {
+      ...checkoutData,
+      orderId: payment.id, // Use payment ID as conversation ID for tracking
+    };
+
     // Create iyzico checkout form (hosted payment page)
-    const result = await PaymentProviders.createIyzicoCheckout(checkoutData);
+    const result = await PaymentProviders.createIyzicoCheckout(updatedCheckoutData);
 
     if (result.success) {
+      // Update payment with Iyzico token
+      await db.payment.update({
+        where: { id: payment.id },
+        data: {
+          providerData: {
+            ...(payment.providerData as Record<string, unknown>),
+            token: result.token,
+            paymentUrl: result.paymentUrl,
+          },
+        },
+      });
+
       return NextResponse.json({
         success: true,
+        paymentId: payment.id,
         paymentUrl: result.paymentUrl,
         token: result.token,
         checkoutFormContent: result.checkoutFormContent,
       });
     } else {
+      // Update payment status to failed
+      await db.payment.update({
+        where: { id: payment.id },
+        data: {
+          status: "FAILED",
+          failureReason: result.error || "Checkout creation failed",
+        },
+      });
+
       return NextResponse.json(
         {
           success: false,

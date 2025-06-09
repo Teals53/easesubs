@@ -60,18 +60,23 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         }
 
         console.log("iyzico callback result:", result);
+        console.log("Searching for payment with conversationId:", result.conversationId);
+        console.log("Searching for payment with paymentId:", result.paymentId);
         
         // Update payment and order status in database based on payment result
         try {
           const { db } = await import("@/lib/db");
           const { DeliveryService } = await import("@/lib/delivery-service");
           
-          // Find payment record by conversation ID (order ID)
+          // Find payment record by conversation ID
+          // The conversationId should now be the payment ID (based on updated create flow)
           const payment = await db.payment.findFirst({
             where: {
               OR: [
-                { id: result.conversationId },
+                { id: result.conversationId },      // Primary: conversationId is payment ID  
                 { providerPaymentId: result.paymentId },
+                { orderId: result.conversationId }, // Fallback: if conversationId is order ID
+                { order: { id: result.conversationId } },
                 { order: { orderNumber: result.conversationId } },
               ],
             },
@@ -98,9 +103,34 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
               conversationId: result.conversationId,
               paymentId: result.paymentId,
             });
+            
+            // Try to find any related records for debugging
+            const orderByNumber = await db.order.findFirst({
+              where: { orderNumber: result.conversationId },
+              include: { items: true }
+            });
+            const orderById = await db.order.findFirst({
+              where: { id: result.conversationId },
+              include: { items: true }
+            });
+            const paymentById = await db.payment.findFirst({
+              where: { id: result.conversationId }
+            });
+            
+            console.log("Debug - Order by number:", orderByNumber);
+            console.log("Debug - Order by ID:", orderById);
+            console.log("Debug - Payment by ID:", paymentById);
+            
             resolve(NextResponse.json({
               success: false,
               error: "Payment record not found",
+              debug: {
+                conversationId: result.conversationId,
+                paymentId: result.paymentId,
+                foundOrderByNumber: !!orderByNumber,
+                foundOrderById: !!orderById,
+                foundPaymentById: !!paymentById,
+              }
             }));
             return;
           }
@@ -164,6 +194,16 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
             status: paymentStatus,
           });
 
+          // Success response
+          resolve(NextResponse.json({
+            success: true,
+            paymentStatus: result.paymentStatus,
+            paymentId: payment.id,
+            providerPaymentId: result.paymentId,
+            orderId: payment.orderId,
+            conversationId: result.conversationId,
+          }));
+
         } catch (dbError) {
           console.error("Database update failed in Iyzico callback:", dbError);
           resolve(NextResponse.json({
@@ -172,13 +212,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           }));
           return;
         }
-        
-        resolve(NextResponse.json({
-          success: true,
-          paymentStatus: result.paymentStatus,
-          paymentId: result.paymentId,
-          orderId: result.conversationId,
-        }));
       });
     });
 
