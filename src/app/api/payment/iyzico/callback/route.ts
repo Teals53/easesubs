@@ -45,8 +45,8 @@ async function handleIyzicoCallback(token: string, isBrowserRequest: boolean = f
     if (!apiKey || !secretKey) {
       console.log("❌ Missing Iyzico credentials");
       if (isBrowserRequest) {
-        // Redirect to a generic error page
-        return NextResponse.redirect(new URL('/checkout?error=configuration', getBaseUrl(originalRequest)));
+        // Redirect to orders page with error
+        return NextResponse.redirect(new URL('/dashboard/orders?error=configuration', getBaseUrl(originalRequest)));
       }
       return NextResponse.json(
         { success: false, error: "Payment configuration error" },
@@ -74,7 +74,7 @@ async function handleIyzicoCallback(token: string, isBrowserRequest: boolean = f
         if (err) {
           console.error("Iyzico checkout form retrieve failed:", err);
           if (isBrowserRequest) {
-            resolve(NextResponse.redirect(new URL('/checkout?error=payment_failed', getBaseUrl(originalRequest))));
+            resolve(NextResponse.redirect(new URL('/dashboard/orders?error=payment_failed', getBaseUrl(originalRequest))));
           } else {
             resolve(NextResponse.json({
               success: false,
@@ -136,7 +136,7 @@ async function handleIyzicoCallback(token: string, isBrowserRequest: boolean = f
             });
             
             if (isBrowserRequest) {
-              resolve(NextResponse.redirect(new URL('/checkout?error=payment_not_found', getBaseUrl(originalRequest))));
+              resolve(NextResponse.redirect(new URL('/dashboard/orders?error=payment_not_found', getBaseUrl(originalRequest))));
             } else {
               resolve(NextResponse.json({
                 success: false,
@@ -229,15 +229,11 @@ async function handleIyzicoCallback(token: string, isBrowserRequest: boolean = f
 
           // Handle response based on request type
           if (isBrowserRequest) {
-            // Use the current request origin for redirect to support both local and production
+            // Redirect directly to orders page - much simpler and more reliable
             const baseUrl = getBaseUrl(originalRequest);
-            const redirectUrl = new URL(`/checkout/payment/${payment.id}`, baseUrl);
+            const redirectUrl = new URL('/dashboard/orders', baseUrl);
             
-            // Add status as query parameter - payment page will use this stateless data
-            redirectUrl.searchParams.set('status', paymentStatus.toLowerCase());
-            redirectUrl.searchParams.set('fresh', 'true'); // Indicate this is fresh from callback
-            
-            console.log(`🔵 Redirecting to: ${redirectUrl.toString()}`);
+            console.log(`🔵 Redirecting to orders page: ${redirectUrl.toString()}`);
             resolve(NextResponse.redirect(redirectUrl));
           } else {
             // Return JSON response for server callbacks
@@ -254,7 +250,7 @@ async function handleIyzicoCallback(token: string, isBrowserRequest: boolean = f
         } catch (dbError) {
           console.error("Database update failed in Iyzico callback:", dbError);
           if (isBrowserRequest) {
-            resolve(NextResponse.redirect(new URL('/checkout?error=database_error', getBaseUrl(originalRequest))));
+            resolve(NextResponse.redirect(new URL('/dashboard/orders?error=database_error', getBaseUrl(originalRequest))));
           } else {
             resolve(NextResponse.json({
               success: false,
@@ -271,7 +267,7 @@ async function handleIyzicoCallback(token: string, isBrowserRequest: boolean = f
     console.error("❌ Error stack:", error instanceof Error ? error.stack : "Unknown error");
     
     if (isBrowserRequest) {
-      return NextResponse.redirect(new URL('/checkout?error=server_error', getBaseUrl(originalRequest)));
+      return NextResponse.redirect(new URL('/dashboard/orders?error=server_error', getBaseUrl(originalRequest)));
     }
     
     return NextResponse.json(
@@ -292,7 +288,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   console.log("🔵 GET Token:", token);
   
   if (!token) {
-    return NextResponse.redirect(new URL('/checkout?error=missing_token', getBaseUrl(request)));
+    return NextResponse.redirect(new URL('/dashboard/orders?error=missing_token', getBaseUrl(request)));
   }
 
   // GET requests are typically from browsers (users)
@@ -356,7 +352,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       // Check if this looks like a browser request
       const isBrowserRequest = userAgent.includes('Mozilla') || userAgent.includes('Chrome') || userAgent.includes('Safari');
       if (isBrowserRequest) {
-        return NextResponse.redirect(new URL('/checkout?error=missing_token', getBaseUrl(request)));
+        return NextResponse.redirect(new URL('/dashboard/orders?error=missing_token', getBaseUrl(request)));
       }
       return NextResponse.json(
         { success: false, error: "Missing payment token" },
