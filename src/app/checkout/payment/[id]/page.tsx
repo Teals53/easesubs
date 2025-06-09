@@ -21,6 +21,16 @@ type PaymentStatus =
   | "error"
   | "redirect";
 
+type PaymentData = {
+  id: string;
+  status: string;
+  amount: string;
+  currency: string;
+  method: string;
+  failureReason?: string;
+  orderId: string;
+};
+
 export default function PaymentPage() {
   const params = useParams();
   const router = useRouter();
@@ -28,15 +38,18 @@ export default function PaymentPage() {
   const { data: session, status } = useSession();
   const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>("loading");
   const [errorMessage, setErrorMessage] = useState<string>("");
-  const [retryCount, setRetryCount] = useState(0);
+  const [paymentData, setPaymentData] = useState<PaymentData | null>(null);
 
   const paymentId = params.id as string;
-  
+
   // Check if status is provided in URL (from callback redirect)
   const urlStatus = searchParams.get('status');
   const isFreshFromCallback = searchParams.get('fresh') === 'true';
 
-  // Get payment details with aggressive retry logic for race conditions
+  // Only fetch from database if we don't have URL status (i.e., direct page access)
+  const shouldFetchFromDB = !isFreshFromCallback || !urlStatus;
+
+  // Get payment details - only when needed (not fresh from callback)
   const {
     data: payment,
     isLoading: paymentLoading,
@@ -45,11 +58,10 @@ export default function PaymentPage() {
   } = trpc.payment.getPayment.useQuery(
     { paymentId },
     {
-      enabled: !!paymentId && !!session,
-      retry: 5, // More retries
-      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000), // Exponential backoff
-      refetchInterval: paymentStatus === "processing" ? 3000 : false, // Poll more frequently
-      refetchOnWindowFocus: true, // Refetch when window gains focus
+      enabled: !!paymentId && !!session && shouldFetchFromDB,
+      retry: 3,
+      retryDelay: 2000,
+      refetchInterval: paymentStatus === "processing" ? 5000 : false,
     },
   );
 
@@ -61,47 +73,60 @@ export default function PaymentPage() {
       return;
     }
 
-    // If we have status from URL (fresh from callback), use it with a small delay to avoid race conditions
+    // PRIORITY 1: If we have fresh status from callback, use it immediately (stateless approach)
     if (isFreshFromCallback && urlStatus) {
+      console.log("🔵 Using fresh callback status:", urlStatus);
+      
       // Clean up URL parameters
       const newUrl = new URL(window.location.href);
       newUrl.searchParams.delete('status');
       newUrl.searchParams.delete('fresh');
       window.history.replaceState({}, '', newUrl.toString());
       
-      // Add a small delay to ensure everything is ready
-      setTimeout(() => {
-        if (urlStatus === "completed") {
-          setPaymentStatus("success");
-        } else if (urlStatus === "failed") {
-          setPaymentStatus("error");
-          setErrorMessage("Payment has failed");
-        }
-      }, 500);
+      // Create mock payment data for display
+      const mockPaymentData: PaymentData = {
+        id: paymentId,
+        status: urlStatus.toUpperCase(),
+        amount: "0.00", // We don't have amount from URL, but that's OK for status display
+        currency: "TRY",
+        method: "IYZICO",
+        orderId: "unknown",
+        failureReason: urlStatus === "failed" ? "Payment processing failed" : undefined,
+      };
+      
+      setPaymentData(mockPaymentData);
+      
+      if (urlStatus === "completed") {
+        setPaymentStatus("success");
+      } else if (urlStatus === "failed") {
+        setPaymentStatus("error");
+        setErrorMessage("Payment has failed");
+      } else {
+        setPaymentStatus("processing");
+      }
       return;
     }
 
+    // PRIORITY 2: If no URL status, use database data (normal page access)
     if (paymentError) {
-      // Don't immediately show error - payment might still be being created due to race condition
-      if (retryCount < 5) {
-        setRetryCount((prev) => prev + 1);
-        const delay = Math.min(1000 * 2 ** retryCount, 8000); // Exponential backoff
-        setTimeout(() => {
-          refetch();
-        }, delay);
-        return;
-      }
-
       setPaymentStatus("error");
       setErrorMessage("Payment not found or access denied");
       return;
     }
 
     if (payment) {
+      setPaymentData({
+        id: payment.id,
+        status: payment.status,
+        amount: payment.amount.toString(),
+        currency: payment.currency,
+        method: payment.method,
+        failureReason: payment.failureReason || undefined,
+        orderId: payment.orderId,
+      });
+
       if (payment.status === "PENDING") {
         setPaymentStatus("processing");
-        // Reset retry count since we found the payment
-        setRetryCount(0);
       } else if (payment.status === "COMPLETED") {
         setPaymentStatus("success");
       } else if (payment.status === "FAILED") {
@@ -109,20 +134,21 @@ export default function PaymentPage() {
         setErrorMessage(payment.failureReason || "Payment has failed");
       }
     }
-  }, [session, status, payment, paymentError, router, retryCount, refetch, urlStatus, isFreshFromCallback]);
+  }, [session, status, payment, paymentError, router, urlStatus, isFreshFromCallback, paymentId]);
 
-  // Handle manual retry
+  // Handle manual retry (refresh from database)
   const handleRetry = () => {
     setPaymentStatus("loading");
     setErrorMessage("");
-    setRetryCount(0);
+    setPaymentData(null);
     refetch();
   };
 
+  // Loading state - only show if we're actually loading from database
   if (
     status === "loading" ||
-    paymentLoading ||
-    (paymentStatus === "loading" && retryCount > 0)
+    (shouldFetchFromDB && paymentLoading) ||
+    paymentStatus === "loading"
   ) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-violet-900 flex items-center justify-center">
@@ -136,9 +162,7 @@ export default function PaymentPage() {
             Loading Payment
           </h2>
           <p className="text-gray-400">
-            {retryCount > 0
-              ? `Retrying... (${retryCount}/3)`
-              : "Please wait while we prepare your payment..."}
+            Please wait while we prepare your payment details...
           </p>
         </motion.div>
       </div>
@@ -152,16 +176,6 @@ export default function PaymentPage() {
         animate={{ opacity: 1, y: 0 }}
         className="bg-gray-800/50 backdrop-blur-lg rounded-2xl border border-gray-700 p-8 max-w-md w-full text-center"
       >
-        {paymentStatus === "loading" && (
-          <>
-            <Loader2 className="h-12 w-12 animate-spin text-purple-400 mx-auto mb-4" />
-            <h2 className="text-xl font-semibold text-white mb-2">
-              Preparing Payment
-            </h2>
-            <p className="text-gray-400">Setting up your payment details...</p>
-          </>
-        )}
-
         {paymentStatus === "processing" && (
           <>
             <CreditCard className="h-12 w-12 text-blue-400 mx-auto mb-4" />
@@ -172,7 +186,7 @@ export default function PaymentPage() {
               Your payment is being processed. This page will update
               automatically when the payment is complete.
             </p>
-            {payment && (
+            {paymentData && (
               <div className="bg-gray-700/50 rounded-lg p-4 mb-6 text-left">
                 <h3 className="font-semibold text-white mb-2">
                   Payment Details:
@@ -181,44 +195,44 @@ export default function PaymentPage() {
                   <div>
                     Payment ID:{" "}
                     <span className="text-white font-mono text-xs">
-                      {payment.id}
+                      {paymentData.id}
                     </span>
                   </div>
+                  {paymentData.amount !== "0.00" && (
                   <div>
                     Amount:{" "}
                     <span className="text-white">
-                      {payment.currency} {Number(payment.amount).toFixed(2)}
+                        {paymentData.currency} {Number(paymentData.amount).toFixed(2)}
                     </span>
                   </div>
+                  )}
                   <div>
-                    Method: <span className="text-white">{payment.method}</span>
+                    Method: <span className="text-white">{paymentData.method}</span>
                   </div>
                   <div>
                     Status:{" "}
-                    <span className="text-blue-400">{payment.status}</span>
+                    <span className="text-blue-400">{paymentData.status}</span>
                   </div>
                 </div>
               </div>
             )}
             <div className="space-y-3">
               <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() =>
-                  router.push(`/dashboard/orders/${payment?.orderId}`)
-                }
-                className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white py-3 px-6 rounded-lg font-medium hover:from-purple-700 hover:to-blue-700 transition-all"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={handleRetry}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
               >
-                View Order Details
+                Refresh Status
               </motion.button>
               <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={handleRetry}
-                className="w-full bg-gray-700 text-white py-3 px-6 rounded-lg font-medium hover:bg-gray-600 transition-all flex items-center justify-center gap-2"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => router.push("/dashboard")}
+                className="w-full bg-gray-600 hover:bg-gray-700 text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
               >
-                <ExternalLink className="h-4 w-4" />
-                Refresh Status
+                <ArrowLeft className="h-4 w-4" />
+                Go to Dashboard
               </motion.button>
             </div>
           </>
@@ -226,58 +240,136 @@ export default function PaymentPage() {
 
         {paymentStatus === "success" && (
           <>
-            <CheckCircle className="h-12 w-12 text-green-400 mx-auto mb-4" />
-            <h2 className="text-xl font-semibold text-white mb-2">
+            <CheckCircle className="h-16 w-16 text-green-400 mx-auto mb-4" />
+            <h2 className="text-2xl font-semibold text-white mb-2">
               Payment Successful!
             </h2>
             <p className="text-gray-400 mb-6">
-              Your payment has been processed successfully.
+              Your payment has been processed successfully. You can now access
+              your purchased services.
             </p>
+            {paymentData && (
+              <div className="bg-gray-700/50 rounded-lg p-4 mb-6 text-left">
+                <h3 className="font-semibold text-white mb-2">
+                  Payment Details:
+                </h3>
+                <div className="space-y-1 text-sm text-gray-300">
+                  <div>
+                    Payment ID:{" "}
+                    <span className="text-white font-mono text-xs">
+                      {paymentData.id}
+                    </span>
+                  </div>
+                  {paymentData.amount !== "0.00" && (
+                    <div>
+                      Amount:{" "}
+                      <span className="text-white">
+                        {paymentData.currency} {Number(paymentData.amount).toFixed(2)}
+                      </span>
+                    </div>
+                  )}
+                  <div>
+                    Method: <span className="text-white">{paymentData.method}</span>
+                  </div>
+                  <div>
+                    Status:{" "}
+                    <span className="text-green-400">COMPLETED</span>
+                  </div>
+                </div>
+              </div>
+            )}
+            <div className="space-y-3">
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => router.push("/dashboard")}
+                className="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
+              >
+                Go to Dashboard
+                <ExternalLink className="h-4 w-4" />
+              </motion.button>
             <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() =>
-                router.push(`/dashboard/orders/${payment?.orderId}`)
-              }
-              className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white py-3 px-6 rounded-lg font-medium hover:from-purple-700 hover:to-blue-700 transition-all"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => router.push("/dashboard/orders")}
+                className="w-full bg-gray-600 hover:bg-gray-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
             >
-              View Order Details
+                View Orders
             </motion.button>
+            </div>
           </>
         )}
 
         {paymentStatus === "error" && (
           <>
-            <XCircle className="h-12 w-12 text-red-400 mx-auto mb-4" />
-            <h2 className="text-xl font-semibold text-white mb-2">
-              Payment Issue
+            <XCircle className="h-16 w-16 text-red-400 mx-auto mb-4" />
+            <h2 className="text-2xl font-semibold text-white mb-2">
+              Payment Failed
             </h2>
-            <p className="text-gray-400 mb-6">{errorMessage}</p>
+            <p className="text-gray-400 mb-6">
+              {errorMessage || "Something went wrong with your payment. Please try again."}
+            </p>
+            {paymentData && (
+              <div className="bg-gray-700/50 rounded-lg p-4 mb-6 text-left">
+                <h3 className="font-semibold text-white mb-2">
+                  Payment Details:
+                </h3>
+                <div className="space-y-1 text-sm text-gray-300">
+                  <div>
+                    Payment ID:{" "}
+                    <span className="text-white font-mono text-xs">
+                      {paymentData.id}
+                    </span>
+                  </div>
+                  {paymentData.amount !== "0.00" && (
+                    <div>
+                      Amount:{" "}
+                      <span className="text-white">
+                        {paymentData.currency} {Number(paymentData.amount).toFixed(2)}
+                      </span>
+                    </div>
+                  )}
+                  <div>
+                    Method: <span className="text-white">{paymentData.method}</span>
+                  </div>
+                  <div>
+                    Status:{" "}
+                    <span className="text-red-400">FAILED</span>
+                  </div>
+                  {paymentData.failureReason && (
+                    <div>
+                      Reason:{" "}
+                      <span className="text-red-400">{paymentData.failureReason}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
             <div className="space-y-3">
               <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={handleRetry}
-                className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white py-3 px-6 rounded-lg font-medium hover:from-purple-700 hover:to-blue-700 transition-all"
-              >
-                Retry
-              </motion.button>
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
                 onClick={() => router.push("/checkout")}
-                className="w-full bg-gray-700 text-white py-3 px-6 rounded-lg font-medium hover:bg-gray-600 transition-all"
+                className="w-full bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
               >
-                Try Different Payment
+                Try Again
               </motion.button>
               <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={handleRetry}
+                className="w-full bg-gray-600 hover:bg-gray-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+              >
+                Refresh Status
+              </motion.button>
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
                 onClick={() => router.push("/dashboard")}
-                className="w-full bg-gray-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-gray-500 transition-all flex items-center justify-center gap-2"
+                className="w-full bg-gray-600 hover:bg-gray-700 text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
               >
                 <ArrowLeft className="h-4 w-4" />
-                Back to Dashboard
+                Go to Dashboard
               </motion.button>
             </div>
           </>

@@ -37,7 +37,7 @@ function getBaseUrl(request?: NextRequest): string {
 async function handleIyzicoCallback(token: string, isBrowserRequest: boolean = false, originalRequest?: NextRequest): Promise<NextResponse> {
   try {
     console.log("🔵 Processing Iyzico callback with token:", token);
-    
+
     const apiKey = process.env.IYZICO_API_KEY;
     const secretKey = process.env.IYZICO_SECRET_KEY;
     const baseUrl = process.env.IYZICO_BASE_URL || "https://sandbox-api.iyzipay.com";
@@ -66,8 +66,8 @@ async function handleIyzicoCallback(token: string, isBrowserRequest: boolean = f
     return new Promise((resolve) => {
       const request = {
         locale: "tr",
-        token: token,
-      };
+      token: token,
+    };
 
       // @ts-expect-error - iyzico types may not include checkoutForm.retrieve
       iyzipay.checkoutForm.retrieve(request, async (err: Error | null, result: IyzicoCallbackResult) => {
@@ -211,14 +211,11 @@ async function handleIyzicoCallback(token: string, isBrowserRequest: boolean = f
 
           // Handle response based on request type
           if (isBrowserRequest) {
-            // Add a substantial delay to ensure database transaction is fully committed
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            
             // Use the current request origin for redirect to support both local and production
             const baseUrl = getBaseUrl(originalRequest);
             const redirectUrl = new URL(`/checkout/payment/${payment.id}`, baseUrl);
             
-            // Add status as query parameter to avoid database race condition
+            // Add status as query parameter - payment page will use this stateless data
             redirectUrl.searchParams.set('status', paymentStatus.toLowerCase());
             redirectUrl.searchParams.set('fresh', 'true'); // Indicate this is fresh from callback
             
@@ -226,14 +223,14 @@ async function handleIyzicoCallback(token: string, isBrowserRequest: boolean = f
             resolve(NextResponse.redirect(redirectUrl));
           } else {
             // Return JSON response for server callbacks
-            resolve(NextResponse.json({
-              success: true,
-              paymentStatus: result.paymentStatus,
+        resolve(NextResponse.json({
+          success: true,
+          paymentStatus: result.paymentStatus,
               paymentId: payment.id,
               providerPaymentId: result.paymentId,
               orderId: payment.orderId,
               conversationId: result.conversationId,
-            }));
+        }));
           }
 
         } catch (dbError) {
@@ -268,7 +265,7 @@ async function handleIyzicoCallback(token: string, isBrowserRequest: boolean = f
       { status: 500 }
     );
   }
-}
+} 
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
   console.log("🔵 Iyzico callback received via GET");
