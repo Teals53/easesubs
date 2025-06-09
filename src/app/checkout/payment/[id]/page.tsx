@@ -46,10 +46,11 @@ export default function PaymentPage() {
   const urlStatus = searchParams.get('status');
   const isFreshFromCallback = searchParams.get('fresh') === 'true';
 
-  // Only fetch from database if we don't have URL status (i.e., direct page access)
-  const shouldFetchFromDB = !isFreshFromCallback || !urlStatus;
+  // Always fetch from database, but with different timing based on callback status
+  const shouldFetchImmediately = !isFreshFromCallback;
+  const [shouldFetchAfterDelay, setShouldFetchAfterDelay] = useState(false);
 
-  // Get payment details - only when needed (not fresh from callback)
+  // Get payment details - with dynamic timing based on callback status
   const {
     data: payment,
     isLoading: paymentLoading,
@@ -58,12 +59,24 @@ export default function PaymentPage() {
   } = trpc.payment.getPayment.useQuery(
     { paymentId },
     {
-      enabled: !!paymentId && !!session && shouldFetchFromDB,
+      enabled: !!paymentId && !!session && (shouldFetchImmediately || shouldFetchAfterDelay),
       retry: 3,
       retryDelay: 2000,
       refetchInterval: paymentStatus === "processing" ? 5000 : false,
     },
   );
+
+  // Set up delayed fetch for callback scenarios
+  useEffect(() => {
+    if (isFreshFromCallback && urlStatus) {
+      // For fresh callback, wait a bit then fetch from database to ensure consistency
+      const timer = setTimeout(() => {
+        setShouldFetchAfterDelay(true);
+      }, 500); // 500ms delay to allow database transaction to complete
+      
+      return () => clearTimeout(timer);
+    }
+  }, [isFreshFromCallback, urlStatus]);
 
   useEffect(() => {
     if (status === "loading") return;
@@ -73,9 +86,9 @@ export default function PaymentPage() {
       return;
     }
 
-    // PRIORITY 1: If we have fresh status from callback, use it immediately (stateless approach)
-    if (isFreshFromCallback && urlStatus) {
-      console.log("🔵 Using fresh callback status:", urlStatus);
+    // PRIORITY 1: If we have fresh status from callback, use it immediately for fast feedback
+    if (isFreshFromCallback && urlStatus && !payment) {
+      console.log("🔵 Using fresh callback status temporarily:", urlStatus);
       
       // Clean up URL parameters
       const newUrl = new URL(window.location.href);
@@ -83,18 +96,18 @@ export default function PaymentPage() {
       newUrl.searchParams.delete('fresh');
       window.history.replaceState({}, '', newUrl.toString());
       
-      // Create mock payment data for display
-      const mockPaymentData: PaymentData = {
+      // Create temporary payment data for immediate display
+      const tempPaymentData: PaymentData = {
         id: paymentId,
         status: urlStatus.toUpperCase(),
-        amount: "0.00", // We don't have amount from URL, but that's OK for status display
+        amount: "0.00", // Temporary until we get real data
         currency: "TRY",
         method: "IYZICO",
         orderId: "unknown",
         failureReason: urlStatus === "failed" ? "Payment processing failed" : undefined,
       };
       
-      setPaymentData(mockPaymentData);
+      setPaymentData(tempPaymentData);
       
       if (urlStatus === "completed") {
         setPaymentStatus("success");
@@ -107,14 +120,10 @@ export default function PaymentPage() {
       return;
     }
 
-    // PRIORITY 2: If no URL status, use database data (normal page access)
-    if (paymentError) {
-      setPaymentStatus("error");
-      setErrorMessage("Payment not found or access denied");
-      return;
-    }
-
+    // PRIORITY 2: Use database data when available (more accurate)
     if (payment) {
+      console.log("🔵 Using database payment data:", payment.status);
+      
       setPaymentData({
         id: payment.id,
         status: payment.status,
@@ -133,6 +142,14 @@ export default function PaymentPage() {
         setPaymentStatus("error");
         setErrorMessage(payment.failureReason || "Payment has failed");
       }
+      return;
+    }
+
+    // PRIORITY 3: Handle errors
+    if (paymentError) {
+      setPaymentStatus("error");
+      setErrorMessage("Payment not found or access denied");
+      return;
     }
   }, [session, status, payment, paymentError, router, urlStatus, isFreshFromCallback, paymentId]);
 
@@ -144,11 +161,11 @@ export default function PaymentPage() {
     refetch();
   };
 
-  // Loading state - only show if we're actually loading from database
+  // Loading state - show spinner only when we're actually fetching and have no data
   if (
     status === "loading" ||
-    (shouldFetchFromDB && paymentLoading) ||
-    paymentStatus === "loading"
+    paymentStatus === "loading" ||
+    ((shouldFetchImmediately || shouldFetchAfterDelay) && paymentLoading && !paymentData)
   ) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-violet-900 flex items-center justify-center">

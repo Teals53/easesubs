@@ -203,6 +203,24 @@ async function handleIyzicoCallback(token: string, isBrowserRequest: boolean = f
             }
           });
 
+          // Ensure database consistency before redirecting
+          // Wait a bit to ensure the transaction is fully committed
+          await new Promise(resolve => setTimeout(resolve, 100));
+          
+          // Verify the update was actually committed
+          const updatedPayment = await db.payment.findUnique({
+            where: { id: payment.id },
+            select: { status: true },
+          });
+          
+          if (!updatedPayment || updatedPayment.status !== paymentStatus) {
+            console.error("Database consistency check failed:", {
+              expected: paymentStatus,
+              actual: updatedPayment?.status,
+            });
+            // Still proceed but log the issue
+          }
+
           console.log(`Iyzico payment ${paymentStatus.toLowerCase()}:`, {
             paymentId: payment.id,
             orderId: payment.orderId,
