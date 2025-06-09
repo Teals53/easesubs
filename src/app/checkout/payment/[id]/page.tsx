@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { motion } from "framer-motion";
 import {
@@ -24,12 +24,17 @@ type PaymentStatus =
 export default function PaymentPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { data: session, status } = useSession();
   const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>("loading");
   const [errorMessage, setErrorMessage] = useState<string>("");
   const [retryCount, setRetryCount] = useState(0);
 
   const paymentId = params.id as string;
+  
+  // Check if status is provided in URL (from callback redirect)
+  const urlStatus = searchParams.get('status');
+  const isFreshFromCallback = searchParams.get('fresh') === 'true';
 
   // Get payment details with retry logic
   const {
@@ -53,6 +58,24 @@ export default function PaymentPage() {
     if (!session) {
       router.push("/auth/signin");
       return;
+    }
+
+    // If we have status from URL (fresh from callback), use it immediately
+    if (isFreshFromCallback && urlStatus) {
+      // Clean up URL parameters
+      const newUrl = new URL(window.location.href);
+      newUrl.searchParams.delete('status');
+      newUrl.searchParams.delete('fresh');
+      window.history.replaceState({}, '', newUrl.toString());
+      
+      if (urlStatus === "completed") {
+        setPaymentStatus("success");
+        return;
+      } else if (urlStatus === "failed") {
+        setPaymentStatus("error");
+        setErrorMessage("Payment has failed");
+        return;
+      }
     }
 
     if (paymentError) {
@@ -82,7 +105,7 @@ export default function PaymentPage() {
         setErrorMessage(payment.failureReason || "Payment has failed");
       }
     }
-  }, [session, status, payment, paymentError, router, retryCount, refetch]);
+  }, [session, status, payment, paymentError, router, retryCount, refetch, urlStatus, isFreshFromCallback]);
 
   // Handle manual retry
   const handleRetry = () => {

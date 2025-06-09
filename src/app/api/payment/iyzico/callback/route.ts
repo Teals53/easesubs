@@ -189,9 +189,17 @@ async function handleIyzicoCallback(token: string, isBrowserRequest: boolean = f
 
           // Handle response based on request type
           if (isBrowserRequest) {
-            // Redirect user to payment result page
+            // Add a small delay to ensure database transaction is fully committed
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
+            // Redirect user to payment result page with status info
             const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
             const redirectUrl = new URL(`/checkout/payment/${payment.id}`, baseUrl);
+            
+            // Add status as query parameter to avoid database race condition
+            redirectUrl.searchParams.set('status', paymentStatus.toLowerCase());
+            redirectUrl.searchParams.set('fresh', 'true'); // Indicate this is fresh from callback
+            
             resolve(NextResponse.redirect(redirectUrl));
           } else {
             // Return JSON response for server callbacks
