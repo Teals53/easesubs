@@ -36,7 +36,7 @@ export default function PaymentPage() {
   const urlStatus = searchParams.get('status');
   const isFreshFromCallback = searchParams.get('fresh') === 'true';
 
-  // Get payment details with retry logic
+  // Get payment details with aggressive retry logic for race conditions
   const {
     data: payment,
     isLoading: paymentLoading,
@@ -46,9 +46,10 @@ export default function PaymentPage() {
     { paymentId },
     {
       enabled: !!paymentId && !!session,
-      retry: 3,
-      retryDelay: 1000,
-      refetchInterval: paymentStatus === "processing" ? 5000 : false, // Poll every 5 seconds if processing
+      retry: 5, // More retries
+      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000), // Exponential backoff
+      refetchInterval: paymentStatus === "processing" ? 3000 : false, // Poll more frequently
+      refetchOnWindowFocus: true, // Refetch when window gains focus
     },
   );
 
@@ -60,7 +61,7 @@ export default function PaymentPage() {
       return;
     }
 
-    // If we have status from URL (fresh from callback), use it immediately
+    // If we have status from URL (fresh from callback), use it with a small delay to avoid race conditions
     if (isFreshFromCallback && urlStatus) {
       // Clean up URL parameters
       const newUrl = new URL(window.location.href);
@@ -68,23 +69,26 @@ export default function PaymentPage() {
       newUrl.searchParams.delete('fresh');
       window.history.replaceState({}, '', newUrl.toString());
       
-      if (urlStatus === "completed") {
-        setPaymentStatus("success");
-        return;
-      } else if (urlStatus === "failed") {
-        setPaymentStatus("error");
-        setErrorMessage("Payment has failed");
-        return;
-      }
+      // Add a small delay to ensure everything is ready
+      setTimeout(() => {
+        if (urlStatus === "completed") {
+          setPaymentStatus("success");
+        } else if (urlStatus === "failed") {
+          setPaymentStatus("error");
+          setErrorMessage("Payment has failed");
+        }
+      }, 500);
+      return;
     }
 
     if (paymentError) {
-      // Don't immediately show error - payment might still be being created
-      if (retryCount < 3) {
+      // Don't immediately show error - payment might still be being created due to race condition
+      if (retryCount < 5) {
         setRetryCount((prev) => prev + 1);
+        const delay = Math.min(1000 * 2 ** retryCount, 8000); // Exponential backoff
         setTimeout(() => {
           refetch();
-        }, 2000);
+        }, delay);
         return;
       }
 

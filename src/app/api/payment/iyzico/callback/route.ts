@@ -211,8 +211,8 @@ async function handleIyzicoCallback(token: string, isBrowserRequest: boolean = f
 
           // Handle response based on request type
           if (isBrowserRequest) {
-            // Add a small delay to ensure database transaction is fully committed
-            await new Promise(resolve => setTimeout(resolve, 100));
+            // Add a substantial delay to ensure database transaction is fully committed
+            await new Promise(resolve => setTimeout(resolve, 1000));
             
             // Use the current request origin for redirect to support both local and production
             const baseUrl = getBaseUrl(originalRequest);
