@@ -14,11 +14,24 @@ interface IyzicoCallbackResult {
 
 // Helper function to get the correct base URL for redirects
 function getBaseUrl(request?: NextRequest): string {
+  // In production, always use NEXTAUTH_URL if it's set to a real domain
+  const nextAuthUrl = process.env.NEXTAUTH_URL;
+  if (nextAuthUrl && !nextAuthUrl.includes('localhost')) {
+    return nextAuthUrl;
+  }
+  
+  // For local development, use the request origin
   if (request) {
     const requestUrl = new URL(request.url);
-    return `${requestUrl.protocol}//${requestUrl.host}`;
+    const host = requestUrl.host;
+    // Only use request URL if it's actually localhost
+    if (host.includes('localhost') || host.includes('127.0.0.1')) {
+      return `${requestUrl.protocol}//${requestUrl.host}`;
+    }
   }
-  return process.env.NEXTAUTH_URL || 'http://localhost:3000';
+  
+  // Fallback to NEXTAUTH_URL or localhost
+  return nextAuthUrl || 'http://localhost:3000';
 }
 
 async function handleIyzicoCallback(token: string, isBrowserRequest: boolean = false, originalRequest?: NextRequest): Promise<NextResponse> {
