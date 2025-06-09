@@ -1,4 +1,5 @@
 import nodemailer from "nodemailer";
+import { secureLogger } from "@/lib/secure-logger";
 
 interface EmailConfig {
   host: string;
@@ -38,30 +39,32 @@ class EmailService {
 
       this.transporter = nodemailer.createTransport(config);
     } catch (error) {
-      console.error("Failed to initialize email transporter:", error);
+      secureLogger.error("Email transporter initialization failed", error);
+      this.transporter = null;
     }
+  }
+
+  private logTransporterError() {
+    secureLogger.error("Email transporter not initialized - email sending disabled");
   }
 
   async sendEmail(data: EmailData): Promise<boolean> {
     if (!this.transporter) {
-      console.error("Email transporter not initialized");
+      this.logTransporterError();
       return false;
     }
 
     try {
-      const mailOptions = {
-        from: process.env.SMTP_FROM || "EaseSubs <noreply@easesubs.com>",
+      await this.transporter.sendMail(data);
+      secureLogger.info("Email sent successfully", {
         to: data.to,
-        subject: data.subject,
-        text: data.text,
-        html: data.html,
-      };
-
-      await this.transporter.sendMail(mailOptions);
-      console.log(`Email sent successfully to ${data.to}`);
+        subject: data.subject
+      });
       return true;
     } catch (error) {
-      console.error("Failed to send email:", error);
+      secureLogger.error("Email sending failed", error, {
+        action: "email_send"
+      });
       return false;
     }
   }

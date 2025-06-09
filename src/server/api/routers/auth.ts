@@ -9,6 +9,7 @@ import { TRPCError } from "@trpc/server";
 import crypto from "crypto";
 import { emailService } from "@/lib/email";
 import { validatePassword, DEFAULT_PASSWORD_POLICY } from "@/lib/password-validator";
+import { secureLogger } from "@/lib/secure-logger";
 
 
 
@@ -76,7 +77,9 @@ export const authRouter = createTRPCRouter({
           userId: user.id,
         };
       } catch (error) {
-        console.error("User registration error:", error);
+        secureLogger.error("User registration failed", error, {
+          action: "user_registration"
+        });
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: "Failed to create account",
@@ -134,7 +137,9 @@ export const authRouter = createTRPCRouter({
             "If an account with this email exists, you will receive a password reset link.",
         };
       } catch (error) {
-        console.error("Password reset request error:", error);
+        secureLogger.error("Password reset request failed", error, {
+          action: "password_reset_request"
+        });
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: "Failed to process password reset request",
@@ -211,7 +216,10 @@ export const authRouter = createTRPCRouter({
           message: "Password has been reset successfully",
         };
       } catch (error) {
-        console.error("Password reset error:", error);
+        secureLogger.error("Password reset failed", error, {
+          action: "password_reset",
+          userId: user.id
+        });
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: "Failed to reset password",
@@ -288,7 +296,10 @@ export const authRouter = createTRPCRouter({
           message: "Password changed successfully",
         };
       } catch (error) {
-        console.error("Password change error:", error);
+        secureLogger.error("Password change failed", error, {
+          action: "password_change",
+          userId: userId
+        });
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: "Failed to change password",

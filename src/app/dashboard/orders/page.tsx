@@ -40,8 +40,13 @@ interface Order {
   createdAt: Date | string;
   total: { toString(): string } | string | number;
   status: string;
-  paymentMethod?: string;
   items: OrderItem[];
+  payments: Array<{
+    id: string;
+    method: string;
+    status: string;
+    createdAt: Date | string;
+  }>;
 }
 
 export default function OrdersPage() {
@@ -311,10 +316,10 @@ export default function OrdersPage() {
             {/* Order Actions */}
             <div className="flex items-center justify-between pt-4 border-t border-gray-700">
               <div className="flex items-center space-x-2 text-gray-400 text-sm">
-                {order.paymentMethod && (
+                {order.payments.length > 0 && (
                   <>
                     <CreditCard className="w-4 h-4" />
-                    <span>{order.paymentMethod}</span>
+                    <span>{order.payments[0].method}</span>
                   </>
                 )}
               </div>

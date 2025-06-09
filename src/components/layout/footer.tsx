@@ -196,7 +196,7 @@ export function Footer() {
           </p>
           <div className="flex items-center space-x-4 mt-4 md:mt-0">
             <span className="text-gray-400 text-sm">
-              Secure payments powered by Cryptomus
+              Secure payments powered by Cryptomus and Weepay
             </span>
           </div>
         </div>

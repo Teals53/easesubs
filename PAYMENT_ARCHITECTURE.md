@@ -1,261 +1,139 @@
 # Payment Architecture Documentation
 
-## 🏗️ **Unified Payment System Architecture**
+## Overview
+EaseSubs supports cryptocurrency payments through Cryptomus integration, providing a secure and modern payment solution for digital services.
 
-This document outlines the clean, unified payment architecture for both Cryptomus and Iyzico payment providers.
+## Payment Methods
 
-## 📁 **File Structure**
+### Supported Providers
+1. **Cryptomus** - Cryptocurrency payments (Bitcoin, Ethereum, USDT, etc.)
+2. **Weepay** - Credit card payments with 3D verification
+3. **Admin Bypass** - For testing purposes (admin only)
 
-```
-src/
-├── app/api/payment/
-│   ├── cryptomus/
-│   │   └── create/
-│   │       └── route.ts          # Cryptomus payment creation
-│   └── iyzico/
-│       ├── create/
-│       │   └── route.ts          # Iyzico payment creation
-│       └── callback/
-│           └── route.ts          # Iyzico payment callback
-├── app/api/webhooks/
-│   └── cryptomus/
-│       └── route.ts              # Cryptomus webhook handler
-├── lib/
-│   ├── payment-providers.ts     # Unified payment provider class
-│   ├── cryptomus.ts             # Cryptomus SDK wrapper
-│   └── iyzico-wrapper.ts        # Iyzico SDK wrapper
-└── server/api/routers/
-    └── payment.ts               # Payment queries and webhook handling
-```
+## Database Schema
 
-## 🔄 **Unified Payment Flow**
-
-### **1. Order Creation**
+### Payment Method Enum
 ```typescript
-// Frontend: checkout-form.tsx
-const orderResult = await createOrderMutation.mutateAsync({
-  items: [...],
-  paymentMethod: "CRYPTOMUS" | "IYZICO" | "ADMIN_BYPASS"
-});
+enum PaymentMethod {
+  CRYPTOMUS
+  WEEPAY
+  ADMIN_BYPASS
+}
 ```
 
-### **2. Payment Processing**
-
-Both providers follow the same pattern:
-
-#### **Cryptomus Flow:**
-1. `POST /api/payment/cryptomus/create`
-2. Creates payment record in database
-3. Calls `PaymentProviders.createCryptomusPayment()`
-4. Redirects user to Cryptomus payment page
-5. User completes payment
-6. `POST /api/webhooks/cryptomus` receives callback
-7. Updates payment and order status
-8. Processes delivery
-
-#### **Iyzico Flow:**
-1. `POST /api/payment/iyzico/create`
-2. Creates payment record in database
-3. Calls `PaymentProviders.createIyzicoCheckout()`
-4. Redirects user to Iyzico payment page
-5. User completes payment
-6. `POST /api/payment/iyzico/callback` receives callback
-7. Updates payment and order status
-8. Processes delivery
-
-## 🗄️ **Database Schema**
-
-### **Payment Record Structure**
+### Order Model
 ```typescript
-payment {
-  id: string                    // Internal payment ID
-  orderId: string              // Reference to order
-  method: "CRYPTOMUS" | "IYZICO"
-  amount: number
+model Order {
+  id: string
+  orderNumber: string
+  userId: string
+  total: Decimal
+  status: OrderStatus
+  paymentMethod: "CRYPTOMUS" | "WEEPAY" | "ADMIN_BYPASS"
+  // ... other fields
+}
+```
+
+### Payment Model
+```typescript
+model Payment {
+  id: string
+  orderId: string
+  method: "CRYPTOMUS" | "WEEPAY"
+  amount: Decimal
   currency: string
-  status: "PENDING" | "COMPLETED" | "FAILED" | "CANCELLED"
-  providerPaymentId: string    // Provider's payment ID
-  providerData: JSON           // Provider-specific data
-  webhookData: JSON           // Webhook response data
-  completedAt: Date?
-  failureReason: string?
+  status: PaymentStatus
+  // ... other fields
 }
 ```
 
-## 🔗 **Provider Integration Mapping**
+## API Routes
 
-### **Conversation ID Mapping**
-- **Cryptomus**: `order_id` = `payment.id` (for tracking)
-- **Iyzico**: `conversationId` = `payment.id` (for tracking)
+### Payment Creation
+- `/api/payment/cryptomus/create` - Create Cryptomus payment session
+- `/api/payment/weepay/create` - Create Weepay payment session
 
-### **Payment ID Mapping**
-- **Cryptomus**: `uuid` = `payment.providerPaymentId`
-- **Iyzico**: `paymentId` = `payment.providerPaymentId`
+### Webhooks
+- `/api/webhooks/cryptomus` - Process Cryptomus payment callbacks
+- `/api/webhooks/weepay` - Process Weepay payment callbacks
 
-## 🎯 **Key Features**
+## Environment Variables
 
-### **✅ Unified Architecture**
-- Both providers use identical API route patterns
-- Consistent payment record creation
-- Unified webhook/callback handling
-- Same delivery processing logic
-
-### **✅ Error Handling**
-- Comprehensive error logging
-- Payment status tracking
-- Failed payment recovery
-- Stock validation before completion
-
-### **✅ Security**
-- Webhook signature validation
-- Authentication checks
-- Rate limiting
-- Input sanitization
-
-### **✅ Delivery Integration**
-- Automatic delivery for digital products
-- Manual delivery ticket creation
-- Stock management
-- Subscription creation
-
-## 🔧 **Configuration**
-
-### **Environment Variables**
+### Cryptomus Configuration
 ```env
-# Cryptomus
-CRYPTOMUS_MERCHANT_ID="your-merchant-id"
+CRYPTOMUS_MERCHANT_ID="your-merchant-uuid"
 CRYPTOMUS_PAYMENT_API_KEY="your-payment-api-key"
+CRYPTOMUS_PAYOUT_API_KEY="your-payout-api-key"
 CRYPTOMUS_SECRET="your-secret"
-
-# Iyzico
-IYZICO_API_KEY="your-api-key"
-IYZICO_SECRET_KEY="your-secret-key"
-IYZICO_BASE_URL="https://sandbox-api.iyzipay.com"  # or production
+CRYPTOMUS_WEBHOOK_SECRET="your-webhook-secret"
+CRYPTOMUS_BASE_URL="https://api.cryptomus.com/v1"
 ```
 
-## 🧪 **Testing**
-
-### **Test Cryptomus Flow**
-```bash
-curl -X POST http://localhost:3000/api/payment/cryptomus/create \
-  -H "Content-Type: application/json" \
-  -d '{
-    "orderId": "order-id",
-    "amount": 10.00,
-    "currency": "USD"
-  }'
+### Weepay Configuration
+```env
+WEEPAY_MERCHANT_ID="your-weepay-merchant-id"
+WEEPAY_API_KEY="your-weepay-api-key"
+WEEPAY_SECRET_KEY="your-weepay-secret-key"
+WEEPAY_BASE_URL="https://api.weepay.co"
+WEEPAY_SANDBOX_URL="https://testapi.weepay.co"
+WEEPAY_IS_SANDBOX="true"
 ```
 
-### **Test Iyzico Flow**
-```bash
-curl -X POST http://localhost:3000/api/payment/iyzico/create \
-  -H "Content-Type: application/json" \
-  -d '{
-    "orderId": "order-id",
-    "amount": 10.00,
-    "currency": "USD",
-    "buyer": { ... },
-    "billingAddress": { ... },
-    "basketItems": [ ... ]
-  }'
-```
+## Payment Flow
 
-## 🚨 **Error Resolution**
+### 1. Order Creation
+1. User selects products and proceeds to checkout
+2. User chooses payment method (Cryptomus for crypto or Weepay for credit cards)
+3. Frontend creates order with selected payment method (`CRYPTOMUS` or `WEEPAY`)
+4. Order is stored in database with `PENDING` status
 
-### **Common Issues**
+### 2. Payment Processing
 
-1. **"Payment record not found"**
-   - Check conversation ID mapping
-   - Verify payment was created before callback
-   - Check webhook/callback URL configuration
+#### Cryptomus Flow
+1. Frontend calls `/api/payment/cryptomus/create`
+2. API creates payment record in database
+3. API calls Cryptomus to create payment session
+4. User is redirected to Cryptomus payment page
 
-2. **"Internal server error during callback processing"**
-   - Check database connection
-   - Verify environment variables
-   - Check provider credentials
+#### Weepay Flow
+1. Frontend calls `/api/payment/weepay/create`
+2. API creates payment record in database
+3. API calls Weepay to create payment session
+4. User is redirected to Weepay payment page
 
-3. **"Stock validation failed"**
-   - Check available stock items
-   - Verify automatic delivery configuration
-   - Review stock allocation logic
+### 3. Payment Completion
+1. User completes payment on respective payment provider
+2. Payment provider sends webhook to respective endpoint:
+   - Cryptomus: `/api/webhooks/cryptomus`
+   - Weepay: `/api/webhooks/weepay`
+3. Webhook validates payment signature and updates database
+4. Order status changes to `COMPLETED`
+5. Digital products are delivered automatically
 
-## 📈 **Monitoring**
+## Security Features
 
-### **Key Metrics to Monitor**
-- Payment success/failure rates
-- Callback processing times
-- Stock allocation errors
-- Delivery processing status
+- Webhook signature validation
+- Rate limiting on payment endpoints
+- CSRF protection
+- Secure environment variable handling
+- Database transaction safety
 
-### **Logging Points**
-- Payment creation: `payment.create`
-- Provider responses: `provider.response`
-- Callback processing: `callback.process`
-- Delivery status: `delivery.status`
+## Error Handling
 
-## 🔄 **Migration Notes**
+- Payment failures are logged and tracked
+- Users receive clear error messages
+- Failed payments can be retried
+- Refund capabilities through Cryptomus API
 
-### **From Old Architecture**
-- Removed TRPC `createPayment` mutation
-- Unified frontend payment handling
-- Consistent provider tracking
-- Improved error handling
+## Testing
 
-### **Breaking Changes**
-- Frontend must use direct API routes
-- Payment creation flow changed
-- Webhook/callback processing updated
+### Development Environment
+- Use Cryptomus sandbox environment
+- Test with small cryptocurrency amounts
+- Verify webhook functionality locally
 
-## 📚 **API Reference**
-
-### **POST /api/payment/cryptomus/create**
-```typescript
-Request: {
-  orderId: string;
-  amount: number;
-  currency: string;
-  returnUrl?: string;
-  callbackUrl?: string;
-}
-
-Response: {
-  success: boolean;
-  paymentId?: string;
-  paymentUrl?: string;
-  providerPaymentId?: string;
-  error?: string;
-}
-```
-
-### **POST /api/payment/iyzico/create**
-```typescript
-Request: {
-  orderId: string;
-  amount: number;
-  currency: string;
-  buyer: IyzicoBuyer;
-  billingAddress: IyzicoBillingAddress;
-  basketItems: IyzicoBasketItem[];
-}
-
-Response: {
-  success: boolean;
-  paymentId?: string;
-  paymentUrl?: string;
-  token?: string;
-  error?: string;
-}
-```
-
----
-
-## ✅ **Architecture Benefits**
-
-1. **Consistency**: Both providers follow identical patterns
-2. **Maintainability**: Clear separation of concerns
-3. **Scalability**: Easy to add new payment providers
-4. **Reliability**: Comprehensive error handling and logging
-5. **Security**: Unified validation and authentication
-6. **Testability**: Clear interfaces and mocking points
-
-This architecture provides a solid foundation for payment processing that can easily accommodate future payment providers and business requirements. 
+### Production Checklist
+- [ ] Update `CRYPTOMUS_BASE_URL` to production
+- [ ] Configure production webhook URLs
+- [ ] Test with real cryptocurrency transactions
+- [ ] Verify SSL certificates and security headers 

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { PaymentProviders } from "@/lib/payment-providers";
 import { auth } from "@/lib/auth";
+import { secureLogger } from "@/lib/secure-logger";
 
 interface CryptomusCheckoutRequest {
   orderId: string;
@@ -122,13 +123,11 @@ export async function POST(request: NextRequest) {
       );
     }
   } catch (error) {
-    console.error("Cryptomus checkout API error:", error);
-    
+    secureLogger.error("Cryptomus checkout API error", error, {
+      action: "cryptomus_checkout_create"
+    });
     return NextResponse.json(
-      {
-        success: false,
-        error: "Internal server error during checkout creation",
-      },
+      { error: "Internal server error" },
       { status: 500 }
     );
   }

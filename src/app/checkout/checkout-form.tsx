@@ -37,7 +37,7 @@ export function CheckoutForm() {
   const { items, totalPrice, clearCart, removeItem, updateQuantity } =
     useCart();
   const [isProcessing, setIsProcessing] = useState(false);
-  const [selectedPayment, setSelectedPayment] = useState<string>("");
+  const [selectedPayment, setSelectedPayment] = useState<string>("weepay");
   const [errorMessage, setErrorMessage] = useState<ErrorMessage | null>(null);
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -95,12 +95,12 @@ export function CheckoutForm() {
 
   const createOrderMutation = trpc.order.create.useMutation({
     onSuccess: async (data) => {
-      if (selectedPayment === "iyzico") {
-        // Handle Iyzico payment - create payment session and redirect
+      if (selectedPayment === "cryptomus") {
+        // Handle Cryptomus payment - create payment session and redirect
         try {
-          await handleIyzicoPayment(data.orderId);
+          await handleCryptomusPayment(data.orderId);
         } catch (error) {
-          console.error("Iyzico payment failed:", error);
+          console.error("Cryptomus payment failed:", error);
           setIsProcessing(false);
           setErrorMessage({
             type: "error",
@@ -189,57 +189,27 @@ export function CheckoutForm() {
     }
   };
 
-  // Handle Iyzico payment flow
-  const handleIyzicoPayment = async (orderId: string) => {
-    if (!session?.user) {
-      throw new Error("Please sign in to continue with payment");
-    }
-
-    const user = session.user;
+  // Handle Weepay payment flow
+  const handleWeepayPayment = async (orderId: string) => {
+    // Convert USD to TL since Weepay dealer only accepts Turkish Lira
+    // Using approximate exchange rate: 1 USD = 30 TL
+    const amountInTL = Math.round(totalPrice * 40 * 100) / 100;
     
-    // Prepare checkout data with real user information
-    const checkoutData = {
-      orderId,
-      amount: totalPrice,
-      currency: "USD",
-      buyer: {
-        id: user.id || `U${orderId}`,
-        name: user.name?.split(' ')[0] || "Customer",
-        surname: user.name?.split(' ').slice(1).join(' ') || "User",
-        gsmNumber: "+905551234567", // TODO: Add phone field to user profile
-        email: user.email || "customer@example.com",
-        identityNumber: "12345678901", // TODO: Add identity number field to user profile
-        registrationAddress: "User Address", // TODO: Add address field to user profile
-        ip: "127.0.0.1", // Will be updated by server
-        city: "Istanbul", // TODO: Add city field to user profile
-        country: "Turkey", // TODO: Add country field to user profile
-        zipCode: "34000", // TODO: Add zip code field to user profile
-      },
-      billingAddress: {
-        contactName: user.name || "Customer User",
-        city: "Istanbul", // TODO: Add billing address to user profile
-        country: "Turkey", // TODO: Add billing address to user profile
-        address: "User Billing Address", // TODO: Add billing address to user profile
-        zipCode: "34000", // TODO: Add billing address to user profile
-      },
-      basketItems: [
-        {
-          id: `BI${orderId}`,
-          name: "Subscription Payment",
-          category1: "Digital Services",
-          category2: "Subscription",
-          itemType: "VIRTUAL" as const,
-          price: totalPrice.toFixed(2),
-        },
-      ],
-    };
-
-    const response = await fetch("/api/payment/iyzico/create", {
+    const response = await fetch("/api/payment/weepay/create", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(checkoutData),
+      body: JSON.stringify({
+        orderId,
+        amount: amountInTL,
+        currency: "TL",
+        returnUrl: `${window.location.origin}/dashboard/orders/${orderId}`,
+        notifyUrl: `${window.location.origin}/api/webhooks/weepay`,
+        customerName: session?.user?.name || "Customer",
+        customerEmail: session?.user?.email || "",
+        description: `Payment for order - ${items.length} item(s)`,
+      }),
     });
 
     const result = await response.json();
@@ -247,30 +217,30 @@ export function CheckoutForm() {
     if (result.success && result.paymentUrl) {
       // Clear cart before redirecting to payment
       clearCart();
-      // Redirect to iyzico's hosted payment page
+      // Redirect to Weepay payment page
       window.location.href = result.paymentUrl;
     } else {
-      throw new Error(result.error || "Failed to create payment session");
+      throw new Error(result.error || "Failed to create Weepay payment session");
     }
   };
 
   const paymentMethods = [
     {
-      id: "iyzico",
-      name: "Credit Card",
-      description: "Pay securely with your credit or debit card",
+      id: "weepay",
+      name: "Credit/Debit Card",
+      description: "Secure credit card payments with 3D verification",
       icon: <CreditCard className="w-5 h-5" />,
-      currency: "Credit Card",
+      currency: "Weepay",
       color: "bg-blue-600",
-      externalUrl: "https://iyzico.com",
+      externalUrl: "https://weepay.co",
     },
     {
       id: "cryptomus",
-      name: "Cryptomus",
+      name: "Crypto",
       description:
         "Pay with Bitcoin, Ethereum, USDT, or other cryptocurrencies",
       icon: <Shield className="w-5 h-5" />,
-      currency: "Cryptocurrency",
+      currency: "Cryptomus",
       color: "bg-orange-600",
       externalUrl: "https://cryptomus.com",
     },
@@ -313,8 +283,10 @@ export function CheckoutForm() {
         paymentMethod:
           selectedPayment === "admin_bypass" 
             ? "ADMIN_BYPASS" 
-            : selectedPayment === "iyzico" 
-            ? "IYZICO"
+            : selectedPayment === "cryptomus" 
+            ? "CRYPTOMUS"
+            : selectedPayment === "weepay"
+            ? "WEEPAY"
             : "CRYPTOMUS",
       });
 
@@ -328,12 +300,12 @@ export function CheckoutForm() {
 
         // Clear cart after successful order
         clearCart();
-      } else if (selectedPayment === "iyzico") {
-        // Handle Iyzico payment flow
-        await handleIyzicoPayment(orderResult.orderId);
       } else if (selectedPayment === "cryptomus") {
         // Handle Cryptomus payment flow
         await handleCryptomusPayment(orderResult.orderId);
+      } else if (selectedPayment === "weepay") {
+        // Handle Weepay payment flow
+        await handleWeepayPayment(orderResult.orderId);
       }
     } catch (error) {
       console.error("Payment error:", error);

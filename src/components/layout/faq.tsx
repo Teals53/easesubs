@@ -11,6 +11,7 @@ import {
   User,
   Settings,
 } from "lucide-react";
+import { sanitizeSearchQuery } from "@/lib/input-sanitizer";
 
 interface FAQItem {
   id: string;
@@ -214,6 +215,16 @@ export function FAQ({ maxItems, showSearch = true }: FAQProps) {
     setOpenItems(newOpenItems);
   };
 
+  const handleSearchChange = (value: string) => {
+    try {
+      const sanitizedQuery = sanitizeSearchQuery(value);
+      setSearchQuery(sanitizedQuery);
+    } catch {
+      // If sanitization fails, use empty string
+      setSearchQuery("");
+    }
+  };
+
   const filteredFAQs = faqData.filter((faq) => {
     const matchesSearch =
       !searchQuery ||
@@ -233,7 +244,7 @@ export function FAQ({ maxItems, showSearch = true }: FAQProps) {
               type="text"
               placeholder="Search FAQs..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => handleSearchChange(e.target.value)}
               className="w-full pl-10 pr-4 py-3 bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
             />
           </div>

@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
 import { TRPCError } from "@trpc/server";
+import { secureLogger } from "@/lib/secure-logger";
 
 export const orderRouter = createTRPCRouter({
   create: protectedProcedure
@@ -14,7 +15,7 @@ export const orderRouter = createTRPCRouter({
             }),
           )
           .min(1),
-        paymentMethod: z.enum(["CRYPTOMUS", "ADMIN_BYPASS", "IYZICO"]),
+        paymentMethod: z.enum(["CRYPTOMUS", "WEEPAY", "ADMIN_BYPASS"]),
 
         redirectUrl: z.string().url().optional(),
       }),
@@ -32,6 +33,12 @@ export const orderRouter = createTRPCRouter({
           message: "Admin bypass payment method requires admin privileges",
         });
       }
+
+      secureLogger.info("Order creation initiated", {
+        userId: ctx.session.user.id,
+        planCount: input.items.length,
+        action: "order_creation"
+      });
 
       try {
         // Get plan details and validate
@@ -230,13 +237,13 @@ export const orderRouter = createTRPCRouter({
           orderNumber: order.orderNumber,
           status: order.status,
           total: order.total,
-          redirectUrl:
-            input.paymentMethod === "ADMIN_BYPASS"
-              ? `/dashboard/orders/${order.id}`
-              : `/checkout/payment/${order.id}`,
+          redirectUrl: `/dashboard/orders/${order.id}`,
         };
       } catch (error) {
-        console.error("Order creation error:", error);
+        secureLogger.error("Order creation failed", error, {
+          action: "order_creation",
+          userId: ctx.session.user.id
+        });
 
         if (error instanceof TRPCError) {
           throw error;

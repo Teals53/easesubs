@@ -377,8 +377,8 @@ enum OrderStatus {
 
 enum PaymentMethod {
   CRYPTOMUS
+  WEEPAY
   ADMIN_BYPASS
-  IYZICO
 }
 
 enum PaymentStatus {

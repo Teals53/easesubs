@@ -6,11 +6,11 @@ import {
 } from "@/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import crypto from "crypto";
+import { secureLogger } from "@/lib/secure-logger";
 
 export const paymentRouter = createTRPCRouter({
   // Payment creation is now handled by dedicated API routes:
   // - /api/payment/cryptomus/create
-  // - /api/payment/iyzico/create
   // This provides better separation and allows provider-specific logic
 
   getPayment: protectedProcedure
@@ -60,7 +60,7 @@ export const paymentRouter = createTRPCRouter({
   handleWebhook: publicProcedure
     .input(
       z.object({
-        provider: z.enum(["CRYPTOMUS", "IYZICO"]),
+        provider: z.enum(["CRYPTOMUS"]),
         paymentId: z.string(),
         status: z.enum(["COMPLETED", "FAILED", "CANCELLED"]),
         providerData: z.record(z.any()).optional(),
@@ -149,6 +149,11 @@ export const paymentRouter = createTRPCRouter({
         });
       }
 
+      secureLogger.payment("Payment processing debug info", {
+        paymentId: input.paymentId,
+        status: "processing"
+      });
+
       return updatedPayment;
     }),
 
@@ -190,10 +195,13 @@ export const paymentRouter = createTRPCRouter({
           input.reason,
         );
       } catch (refundError) {
-        console.error("Refund processing error:", refundError);
+        secureLogger.error("Payment refund failed", refundError, {
+          action: "payment_refund",
+          userId: ctx.session.user.id
+        });
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to process refund with payment provider",
+          message: "Failed to process refund",
         });
       }
 
@@ -231,7 +239,7 @@ export const paymentRouter = createTRPCRouter({
 
 // Helper function to verify webhook signatures
 async function verifyWebhookSignature(
-  provider: "CRYPTOMUS" | "IYZICO",
+  provider: "CRYPTOMUS",
   signature?: string,
   data?: Record<string, unknown>,
 ): Promise<boolean> {
@@ -250,11 +258,6 @@ async function verifyWebhookSignature(
         .digest("hex");
 
       return signature === cryptomusExpectedSignature;
-
-    case "IYZICO":
-      // Iyzico uses token-based validation handled in the callback route
-      // The callback endpoint validates the token with Iyzico directly
-      return true;
 
     default:
       return false;
@@ -275,39 +278,6 @@ async function processRefundWithProvider(
       console.log(
         `Processing Cryptomus refund for payment ${paymentId}, amount: ${amount}, reason: ${reason || "No reason provided"}`,
       );
-      break;
-
-    case "IYZICO":
-      // Use the Iyzico refund function from PaymentProviders
-      try {
-        const { PaymentProviders } = await import("@/lib/payment-providers");
-        
-        // For Iyzico, we need the provider payment ID (transaction ID) for refunds
-        const { db } = await import("@/lib/db");
-        const payment = await db.payment.findUnique({
-          where: { id: paymentId }
-        });
-        
-        if (!payment?.providerPaymentId) {
-          throw new Error("Provider payment ID not found for Iyzico refund");
-        }
-        
-        const result = await PaymentProviders.refundIyzicoPayment(
-          payment.providerPaymentId, // Use the actual Iyzico transaction ID
-          amount,
-          "TRY", // Default currency, could be made dynamic
-          payment.id // Use internal payment ID as conversationId
-        );
-        
-        if (!result.success) {
-          throw new Error(result.error || "Iyzico refund failed");
-        }
-        
-        console.log(`Iyzico refund successful: ${result.refundId}`);
-      } catch (error) {
-        console.error("Iyzico refund error:", error);
-        throw error;
-      }
       break;
 
     default:

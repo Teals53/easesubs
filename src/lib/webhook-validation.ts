@@ -1,5 +1,6 @@
 import crypto from "crypto";
 import { Cryptomus } from "./cryptomus";
+import { Weepay, WeepayWebhookData } from "./weepay";
 
 export interface WebhookValidationResult {
   isValid: boolean;
@@ -14,6 +15,23 @@ export function validateCryptomusWebhook(
   try {
     // Use the Cryptomus SDK's webhook validation method
     const isValid = Cryptomus.validateWebhook(payload, signature, secret);
+    return { isValid };
+  } catch (error) {
+    return {
+      isValid: false,
+      error:
+        error instanceof Error ? error.message : "Invalid signature format",
+    };
+  }
+}
+
+export function validateWeepayWebhook(
+  payload: WeepayWebhookData,
+  secret: string,
+): WebhookValidationResult {
+  try {
+    // Use the Weepay SDK's webhook validation method
+    const isValid = Weepay.verifyWebhookSignature(payload, secret);
     return { isValid };
   } catch (error) {
     return {

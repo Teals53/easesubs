@@ -1,39 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { PaymentProviders } from "@/lib/payment-providers";
 import { auth } from "@/lib/auth";
+import { secureLogger } from "@/lib/secure-logger";
 
-interface IyzicoCheckoutRequest {
+interface WeepayCheckoutRequest {
   orderId: string;
   amount: number;
   currency: string;
-  buyer: {
-    id: string;
-    name: string;
-    surname: string;
-    gsmNumber: string;
-    email: string;
-    identityNumber: string;
-    registrationAddress: string;
-    ip: string;
-    city: string;
-    country: string;
-    zipCode: string;
-  };
-  billingAddress: {
-    contactName: string;
-    city: string;
-    country: string;
-    address: string;
-    zipCode: string;
-  };
-  basketItems: Array<{
-    id: string;
-    name: string;
-    category1: string;
-    category2?: string;
-    itemType: "PHYSICAL" | "VIRTUAL";
-    price: string;
-  }>;
+  returnUrl?: string;
+  notifyUrl?: string;
+  customerName?: string;
+  customerEmail?: string;
+  description?: string;
 }
 
 export async function POST(request: NextRequest) {
@@ -49,10 +27,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Parse the request body
-    const body: IyzicoCheckoutRequest = await request.json();
+    const body: WeepayCheckoutRequest = await request.json();
 
     // Validate required fields
-    if (!body.orderId || !body.amount || !body.buyer) {
+    if (!body.orderId || !body.amount) {
       return NextResponse.json(
         { success: false, error: "Missing required payment information" },
         { status: 400 }
@@ -67,20 +45,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get client IP for fraud detection
-    const clientIP = request.headers.get("x-forwarded-for") || 
-                    request.headers.get("x-real-ip") || 
-                    "127.0.0.1";
-
-    // Update buyer info with real IP
-    const checkoutData = {
-      ...body,
-      buyer: {
-        ...body.buyer,
-        ip: clientIP.split(',')[0].trim(), // Take the first IP if multiple
-      },
-    };
-
     // Verify the order exists and belongs to the user
     const { db } = await import("@/lib/db");
     
@@ -89,6 +53,9 @@ export async function POST(request: NextRequest) {
         id: body.orderId,
         userId: session.user.id,
         status: "PENDING",
+      },
+      include: {
+        user: true,
       },
     });
 
@@ -103,35 +70,41 @@ export async function POST(request: NextRequest) {
     const payment = await db.payment.create({
       data: {
         orderId: body.orderId,
-        method: "IYZICO",
+        method: "WEEPAY",
         amount: body.amount,
-        currency: body.currency,
+        currency: body.currency || "TL",
         status: "PENDING",
         providerData: {
-          buyerInfo: body.buyer,
-          billingAddress: body.billingAddress,
-          basketItems: body.basketItems,
+          returnUrl: body.returnUrl,
+          notifyUrl: body.notifyUrl,
+          customerName: body.customerName,
+          customerEmail: body.customerEmail,
+          description: body.description,
         },
       },
     });
 
-    // Update checkout data to use payment ID as conversation ID for tracking
-    const updatedCheckoutData = {
-      ...checkoutData,
-      orderId: payment.id, // Use payment ID as conversation ID for tracking
-    };
-
-    // Create iyzico checkout form (hosted payment page)
-    const result = await PaymentProviders.createIyzicoCheckout(updatedCheckoutData);
+    // Create Weepay payment
+    const result = await PaymentProviders.createWeepayPayment({
+      orderId: payment.id, // Use payment ID for tracking
+      amount: body.amount,
+      currency: body.currency || "TL",
+      returnUrl: body.returnUrl || `${process.env.NEXTAUTH_URL}/dashboard/orders/${order.id}`,
+      notifyUrl: body.notifyUrl || `${process.env.NEXTAUTH_URL}/api/webhooks/weepay`,
+      customerName: body.customerName || order.user.name || "Customer",
+      customerEmail: body.customerEmail || order.user.email || "",
+      description: body.description || `Payment for order ${order.orderNumber}`,
+    });
 
     if (result.success) {
-      // Update payment with Iyzico token
+      // Update payment with Weepay payment ID
       await db.payment.update({
         where: { id: payment.id },
         data: {
+          providerPaymentId: result.paymentId,
           providerData: {
             ...(payment.providerData as Record<string, unknown>),
-            token: result.token,
+            paymentId: result.paymentId,
             paymentUrl: result.paymentUrl,
           },
         },
@@ -141,8 +114,7 @@ export async function POST(request: NextRequest) {
         success: true,
         paymentId: payment.id,
         paymentUrl: result.paymentUrl,
-        token: result.token,
-        checkoutFormContent: result.checkoutFormContent,
+        providerPaymentId: result.paymentId,
       });
     } else {
       // Update payment status to failed
@@ -150,7 +122,7 @@ export async function POST(request: NextRequest) {
         where: { id: payment.id },
         data: {
           status: "FAILED",
-          failureReason: result.error || "Checkout creation failed",
+          failureReason: result.error || "Payment creation failed",
         },
       });
 
@@ -163,13 +135,11 @@ export async function POST(request: NextRequest) {
       );
     }
   } catch (error) {
-    console.error("iyzico checkout API error:", error);
-    
+    secureLogger.error("Weepay checkout API error", error, {
+      action: "weepay_checkout_create"
+    });
     return NextResponse.json(
-      {
-        success: false,
-        error: "Internal server error during checkout creation",
-      },
+      { error: "Internal server error" },
       { status: 500 }
     );
   }

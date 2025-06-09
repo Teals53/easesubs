@@ -91,19 +91,17 @@ export async function POST(request: NextRequest) {
     });
 
     if (!payment) {
-      console.error("Payment not found for Cryptomus webhook:", {
-        order_id,
-        uuid,
+      secureLogger.error("Payment not found for Cryptomus webhook", {
+        paymentId: uuid,
+        status: status
       });
       return NextResponse.json({ error: "Payment not found" }, { status: 404 });
     }
 
-    // Log current payment status for debugging
-    console.log("Current payment status:", {
-      paymentId: payment.id,
+    secureLogger.payment("Current payment status check", {
+      paymentId: uuid,
       currentStatus: payment.status,
-      orderStatus: payment.order.status,
-      newWebhookStatus: status,
+      webhookStatus: status
     });
 
     // Map Cryptomus status to our status

@@ -13,6 +13,7 @@ import {
   ToggleRight,
 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
+import { sanitizeText } from "@/lib/input-sanitizer";
 
 interface Category {
   id: string;
@@ -102,19 +103,35 @@ export function CategoryModal({
   };
 
   const generateSlug = (name: string) => {
-    return name
+    return sanitizeText(name)
       .toLowerCase()
-      .replace(/[^a-z0-9\s-]/g, "")
-      .replace(/\s+/g, "-")
+      .replace(/[^a-z0-9\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-')
       .trim();
   };
 
   const handleNameChange = (value: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      name: value,
-      slug: generateSlug(value),
+    const sanitizedName = sanitizeText(value);
+    setFormData((prev) => ({ 
+      ...prev, 
+      name: sanitizedName,
+      slug: generateSlug(sanitizedName)
     }));
+  };
+
+  const handleSlugChange = (value: string) => {
+    try {
+      const sanitizedSlug = sanitizeText(value)
+        .toLowerCase()
+        .replace(/[^a-z0-9\s-]/g, '')
+        .replace(/\s+/g, '-')
+        .replace(/-+/g, '-')
+        .trim();
+      setFormData((prev) => ({ ...prev, slug: sanitizedSlug }));
+    } catch {
+      // If sanitization fails, keep the current slug
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -265,9 +282,7 @@ export function CategoryModal({
                 <input
                   type="text"
                   value={formData.slug}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, slug: e.target.value }))
-                  }
+                  onChange={(e) => handleSlugChange(e.target.value)}
                   className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
                   placeholder="e.g., streaming-media"
                 />
@@ -288,7 +303,7 @@ export function CategoryModal({
                 onChange={(e) =>
                   setFormData((prev) => ({
                     ...prev,
-                    description: e.target.value,
+                    description: sanitizeText(e.target.value, 500),
                   }))
                 }
                 rows={3}

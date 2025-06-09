@@ -200,12 +200,12 @@ export const apiRateLimit = createRateLimit({
 
 export const authRateLimit = createRateLimit({
   interval: 15 * 60 * 1000, // 15 minutes
-  maxRequests: 10, // Slightly less strict for auth endpoints
+  maxRequests: 50, // Slightly less strict for auth endpoints
 });
 
 export const paymentRateLimit = createRateLimit({
   interval: 60 * 60 * 1000, // 1 hour
-  maxRequests: 20, // Allow more payment attempts
+  maxRequests: 30, // Allow more payment attempts
 });
 
 export const webhookRateLimit = createRateLimit({
@@ -221,7 +221,7 @@ export const webhookRateLimit = createRateLimit({
 // Enhanced rate limiter for login attempts (per email)
 export const loginRateLimit = createRateLimit({
   interval: 15 * 60 * 1000, // 15 minutes
-  maxRequests: 10, // Allow more login attempts
+  maxRequests: 50, // Allow more login attempts
   keyGenerator: (req) => {
     // This would need to be implemented in the route handler where email is available
     return `login:${getClientIdentifier(req)}`;
@@ -231,23 +231,23 @@ export const loginRateLimit = createRateLimit({
 // Password reset rate limiter
 export const passwordResetRateLimit = createRateLimit({
   interval: 60 * 60 * 1000, // 1 hour
-  maxRequests: 5, // Slightly more attempts for password reset
+  maxRequests: 10, // Slightly more attempts for password reset
 });
 
 // Search rate limiter to prevent scraping
 export const searchRateLimit = createRateLimit({
   interval: 60 * 1000, // 1 minute
-  maxRequests: 50, // Higher limit for search
+  maxRequests: 100, // Higher limit for search
 });
 
 // Contact form rate limiter
 export const contactRateLimit = createRateLimit({
   interval: 60 * 60 * 1000, // 1 hour
-  maxRequests: 10, // More contact form submissions allowed
+  maxRequests: 100, // More contact form submissions allowed
 });
 
 // Registration rate limiter
 export const registrationRateLimit = createRateLimit({
   interval: 60 * 60 * 1000, // 1 hour
-  maxRequests: 5,
+  maxRequests: 50,
 }); 

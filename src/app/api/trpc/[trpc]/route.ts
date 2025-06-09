@@ -4,6 +4,7 @@ import { type NextRequest, NextResponse } from "next/server";
 import { appRouter } from "@/server/api/root";
 import { createTRPCContext } from "@/server/api/trpc";
 import { apiRateLimit, authRateLimit } from "@/lib/enhanced-rate-limit";
+import { secureLogger } from "@/lib/secure-logger";
 
 const handler = (req: NextRequest) => {
   // Only apply strict rate limiting to sensitive operations
@@ -37,27 +38,40 @@ const handler = (req: NextRequest) => {
     );
   }
 
-  return fetchRequestHandler({
-    endpoint: "/api/trpc",
-    req,
-    router: appRouter,
-    createContext: createTRPCContext,
-    onError:
-      process.env.NODE_ENV === "development"
-        ? ({ path, error }) => {
-            console.error(
-              `❌ tRPC failed on ${path ?? "<no-path>"}: ${error.message}`,
-            );
-          }
-        : ({ path, error }) => {
-            // In production, log errors securely without exposing sensitive info
-            console.error(`tRPC error on ${path ?? "unknown"}:`, {
-              code: error.code,
-              message: error.message,
-              timestamp: new Date().toISOString(),
-            });
-          },
-  });
+  try {
+    return fetchRequestHandler({
+      endpoint: "/api/trpc",
+      req,
+      router: appRouter,
+      createContext: createTRPCContext,
+      onError:
+        process.env.NODE_ENV === "development"
+          ? ({ path, error }) => {
+              console.error(
+                `❌ tRPC failed on ${path ?? "<no-path>"}: ${error.message}`,
+              );
+            }
+          : ({ path, error }) => {
+              // In production, log errors securely without exposing sensitive info
+              console.error(`tRPC error on ${path ?? "unknown"}:`, {
+                code: error.code,
+                message: error.message,
+                timestamp: new Date().toISOString(),
+              });
+            },
+    });
+  } catch (error) {
+    secureLogger.error("tRPC handler error", error, {
+      action: "trpc_request_handler"
+    });
+
+    // Additional structured error logging for tRPC issues
+    secureLogger.error("tRPC request failed", error, {
+      action: "trpc_request_processing"
+    });
+
+    return new Response("Internal server error", { status: 500 });
+  }
 };
 
 export { handler as GET, handler as POST };

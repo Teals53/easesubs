@@ -1,4 +1,5 @@
 import crypto from "crypto";
+import { secureLogger } from "./secure-logger";
 
 // Base interfaces
 export interface CryptomusConfig {
@@ -439,7 +440,9 @@ export class Cryptomus {
         Buffer.from(expectedSignature.toLowerCase()),
       );
     } catch (error) {
-      console.error("Webhook validation error:", error);
+      secureLogger.error("Cryptomus webhook validation failed", error, {
+        action: "cryptomus_webhook_validation"
+      });
       return false;
     }
   }

@@ -15,6 +15,8 @@ import { ZodError } from "zod";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { securityMonitor } from "@/lib/security-monitor";
+import { dataSanitizer } from "@/lib/data-sanitizer";
+import { secureLogger } from "@/lib/secure-logger";
 
 /**
  * 1. CONTEXT
@@ -263,6 +265,110 @@ export const protectedProcedure = t.procedure.use(enforceUserIsAuthed);
 export const activeUserProcedure = t.procedure.use(enforceUserIsActive);
 
 /**
+ * Response sanitization middleware
+ * Automatically sanitizes sensitive data in API responses
+ */
+const sanitizeResponse = t.middleware(async ({ ctx, next, path }) => {
+  const result = await next();
+  
+  // Only sanitize successful responses with data
+  if (result.ok && result.data && typeof result.data === 'object') {
+    let sanitizedData = result.data;
+    
+    try {
+      // Determine sanitization strategy based on the API path and user role
+      const userRole = ctx.session?.user?.role as string;
+      const isOwner = path.includes('me') || path.includes('profile');
+      const isAdmin = userRole === 'ADMIN' || userRole === 'MANAGER';
+      
+      if (path.includes('user') || path.includes('profile') || path.includes('me')) {
+        // User data sanitization
+        if (Array.isArray(sanitizedData)) {
+          sanitizedData = sanitizedData.map(item => 
+            dataSanitizer.sanitizeUser(item as Record<string, unknown>, isOwner)
+          );
+        } else {
+          sanitizedData = dataSanitizer.sanitizeUser(
+            sanitizedData as Record<string, unknown>, 
+            isOwner
+          );
+        }
+      } else if (path.includes('payment')) {
+        // Payment data sanitization
+        if (Array.isArray(sanitizedData)) {
+          sanitizedData = sanitizedData.map(item => 
+            dataSanitizer.sanitizePayment(item as Record<string, unknown>)
+          );
+        } else {
+          sanitizedData = dataSanitizer.sanitizePayment(sanitizedData as Record<string, unknown>);
+        }
+      } else if (path.includes('order')) {
+        // Order data sanitization
+        if (Array.isArray(sanitizedData)) {
+          sanitizedData = sanitizedData.map(item => 
+            dataSanitizer.sanitizeOrder(item as Record<string, unknown>, isOwner)
+          );
+        } else {
+          sanitizedData = dataSanitizer.sanitizeOrder(
+            sanitizedData as Record<string, unknown>, 
+            isOwner
+          );
+        }
+      } else if (path.includes('admin') && isAdmin) {
+        // Admin data sanitization (less restrictive but still secure)
+        if (Array.isArray(sanitizedData)) {
+          sanitizedData = sanitizedData.map(item => 
+            dataSanitizer.sanitizeAdminData(item as Record<string, unknown>)
+          );
+        } else {
+          sanitizedData = dataSanitizer.sanitizeAdminData(sanitizedData as Record<string, unknown>);
+        }
+      }
+      // For other endpoints, apply general sanitization by removing metadata
+      else if (sanitizedData && typeof sanitizedData === 'object') {
+        if (Array.isArray(sanitizedData)) {
+          sanitizedData = sanitizedData.map(item => 
+            dataSanitizer.removeMetadata(item as Record<string, unknown>)
+          );
+        } else {
+          sanitizedData = dataSanitizer.removeMetadata(sanitizedData as Record<string, unknown>);
+        }
+      }
+      
+    } catch (error) {
+      // Log sanitization errors but don't fail the request
+      secureLogger.error('Data sanitization failed', error, {
+        action: 'response_sanitization'
+      });
+      // Remove basic sensitive fields as fallback
+      if (sanitizedData && typeof sanitizedData === 'object') {
+        const sensitiveFields = ['password', 'passwordHash', 'resetToken', 'verificationToken'];
+        sensitiveFields.forEach(field => {
+          if (field in sanitizedData) {
+            delete (sanitizedData as Record<string, unknown>)[field];
+          }
+        });
+      }
+    }
+    
+    return {
+      ...result,
+      data: sanitizedData
+    };
+  }
+  
+  return result;
+});
+
+/**
  * Admin-only procedure
  */
 export const adminProcedure = t.procedure.use(enforceUserIsAdmin);
+
+/**
+ * Sanitized procedures - automatically sanitize response data
+ */
+export const sanitizedPublicProcedure = t.procedure.use(sanitizeResponse);
+export const sanitizedProtectedProcedure = t.procedure.use(enforceUserIsAuthed).use(sanitizeResponse);
+export const sanitizedActiveUserProcedure = t.procedure.use(enforceUserIsActive).use(sanitizeResponse);
+export const sanitizedAdminProcedure = t.procedure.use(enforceUserIsAdmin).use(sanitizeResponse);
