@@ -14,7 +14,7 @@ export const orderRouter = createTRPCRouter({
             }),
           )
           .min(1),
-        paymentMethod: z.enum(["CRYPTOMUS", "ADMIN_BYPASS"]),
+        paymentMethod: z.enum(["CRYPTOMUS", "ADMIN_BYPASS", "IYZICO"]),
 
         redirectUrl: z.string().url().optional(),
       }),

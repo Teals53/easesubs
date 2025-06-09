@@ -45,19 +45,34 @@ export function CheckoutForm() {
   const isAdmin = session?.user?.role === "ADMIN";
 
   const createOrderMutation = trpc.order.create.useMutation({
-    onSuccess: (data) => {
-      setIsProcessing(false);
-      setErrorMessage({
-        type: "success",
-        title: "Order Created Successfully",
-        message:
-          "Your order has been created and you will be redirected to view it.",
-      });
+    onSuccess: async (data) => {
+      if (selectedPayment === "iyzico") {
+        // Handle Iyzico payment - create payment session and redirect
+        try {
+          await handleIyzicoPayment(data.orderId);
+        } catch (error) {
+          console.error("Iyzico payment failed:", error);
+          setIsProcessing(false);
+          setErrorMessage({
+            type: "error",
+            title: "Payment Error",
+            message: error instanceof Error ? error.message : "Failed to initialize payment. Please try again.",
+          });
+        }
+      } else {
+        setIsProcessing(false);
+        setErrorMessage({
+          type: "success",
+          title: "Order Created Successfully",
+          message:
+            "Your order has been created and you will be redirected to view it.",
+        });
 
-      // Redirect to the order details page
-      setTimeout(() => {
-        router.push(data.redirectUrl || `/dashboard/orders/${data.orderId}`);
-      }, 1500);
+        // Redirect to the order details page
+        setTimeout(() => {
+          router.push(data.redirectUrl || `/dashboard/orders/${data.orderId}`);
+        }, 1500);
+      }
     },
     onError: (error) => {
       console.error("Order creation failed:", error);
@@ -109,7 +124,81 @@ export function CheckoutForm() {
     },
   });
 
+  // Handle Iyzico payment flow
+  const handleIyzicoPayment = async (orderId: string) => {
+    if (!session?.user) {
+      throw new Error("Please sign in to continue with payment");
+    }
+
+    const user = session.user;
+    
+    // Prepare checkout data with real user information
+    const checkoutData = {
+      orderId,
+      amount: totalPrice,
+      currency: "USD",
+      buyer: {
+        id: user.id || `U${orderId}`,
+        name: user.name?.split(' ')[0] || "Customer",
+        surname: user.name?.split(' ').slice(1).join(' ') || "User",
+        gsmNumber: "+905551234567", // TODO: Add phone field to user profile
+        email: user.email || "customer@example.com",
+        identityNumber: "12345678901", // TODO: Add identity number field to user profile
+        registrationAddress: "User Address", // TODO: Add address field to user profile
+        ip: "127.0.0.1", // Will be updated by server
+        city: "Istanbul", // TODO: Add city field to user profile
+        country: "Turkey", // TODO: Add country field to user profile
+        zipCode: "34000", // TODO: Add zip code field to user profile
+      },
+      billingAddress: {
+        contactName: user.name || "Customer User",
+        city: "Istanbul", // TODO: Add billing address to user profile
+        country: "Turkey", // TODO: Add billing address to user profile
+        address: "User Billing Address", // TODO: Add billing address to user profile
+        zipCode: "34000", // TODO: Add billing address to user profile
+      },
+      basketItems: [
+        {
+          id: `BI${orderId}`,
+          name: "Subscription Payment",
+          category1: "Digital Services",
+          category2: "Subscription",
+          itemType: "VIRTUAL" as const,
+          price: totalPrice.toFixed(2),
+        },
+      ],
+    };
+
+    const response = await fetch("/api/payment/iyzico/create", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(checkoutData),
+    });
+
+    const result = await response.json();
+
+    if (result.success && result.paymentUrl) {
+      // Clear cart before redirecting to payment
+      clearCart();
+      // Redirect to iyzico's hosted payment page
+      window.location.href = result.paymentUrl;
+    } else {
+      throw new Error(result.error || "Failed to create payment session");
+    }
+  };
+
   const paymentMethods = [
+    {
+      id: "iyzico",
+      name: "Credit Card",
+      description: "Pay securely with your credit or debit card",
+      icon: <CreditCard className="w-5 h-5" />,
+      currency: "Credit Card",
+      color: "bg-blue-600",
+      externalUrl: "https://iyzico.com",
+    },
     {
       id: "cryptomus",
       name: "Cryptomus",
@@ -157,7 +246,11 @@ export function CheckoutForm() {
           quantity: item.quantity,
         })),
         paymentMethod:
-          selectedPayment === "admin_bypass" ? "ADMIN_BYPASS" : "CRYPTOMUS",
+          selectedPayment === "admin_bypass" 
+            ? "ADMIN_BYPASS" 
+            : selectedPayment === "iyzico" 
+            ? "IYZICO"
+            : "CRYPTOMUS",
       });
 
       if (selectedPayment === "admin_bypass") {
@@ -660,6 +753,7 @@ export function CheckoutForm() {
           </div>
         </div>
       </div>
+
       <Footer />
     </div>
   );

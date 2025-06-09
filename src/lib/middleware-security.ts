@@ -61,8 +61,8 @@ export class MiddlewareSecurity {
     requestData.count++;
     this.requestCounts.set(rateLimitKey, requestData);
 
-    // Check if rate limit exceeded
-    if (requestData.count > maxRequests) {
+    // Check if rate limit exceeded (exclude only signin/signup to prevent duplication with brute force detection)
+    if (requestData.count > maxRequests && !pathname.includes("/signin") && !pathname.includes("/signup")) {
       await securityMonitor.analyzeEvent({
         type: "RATE_LIMIT_EXCEEDED",
         severity: "HIGH",
@@ -84,7 +84,7 @@ export class MiddlewareSecurity {
       .filter(([key]) => key.startsWith(`${ip}:`))
       .reduce((sum, [, data]) => sum + data.count, 0);
 
-    if (totalRequestsFromIP > 500) { // Abnormal traffic threshold
+    if (totalRequestsFromIP > 500) { // Abnormal traffic threshold - keep this for all paths
       await securityMonitor.analyzeEvent({
         type: "ABNORMAL_TRAFFIC",
         severity: "HIGH",
@@ -105,9 +105,9 @@ export class MiddlewareSecurity {
     // Calculate risk score
     const riskScore = this.calculateRequestRiskScore(request, threats);
 
-    // Log high-risk requests with appropriate event type
-    if (riskScore > 70) {
-      let eventType: "SUSPICIOUS_LOGIN" | "MALICIOUS_PAYLOAD" | "INJECTION_ATTEMPT" | "SUSPICIOUS_FILE_ACCESS" | "POTENTIAL_BOT" | "UNAUTHORIZED_ACCESS" = "SUSPICIOUS_LOGIN";
+    // Log high-risk requests with appropriate event type (avoid only signin/signup for brute force, keep others)
+    if (riskScore > 70 && !pathname.includes("/signin") && !pathname.includes("/signup")) {
+      let eventType: "MALICIOUS_PAYLOAD" | "INJECTION_ATTEMPT" | "SUSPICIOUS_FILE_ACCESS" | "POTENTIAL_BOT" | "UNAUTHORIZED_ACCESS" = "UNAUTHORIZED_ACCESS";
       
       if (threats.includes("MALICIOUS_PAYLOAD")) {
         eventType = "MALICIOUS_PAYLOAD";
@@ -160,8 +160,9 @@ export class MiddlewareSecurity {
     if (realIP) return realIP;
     if (forwarded) return forwarded.split(",")[0]?.trim() || "";
     
-    // For development/testing
-    return "127.0.0.1";
+    // For development/testing - use a more realistic IP for testing
+    const devIP = process.env.NODE_ENV === "development" ? "192.168.1.100" : "127.0.0.1";
+    return devIP;
   }
 
   /**

@@ -5,6 +5,96 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { db } from "@/lib/db";
 import { secureLogger } from "@/lib/secure-logger";
+import { securityMonitor } from "@/lib/security-monitor";
+
+// Simple in-memory store for failed login attempts (use Redis in production)
+const failedAttempts = new Map<string, { count: number; lastAttempt: number; lockedUntil?: number }>();
+
+const LOCKOUT_CONFIG = {
+  maxFailedAttempts: 5,
+  lockoutDuration: 15 * 60 * 1000, // 15 minutes
+  attemptWindow: 15 * 60 * 1000, // 15 minutes
+};
+
+async function recordFailedLogin(email: string): Promise<void> {
+  const now = Date.now();
+  const attempts = failedAttempts.get(email) || { count: 0, lastAttempt: 0 };
+
+  // Reset count if last attempt was outside the window
+  if (now - attempts.lastAttempt > LOCKOUT_CONFIG.attemptWindow) {
+    attempts.count = 0;
+  }
+
+  attempts.count++;
+  attempts.lastAttempt = now;
+
+  // Log SUSPICIOUS_LOGIN for first failed attempt
+  if (attempts.count === 1) {
+    await securityMonitor.analyzeEvent({
+      type: "SUSPICIOUS_LOGIN",
+      severity: "MEDIUM",
+      source: "NextAuth - Invalid Credentials",
+      details: {
+        email,
+        reason: "invalid_credentials",
+        attemptCount: attempts.count
+      }
+    });
+  }
+
+  // Lock account if max attempts reached
+  if (attempts.count >= LOCKOUT_CONFIG.maxFailedAttempts) {
+    attempts.lockedUntil = now + LOCKOUT_CONFIG.lockoutDuration;
+    
+    // Log critical security event for account lockout
+    await securityMonitor.analyzeEvent({
+      type: "BRUTE_FORCE_ATTEMPT",
+      severity: "CRITICAL",
+      source: "NextAuth - Account Locked",
+      details: {
+        email,
+        action: "account_locked",
+        attemptCount: attempts.count,
+        lockoutDuration: LOCKOUT_CONFIG.lockoutDuration
+      }
+    });
+  } else if (attempts.count >= 2) {
+    // Log security event for brute force attempt (multiple failures, but not locked yet)
+    await securityMonitor.analyzeEvent({
+      type: "BRUTE_FORCE_ATTEMPT",
+      severity: attempts.count >= 3 ? "HIGH" : "MEDIUM",
+      source: "NextAuth - Failed Login",
+      details: {
+        email,
+        attemptCount: attempts.count,
+        timeWindow: LOCKOUT_CONFIG.attemptWindow,
+        isLocked: false
+      }
+    });
+  }
+
+  failedAttempts.set(email, attempts);
+}
+
+function isAccountLocked(email: string): boolean {
+  const attempts = failedAttempts.get(email);
+  if (!attempts) return false;
+
+  const now = Date.now();
+  
+  // Check if lockout period has expired
+  if (attempts.lockedUntil && now > attempts.lockedUntil) {
+    failedAttempts.delete(email);
+    return false;
+  }
+
+  // Check if account is currently locked
+  return !!(attempts.lockedUntil && now <= attempts.lockedUntil);
+}
+
+function clearFailedAttempts(email: string): void {
+  failedAttempts.delete(email);
+}
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(db),
@@ -85,6 +175,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         const email = (credentials.email as string).toLowerCase();
 
+        // Check if account is locked due to too many failed attempts
+        if (isAccountLocked(email)) {
+          secureLogger.auth("Login attempt on locked account", email);
+          return null;
+        }
+
         try {
           const user = await db.user.findUnique({
             where: { email },
@@ -99,13 +195,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           });
 
           if (!user || !user.password) {
-            // Failed login will be handled by the auth router's recordFailedAttempt
+            await recordFailedLogin(email);
             return null;
           }
 
           // Check if account is active
           if (!user.isActive) {
-            // Failed login will be handled by the auth router's recordFailedAttempt
+            await recordFailedLogin(email);
             return null;
           }
 
@@ -115,11 +211,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           );
 
           if (!isPasswordValid) {
-            // Failed login will be handled by the auth router's recordFailedAttempt
+            await recordFailedLogin(email);
             return null;
           }
 
-          // Successful login - clear any failed attempts via the auth router
+          // Successful login - clear any failed attempts
+          clearFailedAttempts(email);
+          
           return {
             id: user.id,
             email: user.email,
@@ -128,6 +226,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           };
         } catch (error) {
           secureLogger.error("Authorization error", error);
+          await recordFailedLogin(email);
           return null;
         }
       },

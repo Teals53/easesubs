@@ -140,12 +140,26 @@ const nextConfig: NextConfig = {
   compress: true,
 
   // Server external packages (moved from experimental)
-  serverExternalPackages: ["@prisma/client", "bcryptjs"],
+  serverExternalPackages: ["@prisma/client", "bcryptjs", "iyzipay"],
 
   // Turbopack configuration (now stable)
   turbopack: {
     // Turbopack handles CSS and SVG optimization automatically
     // No need for custom loaders
+    // Handle packages with dynamic requires
+    resolveExtensions: [".js", ".jsx", ".ts", ".tsx", ".json"],
+  },
+
+  // Webpack fallback configuration (in case Turbopack falls back)
+  webpack: (config, { isServer }) => {
+    if (isServer) {
+      // Handle dynamic requires for iyzipay on server-side
+      config.externals = config.externals || [];
+      config.externals.push({
+        'iyzipay': 'commonjs iyzipay'
+      });
+    }
+    return config;
   },
 
   // Performance optimizations

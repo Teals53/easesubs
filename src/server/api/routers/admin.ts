@@ -1,18 +1,11 @@
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure } from "../trpc";
+import { createTRPCRouter, protectedProcedure, adminProcedure } from "../trpc";
 import { TRPCError } from "@trpc/server";
 import type { Prisma } from "@prisma/client";
 import { securityMonitor } from "@/lib/security-monitor";
 
 export const adminRouter = createTRPCRouter({
-  getDashboardStats: protectedProcedure.query(async ({ ctx }) => {
-    // Check if user is admin
-    if (ctx.session.user.role !== "ADMIN") {
-      throw new TRPCError({
-        code: "FORBIDDEN",
-        message: "Admin access required",
-      });
-    }
+  getDashboardStats: adminProcedure.query(async ({ ctx }) => {
 
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -120,14 +113,7 @@ export const adminRouter = createTRPCRouter({
     };
   }),
 
-  getRecentActivity: protectedProcedure.query(async ({ ctx }) => {
-    // Check if user is admin
-    if (ctx.session.user.role !== "ADMIN") {
-      throw new TRPCError({
-        code: "FORBIDDEN",
-        message: "Admin access required",
-      });
-    }
+  getRecentActivity: adminProcedure.query(async ({ ctx }) => {
 
     // Recent orders
     const recentOrders = await ctx.db.order.findMany({
@@ -200,7 +186,7 @@ export const adminRouter = createTRPCRouter({
     };
   }),
 
-  getUsers: protectedProcedure
+  getUsers: adminProcedure
     .input(
       z.object({
         search: z.string().optional(),
@@ -210,13 +196,6 @@ export const adminRouter = createTRPCRouter({
       }),
     )
     .query(async ({ ctx, input }) => {
-      // Check if user is admin
-      if (ctx.session.user.role !== "ADMIN") {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "Admin access required",
-        });
-      }
 
       const { page, limit, search, role } = input;
       const skip = (page - 1) * limit;
@@ -306,7 +285,7 @@ export const adminRouter = createTRPCRouter({
       };
     }),
 
-  updateUserRole: protectedProcedure
+  updateUserRole: adminProcedure
     .input(
       z.object({
         userId: z.string(),
@@ -314,13 +293,6 @@ export const adminRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      // Check if user is admin
-      if (ctx.session.user.role !== "ADMIN") {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "Admin access required",
-        });
-      }
 
       // Get current user data for logging
       const currentUser = await ctx.db.user.findUnique({
@@ -371,7 +343,7 @@ export const adminRouter = createTRPCRouter({
       return user;
     }),
 
-  updateUser: protectedProcedure
+  updateUser: adminProcedure
     .input(
       z.object({
         userId: z.string(),
@@ -382,13 +354,6 @@ export const adminRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      // Check if user is admin
-      if (ctx.session.user.role !== "ADMIN") {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "Admin access required",
-        });
-      }
 
       const { userId, ...updateData } = input;
 
@@ -1839,18 +1804,11 @@ export const adminRouter = createTRPCRouter({
     }),
 
   // Security monitoring endpoints
-  getSecurityStats: protectedProcedure
+  getSecurityStats: adminProcedure
     .input(z.object({
       timeRange: z.enum(["1h", "24h", "7d", "30d"]).default("24h")
     }))
-    .query(async ({ ctx }) => {
-      // Check if user is admin
-      if (ctx.session.user.role !== "ADMIN") {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "Admin access required",
-        });
-      }
+    .query(async () => {
 
       const stats = await securityMonitor.getSecurityStats();
       return {
@@ -1861,20 +1819,13 @@ export const adminRouter = createTRPCRouter({
       };
     }),
 
-  getSecurityEvents: protectedProcedure
+  getSecurityEvents: adminProcedure
     .input(z.object({
       limit: z.number().min(1).max(100).default(50),
       timeRange: z.enum(["1h", "24h", "7d", "30d"]).default("24h"),
       severity: z.enum(["LOW", "MEDIUM", "HIGH", "CRITICAL"]).optional()
     }))
-    .query(async ({ ctx, input }) => {
-      // Check if user is admin
-      if (ctx.session.user.role !== "ADMIN") {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "Admin access required",
-        });
-      }
+    .query(async ({ input }) => {
 
       // Get real events from database-backed security monitor
       const events = await securityMonitor.getRecentEvents(input.limit, input.severity);
@@ -1883,58 +1834,37 @@ export const adminRouter = createTRPCRouter({
         type: event.type,
         severity: event.severity,
         source: event.source,
-        ip: event.ip || "unknown",
+        ip: event.ip, // Keep as null if not available
         riskScore: event.riskScore,
         timestamp: event.timestamp
       }));
     }),
 
-  getBlockedIPs: protectedProcedure
-    .query(async ({ ctx }) => {
-      // Check if user is admin
-      if (ctx.session.user.role !== "ADMIN") {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "Admin access required",
-        });
-      }
+  getBlockedIPs: adminProcedure
+    .query(async () => {
 
       // Get real blocked IPs from database
       const blockedIPs = await securityMonitor.getBlockedIPsWithDetails();
       return blockedIPs;
     }),
 
-  unblockIP: protectedProcedure
+  unblockIP: adminProcedure
     .input(z.object({
       ip: z.string()
     }))
-    .mutation(async ({ ctx, input }) => {
-      // Check if user is admin
-      if (ctx.session.user.role !== "ADMIN") {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "Admin access required",
-        });
-      }
+    .mutation(async ({ input }) => {
 
       await securityMonitor.unblockIP(input.ip);
       return { success: true };
     }),
 
-  blockIP: protectedProcedure
+  blockIP: adminProcedure
     .input(z.object({
       ip: z.string(),
       reason: z.string(),
       duration: z.number().min(60).max(86400).default(3600)
     }))
-    .mutation(async ({ ctx, input }) => {
-      // Check if user is admin
-      if (ctx.session.user.role !== "ADMIN") {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "Admin access required",
-        });
-      }
+    .mutation(async ({ input }) => {
 
       await securityMonitor.blockIP(input.ip, input.reason, Math.floor(input.duration / 60));
       return { success: true };

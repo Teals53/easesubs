@@ -11,7 +11,6 @@ import {
   CheckCircle,
   RefreshCw,
   Clock,
-  MapPin,
   Lock,
   Eye,
   TrendingUp,
@@ -22,7 +21,7 @@ interface SecurityEvent {
   type: string;
   severity: string;
   source: string;
-  ip?: string;
+  ip?: string | null;
   riskScore: number;
   timestamp: Date;
 }
@@ -58,10 +57,16 @@ export default function SecurityDashboardPage() {
     { refetchInterval: 30000 }
   );
 
-  const { data: blockedIPsData } = trpc.admin.getBlockedIPs.useQuery(
+  const { data: blockedIPsData, refetch: refetchBlockedIPs } = trpc.admin.getBlockedIPs.useQuery(
     undefined,
     { refetchInterval: 60000 }
   );
+
+  const unblockIPMutation = trpc.admin.unblockIP.useMutation({
+    onSuccess: () => {
+      refetchBlockedIPs();
+    }
+  });
 
   // Update local state when data is fetched
   useEffect(() => {
@@ -69,6 +74,8 @@ export default function SecurityDashboardPage() {
       setSecurityEvents(securityEventsData);
     }
   }, [securityEventsData]);
+
+
 
   useEffect(() => {
     if (blockedIPsData) {
@@ -266,10 +273,9 @@ export default function SecurityDashboardPage() {
                           <p className="text-gray-400 text-sm">
                             {event.source} • Risk Score: {event.riskScore}
                           </p>
-                          {event.ip && (
-                            <p className="text-gray-500 text-xs flex items-center mt-1">
-                              <MapPin className="w-3 h-3 mr-1" />
-                              {event.ip}
+                          {event.ip && event.ip !== "unknown" && (
+                            <p className="text-gray-500 text-xs mt-1">
+                              <span className="font-mono">{event.ip}</span>
                             </p>
                           )}
                         </div>
@@ -323,8 +329,12 @@ export default function SecurityDashboardPage() {
                         </p>
                       </div>
                     </div>
-                    <button className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm transition-colors">
-                      Unblock
+                    <button 
+                      onClick={() => unblockIPMutation.mutate({ ip: ip.address })}
+                      disabled={unblockIPMutation.isPending}
+                      className="bg-green-600 hover:bg-green-700 disabled:bg-gray-600 text-white px-3 py-1 rounded text-sm transition-colors"
+                    >
+                      {unblockIPMutation.isPending ? "Unblocking..." : "Unblock"}
                     </button>
                   </div>
                 ))}

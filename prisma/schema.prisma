@@ -378,6 +378,7 @@ enum OrderStatus {
 enum PaymentMethod {
   CRYPTOMUS
   ADMIN_BYPASS
+  IYZICO
 }
 
 enum PaymentStatus {
