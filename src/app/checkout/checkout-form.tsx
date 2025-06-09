@@ -23,7 +23,7 @@ import { useCart } from "@/components/cart/use-cart";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
 import { trpc } from "@/lib/trpc";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 
 interface ErrorMessage {
@@ -40,6 +40,55 @@ export function CheckoutForm() {
   const [selectedPayment, setSelectedPayment] = useState<string>("");
   const [errorMessage, setErrorMessage] = useState<ErrorMessage | null>(null);
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // Check for error parameters from payment redirects
+  const errorParam = searchParams.get('error');
+  if (errorParam && !errorMessage) {
+    let errorTitle = "Payment Error";
+    let errorDescription = "An error occurred during payment processing.";
+    
+    switch (errorParam) {
+      case 'configuration':
+        errorTitle = "Configuration Error";
+        errorDescription = "Payment system is not properly configured. Please contact support.";
+        break;
+      case 'payment_failed':
+        errorTitle = "Payment Failed";
+        errorDescription = "Your payment could not be processed. Please try again.";
+        break;
+      case 'payment_not_found':
+        errorTitle = "Payment Not Found";
+        errorDescription = "Payment record could not be found. Please try creating a new order.";
+        break;
+      case 'database_error':
+        errorTitle = "System Error";
+        errorDescription = "A system error occurred. Please try again or contact support.";
+        break;
+      case 'server_error':
+        errorTitle = "Server Error";
+        errorDescription = "An internal server error occurred. Please try again later.";
+        break;
+      case 'missing_token':
+        errorTitle = "Invalid Payment";
+        errorDescription = "Payment verification failed. Please try again.";
+        break;
+      default:
+        errorTitle = "Unknown Error";
+        errorDescription = "An unknown error occurred during payment.";
+    }
+    
+    setErrorMessage({
+      type: "error",
+      title: errorTitle,
+      message: errorDescription,
+    });
+    
+    // Clear the error parameter from URL
+    const newUrl = new URL(window.location.href);
+    newUrl.searchParams.delete('error');
+    window.history.replaceState({}, '', newUrl.toString());
+  }
 
   // Check if user is admin
   const isAdmin = session?.user?.role === "ADMIN";

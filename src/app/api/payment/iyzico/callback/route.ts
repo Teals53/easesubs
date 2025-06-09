@@ -12,16 +12,20 @@ interface IyzicoCallbackResult {
   errorMessage?: string;
 }
 
-async function handleIyzicoCallback(token: string): Promise<NextResponse> {
+async function handleIyzicoCallback(token: string, isBrowserRequest: boolean = false): Promise<NextResponse> {
   try {
     console.log("🔵 Processing Iyzico callback with token:", token);
-
+    
     const apiKey = process.env.IYZICO_API_KEY;
     const secretKey = process.env.IYZICO_SECRET_KEY;
     const baseUrl = process.env.IYZICO_BASE_URL || "https://sandbox-api.iyzipay.com";
 
     if (!apiKey || !secretKey) {
       console.log("❌ Missing Iyzico credentials");
+      if (isBrowserRequest) {
+        // Redirect to a generic error page
+        return NextResponse.redirect(new URL('/checkout?error=configuration', process.env.NEXTAUTH_URL || 'http://localhost:3000'));
+      }
       return NextResponse.json(
         { success: false, error: "Payment configuration error" },
         { status: 500 }
@@ -37,29 +41,30 @@ async function handleIyzicoCallback(token: string): Promise<NextResponse> {
       uri: baseUrl,
     });
 
-    // Retrieve checkout form result
-    const retrieveRequest = {
-      locale: "TR" as const,
-      token: token,
-    };
+    return new Promise((resolve) => {
+      const request = {
+        locale: "tr",
+        token: token,
+      };
 
-    return new Promise<NextResponse>((resolve) => {
-      iyzipay.checkoutForm.retrieve(retrieveRequest, async (err: unknown, result: IyzicoCallbackResult) => {
+      // @ts-expect-error - iyzico types may not include checkoutForm.retrieve
+      iyzipay.checkoutForm.retrieve(request, async (err: Error | null, result: IyzicoCallbackResult) => {
         if (err) {
-          console.error("iyzico callback error:", err);
-          resolve(NextResponse.json(
-            { success: false, error: "Payment verification failed" },
-            { status: 400 }
-          ));
+          console.error("Iyzico checkout form retrieve failed:", err);
+          if (isBrowserRequest) {
+            resolve(NextResponse.redirect(new URL('/checkout?error=payment_failed', process.env.NEXTAUTH_URL || 'http://localhost:3000')));
+          } else {
+            resolve(NextResponse.json({
+              success: false,
+              error: "Payment verification failed",
+            }));
+          }
           return;
         }
 
-        console.log("iyzico callback result:", result);
-        console.log("Searching for payment with conversationId:", result.conversationId);
-        console.log("Searching for payment with paymentId:", result.paymentId);
-        
-        // Update payment and order status in database based on payment result
         try {
+          console.log("Iyzico payment result:", result);
+
           const { db } = await import("@/lib/db");
           const { DeliveryService } = await import("@/lib/delivery-service");
           
@@ -108,34 +113,18 @@ async function handleIyzicoCallback(token: string): Promise<NextResponse> {
               paymentId: result.paymentId,
             });
             
-            // Try to find any related records for debugging
-            const orderByNumber = await db.order.findFirst({
-              where: { orderNumber: result.conversationId },
-              include: { items: true }
-            });
-            const orderById = await db.order.findFirst({
-              where: { id: result.conversationId },
-              include: { items: true }
-            });
-            const paymentById = await db.payment.findFirst({
-              where: { id: result.conversationId }
-            });
-            
-            console.log("Debug - Order by number:", orderByNumber);
-            console.log("Debug - Order by ID:", orderById);
-            console.log("Debug - Payment by ID:", paymentById);
-            
-            resolve(NextResponse.json({
-              success: false,
-              error: "Payment record not found",
-              debug: {
-                conversationId: result.conversationId,
-                paymentId: result.paymentId,
-                foundOrderByNumber: !!orderByNumber,
-                foundOrderById: !!orderById,
-                foundPaymentById: !!paymentById,
-              }
-            }));
+            if (isBrowserRequest) {
+              resolve(NextResponse.redirect(new URL('/checkout?error=payment_not_found', process.env.NEXTAUTH_URL || 'http://localhost:3000')));
+            } else {
+              resolve(NextResponse.json({
+                success: false,
+                error: "Payment record not found",
+                debug: {
+                  conversationId: result.conversationId,
+                  paymentId: result.paymentId,
+                }
+              }));
+            }
             return;
           }
 
@@ -176,20 +165,20 @@ async function handleIyzicoCallback(token: string): Promise<NextResponse> {
               },
             });
 
-                         // If payment successful, process delivery for each order item
-             if (paymentStatus === "COMPLETED") {
-               try {
-                 for (const item of payment.order.items) {
-                   await DeliveryService.processDelivery({
-                     orderId: payment.orderId,
-                     orderItemId: item.id,
-                   });
-                 }
-               } catch (deliveryError) {
-                 console.error("Delivery processing failed:", deliveryError);
-                 // Don't fail the payment, just log the error
-               }
-             }
+            // If payment successful, process delivery for each order item
+            if (paymentStatus === "COMPLETED") {
+              try {
+                for (const item of payment.order.items) {
+                  await DeliveryService.processDelivery({
+                    orderId: payment.orderId,
+                    orderItemId: item.id,
+                  });
+                }
+              } catch (deliveryError) {
+                console.error("Delivery processing failed:", deliveryError);
+                // Don't fail the payment, just log the error
+              }
+            }
           });
 
           console.log(`Iyzico payment ${paymentStatus.toLowerCase()}:`, {
@@ -198,22 +187,34 @@ async function handleIyzicoCallback(token: string): Promise<NextResponse> {
             status: paymentStatus,
           });
 
-          // Success response
-          resolve(NextResponse.json({
-            success: true,
-            paymentStatus: result.paymentStatus,
-            paymentId: payment.id,
-            providerPaymentId: result.paymentId,
-            orderId: payment.orderId,
-            conversationId: result.conversationId,
-          }));
+          // Handle response based on request type
+          if (isBrowserRequest) {
+            // Redirect user to payment result page
+            const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
+            const redirectUrl = new URL(`/checkout/payment/${payment.id}`, baseUrl);
+            resolve(NextResponse.redirect(redirectUrl));
+          } else {
+            // Return JSON response for server callbacks
+            resolve(NextResponse.json({
+              success: true,
+              paymentStatus: result.paymentStatus,
+              paymentId: payment.id,
+              providerPaymentId: result.paymentId,
+              orderId: payment.orderId,
+              conversationId: result.conversationId,
+            }));
+          }
 
         } catch (dbError) {
           console.error("Database update failed in Iyzico callback:", dbError);
-          resolve(NextResponse.json({
-            success: false,
-            error: "Database update failed",
-          }));
+          if (isBrowserRequest) {
+            resolve(NextResponse.redirect(new URL('/checkout?error=database_error', process.env.NEXTAUTH_URL || 'http://localhost:3000')));
+          } else {
+            resolve(NextResponse.json({
+              success: false,
+              error: "Database update failed",
+            }));
+          }
           return;
         }
       });
@@ -222,6 +223,10 @@ async function handleIyzicoCallback(token: string): Promise<NextResponse> {
   } catch (error) {
     console.error("❌ Iyzico callback API error:", error);
     console.error("❌ Error stack:", error instanceof Error ? error.stack : "Unknown error");
+    
+    if (isBrowserRequest) {
+      return NextResponse.redirect(new URL('/checkout?error=server_error', process.env.NEXTAUTH_URL || 'http://localhost:3000'));
+    }
     
     return NextResponse.json(
       {
@@ -241,13 +246,11 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   console.log("🔵 GET Token:", token);
   
   if (!token) {
-    return NextResponse.json(
-      { success: false, error: "Missing payment token" },
-      { status: 400 }
-    );
+    return NextResponse.redirect(new URL('/checkout?error=missing_token', process.env.NEXTAUTH_URL || 'http://localhost:3000'));
   }
 
-  return handleIyzicoCallback(token);
+  // GET requests are typically from browsers (users)
+  return handleIyzicoCallback(token, true);
 }
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
@@ -255,7 +258,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   
   try {
     const contentType = request.headers.get('content-type') || '';
+    const userAgent = request.headers.get('user-agent') || '';
     console.log("🔵 Content-Type:", contentType);
+    console.log("🔵 User-Agent:", userAgent);
     
     let token: string | null = null;
     
@@ -302,13 +307,22 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     }
 
     if (!token) {
+      // Check if this looks like a browser request
+      const isBrowserRequest = userAgent.includes('Mozilla') || userAgent.includes('Chrome') || userAgent.includes('Safari');
+      if (isBrowserRequest) {
+        return NextResponse.redirect(new URL('/checkout?error=missing_token', process.env.NEXTAUTH_URL || 'http://localhost:3000'));
+      }
       return NextResponse.json(
         { success: false, error: "Missing payment token" },
         { status: 400 }
       );
     }
 
-    return handleIyzicoCallback(token);
+    // Determine if this is a browser request or server callback
+    const isBrowserRequest = userAgent.includes('Mozilla') || userAgent.includes('Chrome') || userAgent.includes('Safari');
+    console.log("🔵 Is browser request:", isBrowserRequest);
+
+    return handleIyzicoCallback(token, isBrowserRequest);
   } catch (error) {
     console.error("❌ Error processing POST callback:", error);
     return NextResponse.json(
