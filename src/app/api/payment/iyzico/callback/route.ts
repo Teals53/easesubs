@@ -12,7 +12,16 @@ interface IyzicoCallbackResult {
   errorMessage?: string;
 }
 
-async function handleIyzicoCallback(token: string, isBrowserRequest: boolean = false): Promise<NextResponse> {
+// Helper function to get the correct base URL for redirects
+function getBaseUrl(request?: NextRequest): string {
+  if (request) {
+    const requestUrl = new URL(request.url);
+    return `${requestUrl.protocol}//${requestUrl.host}`;
+  }
+  return process.env.NEXTAUTH_URL || 'http://localhost:3000';
+}
+
+async function handleIyzicoCallback(token: string, isBrowserRequest: boolean = false, originalRequest?: NextRequest): Promise<NextResponse> {
   try {
     console.log("🔵 Processing Iyzico callback with token:", token);
     
@@ -24,7 +33,7 @@ async function handleIyzicoCallback(token: string, isBrowserRequest: boolean = f
       console.log("❌ Missing Iyzico credentials");
       if (isBrowserRequest) {
         // Redirect to a generic error page
-        return NextResponse.redirect(new URL('/checkout?error=configuration', process.env.NEXTAUTH_URL || 'http://localhost:3000'));
+        return NextResponse.redirect(new URL('/checkout?error=configuration', getBaseUrl(originalRequest)));
       }
       return NextResponse.json(
         { success: false, error: "Payment configuration error" },
@@ -52,7 +61,7 @@ async function handleIyzicoCallback(token: string, isBrowserRequest: boolean = f
         if (err) {
           console.error("Iyzico checkout form retrieve failed:", err);
           if (isBrowserRequest) {
-            resolve(NextResponse.redirect(new URL('/checkout?error=payment_failed', process.env.NEXTAUTH_URL || 'http://localhost:3000')));
+            resolve(NextResponse.redirect(new URL('/checkout?error=payment_failed', getBaseUrl(originalRequest))));
           } else {
             resolve(NextResponse.json({
               success: false,
@@ -114,7 +123,7 @@ async function handleIyzicoCallback(token: string, isBrowserRequest: boolean = f
             });
             
             if (isBrowserRequest) {
-              resolve(NextResponse.redirect(new URL('/checkout?error=payment_not_found', process.env.NEXTAUTH_URL || 'http://localhost:3000')));
+              resolve(NextResponse.redirect(new URL('/checkout?error=payment_not_found', getBaseUrl(originalRequest))));
             } else {
               resolve(NextResponse.json({
                 success: false,
@@ -192,14 +201,15 @@ async function handleIyzicoCallback(token: string, isBrowserRequest: boolean = f
             // Add a small delay to ensure database transaction is fully committed
             await new Promise(resolve => setTimeout(resolve, 100));
             
-            // Redirect user to payment result page with status info
-            const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
+            // Use the current request origin for redirect to support both local and production
+            const baseUrl = getBaseUrl(originalRequest);
             const redirectUrl = new URL(`/checkout/payment/${payment.id}`, baseUrl);
             
             // Add status as query parameter to avoid database race condition
             redirectUrl.searchParams.set('status', paymentStatus.toLowerCase());
             redirectUrl.searchParams.set('fresh', 'true'); // Indicate this is fresh from callback
             
+            console.log(`🔵 Redirecting to: ${redirectUrl.toString()}`);
             resolve(NextResponse.redirect(redirectUrl));
           } else {
             // Return JSON response for server callbacks
@@ -216,7 +226,7 @@ async function handleIyzicoCallback(token: string, isBrowserRequest: boolean = f
         } catch (dbError) {
           console.error("Database update failed in Iyzico callback:", dbError);
           if (isBrowserRequest) {
-            resolve(NextResponse.redirect(new URL('/checkout?error=database_error', process.env.NEXTAUTH_URL || 'http://localhost:3000')));
+            resolve(NextResponse.redirect(new URL('/checkout?error=database_error', getBaseUrl(originalRequest))));
           } else {
             resolve(NextResponse.json({
               success: false,
@@ -233,7 +243,7 @@ async function handleIyzicoCallback(token: string, isBrowserRequest: boolean = f
     console.error("❌ Error stack:", error instanceof Error ? error.stack : "Unknown error");
     
     if (isBrowserRequest) {
-      return NextResponse.redirect(new URL('/checkout?error=server_error', process.env.NEXTAUTH_URL || 'http://localhost:3000'));
+      return NextResponse.redirect(new URL('/checkout?error=server_error', getBaseUrl(originalRequest)));
     }
     
     return NextResponse.json(
@@ -254,11 +264,11 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   console.log("🔵 GET Token:", token);
   
   if (!token) {
-    return NextResponse.redirect(new URL('/checkout?error=missing_token', process.env.NEXTAUTH_URL || 'http://localhost:3000'));
+    return NextResponse.redirect(new URL('/checkout?error=missing_token', getBaseUrl(request)));
   }
 
   // GET requests are typically from browsers (users)
-  return handleIyzicoCallback(token, true);
+  return handleIyzicoCallback(token, true, request);
 }
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
@@ -318,7 +328,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       // Check if this looks like a browser request
       const isBrowserRequest = userAgent.includes('Mozilla') || userAgent.includes('Chrome') || userAgent.includes('Safari');
       if (isBrowserRequest) {
-        return NextResponse.redirect(new URL('/checkout?error=missing_token', process.env.NEXTAUTH_URL || 'http://localhost:3000'));
+        return NextResponse.redirect(new URL('/checkout?error=missing_token', getBaseUrl(request)));
       }
       return NextResponse.json(
         { success: false, error: "Missing payment token" },
@@ -330,7 +340,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const isBrowserRequest = userAgent.includes('Mozilla') || userAgent.includes('Chrome') || userAgent.includes('Safari');
     console.log("🔵 Is browser request:", isBrowserRequest);
 
-    return handleIyzicoCallback(token, isBrowserRequest);
+    return handleIyzicoCallback(token, isBrowserRequest, request);
   } catch (error) {
     console.error("❌ Error processing POST callback:", error);
     return NextResponse.json(
