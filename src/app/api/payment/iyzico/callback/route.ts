@@ -49,7 +49,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     };
 
     return new Promise<NextResponse>((resolve) => {
-      iyzipay.checkoutForm.retrieve(retrieveRequest, (err: unknown, result: IyzicoCallbackResult) => {
+      iyzipay.checkoutForm.retrieve(retrieveRequest, async (err: unknown, result: IyzicoCallbackResult) => {
         if (err) {
           console.error("iyzico callback error:", err);
           resolve(NextResponse.json(
@@ -61,12 +61,117 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
         console.log("iyzico callback result:", result);
         
-        // TODO: Update order status in database based on payment result
-        // You should implement order status update logic here:
-        // - If result.paymentStatus === "SUCCESS": mark order as paid
-        // - If result.paymentStatus === "FAILURE": mark order as failed
-        // - Update payment record with result.paymentId and providerData
-        // - Update order status and completedAt timestamp
+        // Update payment and order status in database based on payment result
+        try {
+          const { db } = await import("@/lib/db");
+          const { DeliveryService } = await import("@/lib/delivery-service");
+          
+          // Find payment record by conversation ID (order ID)
+          const payment = await db.payment.findFirst({
+            where: {
+              OR: [
+                { id: result.conversationId },
+                { providerPaymentId: result.paymentId },
+                { order: { orderNumber: result.conversationId } },
+              ],
+            },
+            include: {
+              order: {
+                include: {
+                  user: true,
+                  items: {
+                    include: {
+                      plan: {
+                        include: {
+                          product: true,
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          });
+
+          if (!payment) {
+            console.error("Payment not found for Iyzico callback:", {
+              conversationId: result.conversationId,
+              paymentId: result.paymentId,
+            });
+            resolve(NextResponse.json({
+              success: false,
+              error: "Payment record not found",
+            }));
+            return;
+          }
+
+          // Map Iyzico status to our status
+          let paymentStatus: "COMPLETED" | "FAILED" | "CANCELLED" = "FAILED";
+          let orderStatus: "COMPLETED" | "FAILED" | "CANCELLED" = "FAILED";
+
+          if (result.status === "success" && result.paymentStatus === "SUCCESS") {
+            paymentStatus = "COMPLETED";
+            orderStatus = "COMPLETED";
+          } else {
+            paymentStatus = "FAILED";
+            orderStatus = "FAILED";
+          }
+
+          // Update payment and order in transaction
+          await db.$transaction(async (tx) => {
+            // Update payment record
+            await tx.payment.update({
+              where: { id: payment.id },
+              data: {
+                status: paymentStatus,
+                providerPaymentId: result.paymentId,
+                webhookData: JSON.parse(JSON.stringify(result)),
+                completedAt: paymentStatus === "COMPLETED" ? new Date() : undefined,
+                failureReason: paymentStatus === "FAILED" 
+                  ? (result.errorMessage || "Payment failed") 
+                  : undefined,
+              },
+            });
+
+            // Update order status
+            await tx.order.update({
+              where: { id: payment.orderId },
+              data: {
+                status: orderStatus,
+                completedAt: orderStatus === "COMPLETED" ? new Date() : undefined,
+              },
+            });
+
+                         // If payment successful, process delivery for each order item
+             if (paymentStatus === "COMPLETED") {
+               try {
+                 for (const item of payment.order.items) {
+                   await DeliveryService.processDelivery({
+                     orderId: payment.orderId,
+                     orderItemId: item.id,
+                   });
+                 }
+               } catch (deliveryError) {
+                 console.error("Delivery processing failed:", deliveryError);
+                 // Don't fail the payment, just log the error
+               }
+             }
+          });
+
+          console.log(`Iyzico payment ${paymentStatus.toLowerCase()}:`, {
+            paymentId: payment.id,
+            orderId: payment.orderId,
+            status: paymentStatus,
+          });
+
+        } catch (dbError) {
+          console.error("Database update failed in Iyzico callback:", dbError);
+          resolve(NextResponse.json({
+            success: false,
+            error: "Database update failed",
+          }));
+          return;
+        }
         
         resolve(NextResponse.json({
           success: true,
