@@ -252,10 +252,54 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   console.log("🔵 Iyzico callback received via POST");
+  
   try {
-    const body: { token?: string } = await request.json();
-    const { token } = body;
-    console.log("🔵 POST body:", body);
+    const contentType = request.headers.get('content-type') || '';
+    console.log("🔵 Content-Type:", contentType);
+    
+    let token: string | null = null;
+    
+    if (contentType.includes('application/json')) {
+      // Handle JSON body
+      try {
+        const body: { token?: string } = await request.json();
+        token = body.token || null;
+        console.log("🔵 JSON body:", body);
+      } catch (jsonError) {
+        console.error("❌ Failed to parse JSON:", jsonError);
+      }
+    } else if (contentType.includes('application/x-www-form-urlencoded')) {
+      // Handle form data
+      try {
+        const formData = await request.formData();
+        token = formData.get('token') as string || null;
+        console.log("🔵 Form data token:", token);
+        
+        // Log all form data for debugging
+        const allFormData: Record<string, string> = {};
+        formData.forEach((value, key) => {
+          allFormData[key] = value.toString();
+        });
+        console.log("🔵 All form data:", allFormData);
+      } catch (formError) {
+        console.error("❌ Failed to parse form data:", formError);
+      }
+    } else {
+      // Try to read as text and parse manually
+      try {
+        const text = await request.text();
+        console.log("🔵 Raw body text:", text);
+        
+        // Try to parse as URL-encoded
+        if (text.includes('token=')) {
+          const params = new URLSearchParams(text);
+          token = params.get('token');
+          console.log("🔵 URL-encoded token:", token);
+        }
+      } catch (textError) {
+        console.error("❌ Failed to read as text:", textError);
+      }
+    }
 
     if (!token) {
       return NextResponse.json(
@@ -266,7 +310,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     return handleIyzicoCallback(token);
   } catch (error) {
-    console.error("❌ Error parsing POST body:", error);
+    console.error("❌ Error processing POST callback:", error);
     return NextResponse.json(
       { success: false, error: "Invalid request body" },
       { status: 400 }
