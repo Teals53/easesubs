@@ -8,14 +8,14 @@ import { CSP_DIRECTIVES } from './security-config';
 /**
  * Parse CSP directive into a more readable format
  */
-export function parseCSPDirective(directive: string): Record<string, string[]> {
+export function parseCSPDirective(csp: string): Record<string, string[]> {
   const directives: Record<string, string[]> = {};
   
-  directive.split(';').forEach(part => {
-    const trimmed = part.trim();
+  csp.split(';').forEach(directive => {
+    const trimmed = directive.trim();
     if (!trimmed) return;
     
-    const [name, ...values] = trimmed.split(' ');
+    const [name, ...values] = trimmed.split(/\s+/);
     if (name) {
       directives[name] = values;
     }
@@ -25,12 +25,41 @@ export function parseCSPDirective(directive: string): Record<string, string[]> {
 }
 
 /**
+ * Generate a cryptographically secure nonce for CSP
+ */
+export function generateNonce(): string {
+  if (typeof crypto === 'undefined') {
+    // Fallback for environments without crypto
+    return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+  }
+  
+  const array = new Uint8Array(16);
+  crypto.getRandomValues(array);
+  return btoa(String.fromCharCode.apply(null, Array.from(array))).replace(/[+/=]/g, '');
+}
+
+/**
+ * Get nonce from request headers (set by middleware)
+ */
+export async function getNonce(): Promise<string | undefined> {
+  try {
+    const { headers } = await import("next/headers");
+    const headersList = await headers();
+    return headersList.get('x-csp-nonce') || undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/**
  * Get current CSP policy based on environment
  */
-export function getCurrentCSP(): string[] {
-  return process.env.NODE_ENV === 'development' 
-    ? CSP_DIRECTIVES.development 
-    : CSP_DIRECTIVES.production;
+export function getCurrentCSP(nonce?: string): string[] {
+  if (process.env.NODE_ENV === 'development') {
+    return CSP_DIRECTIVES.development;
+  } else {
+    return CSP_DIRECTIVES.production(nonce);
+  }
 }
 
 /**
@@ -59,7 +88,7 @@ export function getCSPDifferences(): {
   common: string[];
 } {
   const dev = new Set(CSP_DIRECTIVES.development);
-  const prod = new Set(CSP_DIRECTIVES.production);
+  const prod = new Set(CSP_DIRECTIVES.production()); // Call function with no nonce
   
   const developmentOnly = Array.from(dev).filter(x => !prod.has(x));
   const productionOnly = Array.from(prod).filter(x => !dev.has(x));
@@ -119,8 +148,8 @@ export function validateCSPSecurity(directives: string[]): {
 /**
  * Generate CSP meta tag for HTML head (useful for debugging)
  */
-export function generateCSPMetaTag(): string {
-  const csp = getCurrentCSP().join('; ');
+export function generateCSPMetaTag(nonce?: string): string {
+  const csp = getCurrentCSP(nonce).join('; ');
   return `<meta http-equiv="Content-Security-Policy" content="${csp}">`;
 }
 
@@ -146,4 +175,33 @@ export function debugCSP(): void {
   console.log('📊 Development vs Production differences:', differences);
   
   console.groupEnd();
+}
+
+/**
+ * Convert CSP directives array to string
+ */
+export function stringifyCSPDirectives(directives: string[]): string {
+  return directives.join('; ');
+}
+
+/**
+ * Add a directive to existing CSP directives
+ */
+export function addCSPDirective(
+  directives: string[], 
+  newDirective: string
+): string[] {
+  // Check if directive type already exists
+  const directiveType = newDirective.split(' ')[0];
+  const existingIndex = directives.findIndex(d => d.startsWith(directiveType));
+  
+  if (existingIndex >= 0) {
+    // Replace existing directive
+    const updatedDirectives = [...directives];
+    updatedDirectives[existingIndex] = newDirective;
+    return updatedDirectives;
+  } else {
+    // Add new directive
+    return [...directives, newDirective];
+  }
 } 

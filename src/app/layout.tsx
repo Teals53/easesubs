@@ -5,8 +5,10 @@ import { SessionProvider } from "next-auth/react";
 import { SessionContextProvider } from "@/lib/session-context";
 import { CartSidebar } from "@/components/cart/cart-sidebar";
 import { AdvancedSEO } from "@/components/seo/advanced-seo";
-import { PerformanceSEO, ResourceHints } from "@/components/seo/performance-seo";
+import { ResourceHints } from "@/components/seo/performance-seo";
 import { ECommerceSchema, SubscriptionServiceSchema } from "@/components/seo/local-business-schema";
+import { ServerNonceProvider } from "@/components/seo/nonce-provider";
+import { NonceAwareScripts } from "@/components/seo/nonce-aware-scripts";
 import "./globals.css";
 import { Toaster } from "sonner";
 
@@ -178,32 +180,34 @@ export default function RootLayout({
           </a>
         </div>
 
-        <AdvancedSEO>
-          <ECommerceSchema />
-          <SubscriptionServiceSchema />
-          <PerformanceSEO />
-          <TRPCProvider>
-            <SessionProvider>
-              <SessionContextProvider>
-                <Toaster 
-                  position="top-right" 
-                  toastOptions={{
-                    duration: 4000,
-                    style: {
-                      background: '#1f2937',
-                      color: '#ffffff',
-                      border: '1px solid #374151',
-                    },
-                  }}
-                />
-                <main id="main-content" role="main">
-                  {children}
-                </main>
-                <CartSidebar />
-              </SessionContextProvider>
-            </SessionProvider>
-          </TRPCProvider>
-        </AdvancedSEO>
+        <ServerNonceProvider>
+          <AdvancedSEO>
+            <ECommerceSchema />
+            <SubscriptionServiceSchema />
+            <NonceAwareScripts />
+            <TRPCProvider>
+              <SessionProvider>
+                <SessionContextProvider>
+                  <Toaster 
+                    position="top-right" 
+                    toastOptions={{
+                      duration: 4000,
+                      style: {
+                        background: '#1f2937',
+                        color: '#ffffff',
+                        border: '1px solid #374151',
+                      },
+                    }}
+                  />
+                  <main id="main-content" role="main">
+                    {children}
+                  </main>
+                  <CartSidebar />
+                </SessionContextProvider>
+              </SessionProvider>
+            </TRPCProvider>
+          </AdvancedSEO>
+        </ServerNonceProvider>
       </body>
     </html>
   );

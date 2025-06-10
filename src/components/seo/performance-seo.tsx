@@ -10,7 +10,7 @@ interface LayoutShift extends PerformanceEntry {
 }
 
 // Core Web Vitals tracking for SEO
-export function PerformanceSEO() {
+export function PerformanceSEO({ nonce }: { nonce?: string }) {
   useEffect(() => {
     // Track Core Web Vitals
     if (typeof window !== 'undefined' && 'performance' in window) {
@@ -83,6 +83,7 @@ export function PerformanceSEO() {
       <Script
         id="performance-monitoring"
         strategy="afterInteractive"
+        nonce={nonce}
         dangerouslySetInnerHTML={{
           __html: `
             // Monitor page load performance

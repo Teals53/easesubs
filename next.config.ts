@@ -24,7 +24,7 @@ const nextConfig: NextConfig = {
             key: "Content-Security-Policy",
             value: process.env.NODE_ENV === "development" 
               ? CSP_DIRECTIVES.development.join("; ")
-              : CSP_DIRECTIVES.production.join("; "),
+              : CSP_DIRECTIVES.production().join("; "), // Note: nonce will be added at request time
           },
           // Remove overly broad cache headers from global scope
         ],

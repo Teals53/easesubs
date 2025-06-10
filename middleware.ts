@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { MiddlewareSecurity } from "@/lib/middleware-security";
+import { generateNonce, getCurrentCSP } from "@/lib/csp-utils";
 
 // Initialize security middleware
 const middlewareSecurity = new MiddlewareSecurity();
@@ -41,6 +42,9 @@ const supportRoles = ["ADMIN", "MANAGER", "SUPPORT_AGENT"];
 
 export default async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  // Generate nonce for CSP
+  const nonce = generateNonce();
 
   // Run security analysis first
   try {
@@ -110,7 +114,19 @@ export default async function middleware(request: NextRequest) {
     return NextResponse.redirect(signInUrl);
   }
 
-  return NextResponse.next();
+  // Create response and add security headers
+  const response = NextResponse.next();
+  
+  // Add nonce header for components to use
+  response.headers.set('x-csp-nonce', nonce);
+  
+  // Set CSP header with nonce if in production
+  if (process.env.NODE_ENV === 'production') {
+    const cspHeader = getCurrentCSP(nonce).join('; ');
+    response.headers.set('Content-Security-Policy', cspHeader);
+  }
+
+  return response;
 }
 
 export const config = {

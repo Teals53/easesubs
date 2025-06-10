@@ -208,9 +208,10 @@ export function generateMetadata({
 interface AnalyticsScriptsProps {
   googleAnalyticsId?: string;
   gtmId?: string;
+  nonce?: string;
 }
 
-export function AnalyticsScripts({ googleAnalyticsId, gtmId }: AnalyticsScriptsProps) {
+export function AnalyticsScripts({ googleAnalyticsId, gtmId, nonce }: AnalyticsScriptsProps) {
   return (
     <>
       {/* Google Analytics */}
@@ -219,8 +220,9 @@ export function AnalyticsScripts({ googleAnalyticsId, gtmId }: AnalyticsScriptsP
           <Script
             src={`https://www.googletagmanager.com/gtag/js?id=${googleAnalyticsId}`}
             strategy="afterInteractive"
+            nonce={nonce}
           />
-          <Script id="google-analytics" strategy="afterInteractive">
+          <Script id="google-analytics" strategy="afterInteractive" nonce={nonce}>
             {`
               window.dataLayer = window.dataLayer || [];
               function gtag(){dataLayer.push(arguments);}
@@ -239,7 +241,7 @@ export function AnalyticsScripts({ googleAnalyticsId, gtmId }: AnalyticsScriptsP
       {/* Google Tag Manager */}
       {gtmId && (
         <>
-          <Script id="google-tag-manager" strategy="afterInteractive">
+          <Script id="google-tag-manager" strategy="afterInteractive" nonce={nonce}>
             {`
               (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
               new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
@@ -265,11 +267,13 @@ export function AnalyticsScripts({ googleAnalyticsId, gtmId }: AnalyticsScriptsP
 // Component for critical CSS inlining
 interface CriticalCSSProps {
   css: string;
+  nonce?: string;
 }
 
-export function CriticalCSS({ css }: CriticalCSSProps) {
+export function CriticalCSS({ css, nonce }: CriticalCSSProps) {
   return (
     <style
+      nonce={nonce}
       dangerouslySetInnerHTML={{
         __html: css,
       }}
@@ -278,9 +282,9 @@ export function CriticalCSS({ css }: CriticalCSSProps) {
 }
 
 // Performance monitoring script
-export function PerformanceMonitoring() {
+export function PerformanceMonitoring({ nonce }: { nonce?: string }) {
   return (
-    <Script id="performance-monitoring" strategy="afterInteractive">
+    <Script id="performance-monitoring" strategy="afterInteractive" nonce={nonce}>
       {`
         // Core Web Vitals monitoring
         function sendToAnalytics(metric) {
