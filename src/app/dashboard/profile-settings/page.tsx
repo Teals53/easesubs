@@ -20,7 +20,6 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
-import { sanitizeText } from "@/lib/input-sanitizer";
 
 export default function ProfileSettingsPage() {
   const { data: session, status, update } = useSession();
@@ -47,24 +46,42 @@ export default function ProfileSettingsPage() {
   // Get user data from session
   const userProfile = session?.user;
 
+  // Get tRPC utils for cache invalidation
+  const utils = trpc.useUtils();
+
+  // Fetch user profile data from database
+  const { data: dbUserProfile } = trpc.user.getProfile.useQuery(undefined, {
+    enabled: !!session?.user?.id,
+    refetchOnWindowFocus: false,
+  });
+
   // Update profile mutation
   const updateProfileMutation = trpc.user.updateProfile.useMutation({
-    onSuccess: async () => {
+    onSuccess: async (data) => {
       toast.success("Profile updated successfully!");
       setIsEditing(false);
 
-      // Update the session if name was changed
-      if (formData.name !== session?.user?.name) {
+      // Update the session with the new user data
+      if (data.user && formData.name !== session?.user?.name) {
         await update({
           ...session,
           user: {
             ...session?.user,
-            name: formData.name,
+            name: data.user.name,
           },
         });
       }
+
+      // Invalidate and refetch user profile data
+      await utils.user.getProfile.invalidate();
+      
+      // Update local form data to reflect the change immediately
+      setFormData({
+        name: data.user?.name || formData.name,
+      });
     },
     onError: (error) => {
+      console.error("Profile update error:", error);
       toast.error(`Failed to update profile: ${error.message}`);
     },
   });
@@ -99,12 +116,14 @@ export default function ProfileSettingsPage() {
 
   // Initialize form data when profile loads
   useEffect(() => {
-    if (userProfile) {
+    // Prioritize database profile data over session data for accuracy
+    const profileData = dbUserProfile || userProfile;
+    if (profileData) {
       setFormData({
-        name: userProfile.name || "",
+        name: profileData.name || "",
       });
     }
-  }, [userProfile]);
+  }, [userProfile, dbUserProfile]);
 
   if (status === "loading") {
     return (
@@ -119,19 +138,47 @@ export default function ProfileSettingsPage() {
   }
 
   const handleSave = async () => {
+    // Validate form data
+    if (!formData.name || formData.name.trim().length < 2) {
+      toast.error("Name must be at least 2 characters long");
+      return;
+    }
+
+    if (formData.name.trim().length > 50) {
+      toast.error("Name must be less than 50 characters");
+      return;
+    }
+
+    // Validate name format (same as registration)
+    if (!/^[a-zA-Z\s'-]+$/.test(formData.name.trim())) {
+      toast.error("Name can only contain letters, spaces, hyphens, and apostrophes");
+      return;
+    }
+
+    // Check if name actually changed (prioritize database data)
+    const profileData = dbUserProfile || userProfile;
+    if (formData.name.trim() === profileData?.name?.trim()) {
+      toast.info("No changes detected");
+      setIsEditing(false);
+      return;
+    }
+
     try {
-      await updateProfileMutation.mutateAsync(formData);
-    } catch {
+      await updateProfileMutation.mutateAsync({
+        name: formData.name.trim(),
+      });
+    } catch (error) {
+      console.error("Save error:", error);
       // Error is handled by mutation onError callback
     }
   };
 
   const handleCancel = () => {
-    if (userProfile) {
-      setFormData({
-        name: userProfile.name || "",
-      });
-    }
+    // Reset form data to original values (prioritize database data)
+    const profileData = dbUserProfile || userProfile;
+    setFormData({
+      name: profileData?.name || "",
+    });
     setIsEditing(false);
   };
 
@@ -307,7 +354,7 @@ export default function ProfileSettingsPage() {
               </button>
               <button
                 onClick={handleSave}
-                disabled={updateProfileMutation.isPending}
+                disabled={updateProfileMutation.isPending || !formData.name.trim() || formData.name.trim().length < 2}
                 className="flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-green-600/50 disabled:cursor-not-allowed rounded-lg text-white text-sm transition-colors"
               >
                 <Save className="w-4 h-4 mr-2" />
@@ -325,13 +372,24 @@ export default function ProfileSettingsPage() {
             <input
               type="text"
               value={formData.name}
-              onChange={(e) =>
-                setFormData({ ...formData, name: sanitizeText(e.target.value) })
-              }
+              onChange={(e) => {
+                const value = e.target.value;
+                // Allow only valid characters (letters, spaces, hyphens, apostrophes)
+                const validValue = value.replace(/[^a-zA-Z\s\-']/g, '');
+                if (validValue.length <= 50) {
+                  setFormData({ ...formData, name: validValue });
+                }
+              }}
               disabled={!isEditing}
               className="w-full px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
               placeholder="Enter your full name"
+              maxLength={50}
             />
+            {isEditing && (
+              <p className="text-xs text-gray-500 mt-1">
+                {formData.name.length}/50 characters
+              </p>
+            )}
           </div>
 
           <div>

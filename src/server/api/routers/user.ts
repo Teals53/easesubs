@@ -32,29 +32,68 @@ export const userRouter = createTRPCRouter({
         name: z
           .string()
           .min(2, "Name must be at least 2 characters")
-          .optional(),
+          .max(50, "Name must be less than 50 characters")
+          .regex(
+            /^[a-zA-Z\s'-]+$/,
+            "Name can only contain letters, spaces, hyphens, and apostrophes",
+          )
+          .trim(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.session.user.id;
 
       try {
-        // Update user name if provided
-        if (input.name !== undefined) {
-          await ctx.db.user.update({
-            where: { id: userId },
-            data: { name: input.name },
+        // Validate that the user exists and is active
+        const existingUser = await ctx.db.user.findUnique({
+          where: { id: userId },
+          select: { id: true, isActive: true, name: true },
+        });
+
+        if (!existingUser) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "User not found",
           });
         }
+
+        if (!existingUser.isActive) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "Account is inactive",
+          });
+        }
+
+        // Update the user's name
+        const updatedUser = await ctx.db.user.update({
+          where: { id: userId },
+          data: { 
+            name: input.name,
+            updatedAt: new Date(),
+          },
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            role: true,
+            updatedAt: true,
+          },
+        });
 
         return {
           success: true,
           message: "Profile updated successfully",
+          user: updatedUser,
         };
-      } catch {
+      } catch (error) {
+        if (error instanceof TRPCError) {
+          throw error;
+        }
+        
+        console.error("Profile update error:", error);
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to update user",
+          message: "Failed to update profile",
         });
       }
     }),
