@@ -6,7 +6,6 @@ import {
 } from "@/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import crypto from "crypto";
-import { secureLogger } from "@/lib/secure-logger";
 
 export const paymentRouter = createTRPCRouter({
   // Payment creation is now handled by dedicated API routes:
@@ -149,11 +148,7 @@ export const paymentRouter = createTRPCRouter({
         });
       }
 
-      secureLogger.payment("Payment processing debug info", {
-        paymentId: input.paymentId,
-        status: "processing"
-      });
-
+      
       return updatedPayment;
     }),
 
@@ -190,16 +185,9 @@ export const paymentRouter = createTRPCRouter({
       try {
         await processRefundWithProvider(
           payment.method,
-          payment.id,
-          refundAmount,
-          input.reason,
         );
-      } catch (refundError) {
-        secureLogger.error("Payment refund failed", refundError, {
-          action: "payment_refund",
-          userId: ctx.session.user.id
-        });
-        throw new TRPCError({
+      } catch {
+                throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: "Failed to process refund",
         });
@@ -267,20 +255,17 @@ async function verifyWebhookSignature(
 // Helper function to process refunds with payment providers
 async function processRefundWithProvider(
   method: string,
-  paymentId: string,
-  amount: number,
-  reason?: string,
 ): Promise<void> {
   switch (method) {
     case "CRYPTOMUS":
       // Implement Cryptomus refund API call
       // This would make an actual API call to Cryptomus's refund endpoint
-      console.log(
-        `Processing Cryptomus refund for payment ${paymentId}, amount: ${amount}, reason: ${reason || "No reason provided"}`,
-      );
+      // Processing Cryptomus refund
       break;
 
     default:
       throw new Error(`Unsupported payment method for refund: ${method}`);
   }
 }
+
+

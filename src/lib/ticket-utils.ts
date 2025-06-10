@@ -122,9 +122,6 @@ export async function createAutoTicketForOrder(
     });
   }
 
-  console.log(
-    `✅ Created automatic support ticket ${ticketNumber} for completed order ${order.orderNumber}${isAdminBypass ? " (Admin Bypass)" : ""}`,
-  );
-
   return supportTicket;
 }
+

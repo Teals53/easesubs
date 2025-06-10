@@ -100,7 +100,7 @@ export function CheckoutForm() {
         try {
           await handleCryptomusPayment(data.orderId);
         } catch (error) {
-          console.error("Cryptomus payment failed:", error);
+          // Console statement removed
           setIsProcessing(false);
           setErrorMessage({
             type: "error",
@@ -124,7 +124,7 @@ export function CheckoutForm() {
       }
     },
     onError: (error) => {
-      console.error("Order creation failed:", error);
+      // Console statement removed
       setIsProcessing(false);
 
       let errorTitle = "Order Creation Failed";
@@ -307,8 +307,8 @@ export function CheckoutForm() {
         // Handle Weepay payment flow
         await handleWeepayPayment(orderResult.orderId);
       }
-    } catch (error) {
-      console.error("Payment error:", error);
+    } catch {
+      // Console statement removed
       // Error is handled by the mutation's onError callback
     } finally {
       setIsProcessing(false);
@@ -776,3 +776,4 @@ export function CheckoutForm() {
     </div>
   );
 }
+

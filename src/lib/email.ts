@@ -1,5 +1,4 @@
 import nodemailer from "nodemailer";
-import { secureLogger } from "@/lib/secure-logger";
 
 interface EmailConfig {
   host: string;
@@ -38,15 +37,13 @@ class EmailService {
       };
 
       this.transporter = nodemailer.createTransport(config);
-    } catch (error) {
-      secureLogger.error("Email transporter initialization failed", error);
-      this.transporter = null;
+    } catch {
+            this.transporter = null;
     }
   }
 
   private logTransporterError() {
-    secureLogger.error("Email transporter not initialized - email sending disabled");
-  }
+      }
 
   async sendEmail(data: EmailData): Promise<boolean> {
     if (!this.transporter) {
@@ -56,17 +53,10 @@ class EmailService {
 
     try {
       await this.transporter.sendMail(data);
-      secureLogger.info("Email sent successfully", {
-        to: data.to,
-        subject: data.subject
-      });
-      return true;
-    } catch (error) {
-      secureLogger.error("Email sending failed", error, {
-        action: "email_send"
-      });
-      return false;
-    }
+            return true;
+      } catch {
+        return false;
+  }
   }
 
   // Order confirmation email
@@ -342,3 +332,4 @@ class EmailService {
 }
 
 export const emailService = new EmailService();
+

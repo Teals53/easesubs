@@ -251,3 +251,4 @@ export const registrationRateLimit = createRateLimit({
   interval: 60 * 60 * 1000, // 1 hour
   maxRequests: 50,
 }); 
+

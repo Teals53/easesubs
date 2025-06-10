@@ -238,15 +238,23 @@ export function FAQ({ maxItems, showSearch = true }: FAQProps) {
       {/* Search Bar */}
       {showSearch && (
         <div className="mb-8">
+          <label htmlFor="faq-search" className="sr-only">
+            Search frequently asked questions
+          </label>
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" aria-hidden="true" />
             <input
+              id="faq-search"
               type="text"
               placeholder="Search FAQs..."
               value={searchQuery}
               onChange={(e) => handleSearchChange(e.target.value)}
               className="w-full pl-10 pr-4 py-3 bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              aria-describedby="search-description"
             />
+          </div>
+          <div id="search-description" className="sr-only">
+            Start typing to filter FAQ questions and answers
           </div>
         </div>
       )}
@@ -357,3 +365,4 @@ export function FAQ({ maxItems, showSearch = true }: FAQProps) {
     </div>
   );
 }
+

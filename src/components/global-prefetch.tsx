@@ -71,3 +71,4 @@ export function GlobalPrefetch() {
 
   return null;
 }
+

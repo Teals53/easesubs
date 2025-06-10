@@ -332,8 +332,8 @@ export function ProductModal({
           plans: validPlans,
         });
       }
-    } catch (error) {
-      console.error("Error saving product:", error);
+    } catch {
+      // Silently handle form submission errors
     } finally {
       setIsLoading(false);
     }
@@ -964,3 +964,4 @@ export function ProductModal({
     </AnimatePresence>
   );
 }
+

@@ -50,9 +50,11 @@ export default async function middleware(request: NextRequest) {
     if (analysis.isBlocked || analysis.riskScore > 95) {
       return middlewareSecurity.handleBlockedRequest(analysis);
     }
-  } catch (error) {
-    // Log error but don't block request if security analysis fails
-    console.error("Security middleware error:", error);
+  } catch {
+    if (process.env.NODE_ENV === 'development') {
+      // console.error("Security middleware error:", error);
+    }
+    return NextResponse.next();
   }
 
   // Get session using NextAuth

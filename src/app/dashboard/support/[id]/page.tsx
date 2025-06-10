@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { trpc } from "@/lib/trpc";
+import { toast } from "sonner";
 
 interface TicketMessage {
   id: string;
@@ -56,8 +57,11 @@ export default function TicketDetailPage() {
       setNewMessage("");
       refetch();
     },
-    onError: (error) => {
-      console.error("Failed to send message:", error);
+    onError: () => {
+      if (process.env.NODE_ENV === 'development') {
+        // console.error("Failed to send message:", error);
+      }
+      toast.error("Failed to send message. Please try again.");
     },
   });
 
@@ -83,8 +87,11 @@ export default function TicketDetailPage() {
         ticketId,
         message: newMessage.trim(),
       });
-    } catch (error) {
-      console.error("Failed to send message:", error);
+    } catch {
+      if (process.env.NODE_ENV === 'development') {
+        // console.error("Failed to send message:", error);
+      }
+      toast.error("Failed to send message. Please try again.");
     } finally {
       setIsSubmitting(false);
     }

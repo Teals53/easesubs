@@ -1,11 +1,27 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { validateCryptomusWebhook } from "@/lib/webhook-validation";
 import { webhookRateLimit } from "@/lib/enhanced-rate-limit";
-import { secureLogger } from "@/lib/secure-logger";
 import { emailService } from "@/lib/email";
 import { CryptomusWebhook } from "@/lib/cryptomus";
 import { DeliveryService } from "@/lib/delivery-service";
+
+async function verifyWebhookSignature(
+  body: string,
+  signature: string
+): Promise<boolean> {
+  const cryptomusSecret = process.env.CRYPTOMUS_PAYMENT_API_KEY;
+  if (!cryptomusSecret) {
+    return false;
+  }
+
+  const crypto = await import("crypto");
+  const expectedSignature = crypto
+    .createHash("md5")
+    .update(body + cryptomusSecret)
+    .digest("hex");
+
+  return signature === expectedSignature;
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -19,46 +35,27 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.text();
+    const signature = request.headers.get("sign");
 
-    // SECURITY FIX: Extract signature from headers (Cryptomus sends it as 'sign' header)
-    const signature = request.headers.get("sign") || "";
-
-    // Validate webhook signature using the API key
-    const apiKey = process.env.CRYPTOMUS_PAYMENT_API_KEY;
-    if (!apiKey) {
-      secureLogger.error("CRYPTOMUS_PAYMENT_API_KEY not configured");
-      return NextResponse.json(
-        { error: "Webhook not configured" },
-        { status: 500 },
-      );
+    if (!signature) {
+      return NextResponse.json({ error: "Missing signature" }, { status: 400 });
     }
 
-    // SECURITY FIX: Use proper signature validation
-    const validation = validateCryptomusWebhook(body, signature, apiKey);
-    if (!validation.isValid) {
-      secureLogger.security("Invalid Cryptomus webhook signature", { 
-        error: validation.error,
-        hasSignature: !!signature 
-      });
-      return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
+    const apiKey = process.env.CRYPTOMUS_PAYMENT_API_KEY;
+    if (!apiKey) {
+      return NextResponse.json({ error: "API key not configured" }, { status: 500 });
+    }
+
+    if (!(await verifyWebhookSignature(body, signature))) {
+      return NextResponse.json({ error: "Invalid signature" }, { status: 403 });
     }
 
     // Parse webhook data
     const webhookData: CryptomusWebhook = JSON.parse(body);
     const { order_id, status, uuid } = webhookData;
 
-    secureLogger.payment("Valid Cryptomus webhook received", {
-      order_id,
-      status,
-      uuid,
-      timestamp: new Date().toISOString(),
-    });
-
-    if (!order_id || !status || !uuid) {
-      return NextResponse.json(
-        { error: "Missing required fields" },
-        { status: 400 },
-      );
+    if (!uuid || !order_id || !status) {
+      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
     // Find payment record
@@ -91,37 +88,29 @@ export async function POST(request: NextRequest) {
     });
 
     if (!payment) {
-      secureLogger.error("Payment not found for Cryptomus webhook", {
-        paymentId: uuid,
-        status: status
-      });
       return NextResponse.json({ error: "Payment not found" }, { status: 404 });
     }
 
-    secureLogger.payment("Current payment status check", {
-      paymentId: uuid,
-      currentStatus: payment.status,
-      webhookStatus: status
-    });
+    let paymentStatus: "COMPLETED" | "FAILED" | "PROCESSING" | "CANCELLED";
+    let orderStatus: "COMPLETED" | "FAILED" | "PROCESSING" | "CANCELLED";
 
-    // Map Cryptomus status to our status
-    let paymentStatus: "COMPLETED" | "FAILED" | "CANCELLED" = "FAILED";
-    let orderStatus: "COMPLETED" | "FAILED" | "CANCELLED" = "FAILED";
-
-    switch (status.toLowerCase()) {
+    switch (status) {
       case "paid":
       case "paid_over":
-      case "confirm_check":
         paymentStatus = "COMPLETED";
         orderStatus = "COMPLETED";
         break;
       case "fail":
-      case "system_fail":
       case "wrong_amount":
+      case "cancel":
         paymentStatus = "FAILED";
         orderStatus = "FAILED";
         break;
-      case "cancel":
+      case "check":
+      case "process":
+        paymentStatus = "PROCESSING";
+        orderStatus = "PROCESSING";
+        break;
       case "refund_paid":
         paymentStatus = "CANCELLED";
         orderStatus = "CANCELLED";
@@ -129,13 +118,9 @@ export async function POST(request: NextRequest) {
       case "refund_process":
       case "refund_fail":
         // Keep current status for refund processing states
-        console.log(
-          "Refund processing webhook received, keeping current status",
-        );
         return NextResponse.json({ success: true });
       default:
         // For unknown statuses, don't update
-        console.warn("Unknown Cryptomus payment status:", status);
         return NextResponse.json({ success: true });
     }
 
@@ -167,15 +152,6 @@ export async function POST(request: NextRequest) {
 
         // If stock validation fails, cancel the order instead of completing it
         if (stockValidationErrors.length > 0) {
-          console.warn(
-            "⚠️ Stock validation failed during payment completion:",
-            {
-              orderId: payment.orderId,
-              orderNumber: payment.order.orderNumber,
-              stockErrors: stockValidationErrors,
-            },
-          );
-
           // Update payment as completed but order as cancelled due to stock
           const updatedPaymentRecord = await tx.payment.update({
             where: { id: payment.id },
@@ -272,22 +248,10 @@ export async function POST(request: NextRequest) {
               },
             });
           }
-          console.log(
-            `Created ${orderWithItems.items.length} subscriptions for completed order`,
-          );
         }
       }
 
       return { payment: updatedPaymentRecord, order: updatedOrderRecord };
-    });
-
-    // Log the successful status update
-    console.log("✅ Payment status updated:", {
-      paymentId: updatedPayment.payment.id,
-      oldStatus: payment.status,
-      newStatus: paymentStatus,
-      orderStatus: orderStatus,
-      timestamp: new Date().toISOString(),
     });
 
     // Send email notification for completed orders
@@ -307,10 +271,8 @@ export async function POST(request: NextRequest) {
           Number(payment.order.total),
           orderItems,
         );
-        console.log("✅ Order confirmation email sent");
-      } catch (emailError) {
-        console.error("Failed to send order confirmation email:", emailError);
-        // Don't fail the webhook for email errors
+      } catch {
+        // Email sending failed - continue processing
       }
     }
 
@@ -319,19 +281,11 @@ export async function POST(request: NextRequest) {
       try {
         for (const item of payment.order.items) {
           try {
-            const deliveryResult = await DeliveryService.processDelivery({
+            await DeliveryService.processDelivery({
               orderId: payment.order.id,
               orderItemId: item.id,
             });
-            console.log(
-              `✅ Processed delivery for item ${item.id}:`,
-              deliveryResult,
-            );
-          } catch (deliveryError) {
-            console.error(
-              `Failed to process delivery for item ${item.id}:`,
-              deliveryError,
-            );
+          } catch {
             // Continue with other items even if one fails
           }
         }
@@ -367,7 +321,6 @@ export async function POST(request: NextRequest) {
               },
             });
 
-            let cancelledCount = 0;
             for (const order of conflictingOrders) {
               // Check stock conflicts for this order
               const hasStockConflict = await Promise.all(
@@ -398,36 +351,23 @@ export async function POST(request: NextRequest) {
                     },
                   }),
                 ]);
-                cancelledCount++;
-                console.log(
-                  `🚫 Cancelled conflicting order ${order.orderNumber}`,
-                );
               }
             }
-
-            if (cancelledCount > 0) {
-              console.log(`🚫 Total cancelled orders: ${cancelledCount}`);
-            }
           }
-        } catch (conflictError) {
-          console.error("Failed to cancel conflicting orders:", conflictError);
+        } catch {
           // Don't fail the webhook for conflict resolution errors
         }
-      } catch (deliveryError) {
-        console.error("Failed to process deliveries:", deliveryError);
+      } catch {
         // Don't fail the webhook for delivery errors
       }
     }
 
-    console.log(
-      `✅ Cryptomus webhook processed successfully: ${order_id} - ${status}`,
-    );
     return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error("💥 Cryptomus webhook error:", error);
+  } catch {
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 },
     );
   }
 }
+

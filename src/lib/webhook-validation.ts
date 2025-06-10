@@ -89,3 +89,4 @@ export function validateStripeWebhook(
     return { isValid: false, error: "Invalid signature format" };
   }
 }
+

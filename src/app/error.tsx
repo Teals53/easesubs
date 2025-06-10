@@ -15,7 +15,7 @@ export default function Error({
   useEffect(() => {
     // Log the error to an error reporting service
     if (process.env.NODE_ENV === "production") {
-      console.error("Application error:", error);
+      // Console statement removed
     }
   }, [error]);
 
@@ -80,3 +80,4 @@ export default function Error({
     </div>
   );
 }
+

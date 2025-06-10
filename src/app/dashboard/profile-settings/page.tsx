@@ -121,9 +121,8 @@ export default function ProfileSettingsPage() {
   const handleSave = async () => {
     try {
       await updateProfileMutation.mutateAsync(formData);
-    } catch (error) {
-      // Error is handled by mutation onError
-      console.error("Profile update error:", error);
+    } catch {
+      // Error is handled by mutation onError callback
     }
   };
 
@@ -162,9 +161,8 @@ export default function ProfileSettingsPage() {
         currentPassword: passwordData.currentPassword,
         newPassword: passwordData.newPassword,
       });
-    } catch (error) {
-      // Error is handled by mutation onError
-      console.error("Password change error:", error);
+    } catch {
+      // Error is handled by mutation onError callback
     }
   };
 
@@ -209,9 +207,8 @@ export default function ProfileSettingsPage() {
         password: deletePassword,
         confirmation: "DELETE MY ACCOUNT" as const,
       });
-    } catch (error) {
-      // Error is handled by mutation onError
-      console.error("Delete account error:", error);
+    } catch {
+      // Error is handled by mutation onError callback
     }
   };
 
@@ -747,3 +744,4 @@ export default function ProfileSettingsPage() {
     </div>
   );
 }
+

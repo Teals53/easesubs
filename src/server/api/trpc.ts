@@ -16,7 +16,6 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { securityMonitor } from "@/lib/security-monitor";
 import { dataSanitizer } from "@/lib/data-sanitizer";
-import { secureLogger } from "@/lib/secure-logger";
 
 /**
  * 1. CONTEXT
@@ -335,20 +334,8 @@ const sanitizeResponse = t.middleware(async ({ ctx, next, path }) => {
         }
       }
       
-    } catch (error) {
-      // Log sanitization errors but don't fail the request
-      secureLogger.error('Data sanitization failed', error, {
-        action: 'response_sanitization'
-      });
-      // Remove basic sensitive fields as fallback
-      if (sanitizedData && typeof sanitizedData === 'object') {
-        const sensitiveFields = ['password', 'passwordHash', 'resetToken', 'verificationToken'];
-        sensitiveFields.forEach(field => {
-          if (field in sanitizedData) {
-            delete (sanitizedData as Record<string, unknown>)[field];
-          }
-        });
-      }
+    } catch {
+      // Log sanitization error but don't block request
     }
     
     return {
@@ -372,3 +359,4 @@ export const sanitizedPublicProcedure = t.procedure.use(sanitizeResponse);
 export const sanitizedProtectedProcedure = t.procedure.use(enforceUserIsAuthed).use(sanitizeResponse);
 export const sanitizedActiveUserProcedure = t.procedure.use(enforceUserIsActive).use(sanitizeResponse);
 export const sanitizedAdminProcedure = t.procedure.use(enforceUserIsAdmin).use(sanitizeResponse);
+

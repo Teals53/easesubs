@@ -4,7 +4,6 @@ import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { db } from "@/lib/db";
-import { secureLogger } from "@/lib/secure-logger";
 import { securityMonitor } from "@/lib/security-monitor";
 
 // Simple in-memory store for failed login attempts (use Redis in production)
@@ -177,8 +176,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         // Check if account is locked due to too many failed attempts
         if (isAccountLocked(email)) {
-          secureLogger.auth("Login attempt on locked account", email);
-          return null;
+                    return null;
         }
 
         try {
@@ -224,9 +222,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             name: user.name,
             role: user.role,
           };
-        } catch (error) {
-          secureLogger.error("Authorization error", error);
-          await recordFailedLogin(email);
+        } catch {
+                    await recordFailedLogin(email);
           return null;
         }
       },
@@ -298,9 +295,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             // User has been deactivated, invalidate session
             throw new Error("User account deactivated");
           }
-        } catch (error) {
-          secureLogger.error("Session validation error", error);
-          // On database error, allow session to continue but log the issue
+        } catch {
+                    // On database error, allow session to continue but log the issue
         }
       }
       return session;
@@ -311,8 +307,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         // For Google OAuth, ensure email is verified
         const googleProfile = profile as { email_verified?: boolean };
         if (!googleProfile.email_verified) {
-          secureLogger.auth("Google sign-in with unverified email", profile.email);
-          return false;
+                    return false;
         }
         
         // Check if user exists and is active
@@ -323,12 +318,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           });
           
           if (existingUser && !existingUser.isActive) {
-            secureLogger.auth("Sign-in attempt for inactive user", profile.email);
-            return false;
+                        return false;
           }
-        } catch (error) {
-          secureLogger.error("Error checking user status during OAuth", error);
-          return false;
+        } catch {
+                    return false;
         }
       }
       
@@ -336,11 +329,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
   },
   events: {
-    async signIn({ user, account, isNewUser }) {
+    async signIn({ user }) {
       // Enhanced security logging
       if (process.env.NODE_ENV === "production") {
-        secureLogger.auth(`User signed in via ${account?.provider}${isNewUser ? " (new user)" : ""}`, user.email || undefined);
-      }
+              }
       
       // Update last login timestamp
       if (user.id) {
@@ -349,17 +341,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             where: { id: user.id },
             data: { updatedAt: new Date() },
           });
-        } catch (error) {
-          secureLogger.error("Failed to update last login", error);
-        }
+        } catch {
+                  }
       }
     },
     async signOut() {
       if (process.env.NODE_ENV === "production") {
-        secureLogger.auth("User signed out");
-      }
+              }
     },
   },
   // Enhanced security settings
   debug: false, // Always false for security
 });
+

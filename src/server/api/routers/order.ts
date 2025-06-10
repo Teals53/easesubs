@@ -1,7 +1,6 @@
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
 import { TRPCError } from "@trpc/server";
-import { secureLogger } from "@/lib/secure-logger";
 
 export const orderRouter = createTRPCRouter({
   create: protectedProcedure
@@ -34,12 +33,7 @@ export const orderRouter = createTRPCRouter({
         });
       }
 
-      secureLogger.info("Order creation initiated", {
-        userId: ctx.session.user.id,
-        planCount: input.items.length,
-        action: "order_creation"
-      });
-
+      
       try {
         // Get plan details and validate
         const planIds = input.items.map((item) => item.planId);
@@ -214,21 +208,14 @@ export const orderRouter = createTRPCRouter({
           try {
             const { DeliveryService } = await import("@/lib/delivery-service");
             for (const item of orderWithItems.items) {
-              const deliveryResult = await DeliveryService.processDelivery({
+              await DeliveryService.processDelivery({
                 orderId: orderWithItems.id,
                 orderItemId: item.id,
               });
-              console.log(
-                `✅ Processed delivery for admin bypass order item ${item.id}:`,
-                deliveryResult,
-              );
+              // Processed delivery for admin bypass order item
             }
-          } catch (deliveryError) {
-            console.error(
-              "Failed to process deliveries for admin bypass order:",
-              deliveryError,
-            );
-            // Don't fail the order creation for delivery errors
+          } catch {
+            // Error handled - delivery failed for admin bypass order
           }
         }
 
@@ -240,11 +227,6 @@ export const orderRouter = createTRPCRouter({
           redirectUrl: `/dashboard/orders/${order.id}`,
         };
       } catch (error) {
-        secureLogger.error("Order creation failed", error, {
-          action: "order_creation",
-          userId: ctx.session.user.id
-        });
-
         if (error instanceof TRPCError) {
           throw error;
         }
@@ -756,10 +738,7 @@ export const orderRouter = createTRPCRouter({
             cancelledAt: new Date(),
           });
 
-          console.log(
-            `🚫 Cancelled conflicting order ${order.orderNumber} due to stock conflicts:`,
-            stockConflicts,
-          );
+          // Cancelled conflicting order due to stock conflicts
         }
       }
 
@@ -769,3 +748,5 @@ export const orderRouter = createTRPCRouter({
       };
     }),
 });
+
+

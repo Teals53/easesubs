@@ -70,10 +70,12 @@ model User {
   subscriptions    UserSubscription[]
   securityEvents   SecurityEvent[]
 
+  @@index([email])
+  @@index([isActive])
+  @@index([role])
+  @@index([createdAt])
   @@map("users")
 }
-
-
 
 model Product {
   id             String          @id @default(cuid())
@@ -94,6 +96,12 @@ model Product {
   reviews        Review[]
   category       Category        @relation(fields: [categoryId], references: [id])
 
+  @@index([categoryId])
+  @@index([isActive])
+  @@index([isFeatured])
+  @@index([displayOrder])
+  @@index([createdAt])
+  @@index([slug])
   @@map("products")
 }
 
@@ -162,6 +170,11 @@ model UserSubscription {
   plan          ProductPlan        @relation(fields: [planId], references: [id])
   user          User               @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([userId])
+  @@index([status])
+  @@index([endDate])
+  @@index([renewalDate])
+  @@index([planId])
   @@map("user_subscriptions")
 }
 
@@ -186,6 +199,11 @@ model Order {
   payments       Payment[]
   subscriptions  UserSubscription[]
 
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+  @@index([completedAt])
+  @@index([orderNumber])
   @@map("orders")
 }
 
@@ -244,8 +262,6 @@ model CartItem {
   @@unique([userId, planId])
   @@map("cart_items")
 }
-
-
 
 model Review {
   id          String    @id @default(cuid())
@@ -323,12 +339,6 @@ model SupportTicketAttachment {
   @@map("support_ticket_attachments")
 }
 
-
-
-
-
-
-
 model StockItem {
   id         String      @id @default(cuid())
   planId     String      @map("plan_id")
@@ -391,8 +401,6 @@ enum PaymentStatus {
   PARTIALLY_REFUNDED
 }
 
-
-
 enum TicketStatus {
   OPEN
   IN_PROGRESS
@@ -416,8 +424,6 @@ enum TicketCategory {
   ACCOUNT_ISSUES
   BILLING_INQUIRIES
 }
-
-
 
 enum DeliveryType {
   MANUAL

@@ -149,8 +149,8 @@ export default function AdminProductsPage() {
   const handleToggleStatus = async (productId: string) => {
     try {
       await toggleProductStatusMutation.mutateAsync({ productId });
-    } catch (error) {
-      console.error("Error toggling product status:", error);
+    } catch {
+      // Error is handled by mutation onError callback
     }
   };
 
@@ -162,8 +162,8 @@ export default function AdminProductsPage() {
     ) {
       try {
         await deleteProductMutation.mutateAsync({ productId });
-      } catch (error) {
-        console.error("Error deleting product:", error);
+      } catch {
+        // Error is handled by mutation onError callback
       }
     }
   };
@@ -671,8 +671,8 @@ function CategoriesTab({
   const handleToggleStatus = async (categoryId: string) => {
     try {
       await toggleCategoryStatusMutation.mutateAsync({ id: categoryId });
-    } catch (error) {
-      console.error("Error toggling category status:", error);
+    } catch {
+      // Error is handled by mutation onError callback
     }
   };
 
@@ -684,8 +684,8 @@ function CategoriesTab({
     ) {
       try {
         await deleteCategoryMutation.mutateAsync({ id: categoryId });
-      } catch (error) {
-        console.error("Error deleting category:", error);
+      } catch {
+        // Error is handled by mutation onError callback
       }
     }
   };
@@ -827,3 +827,4 @@ function CategoriesTab({
     </>
   );
 }
+

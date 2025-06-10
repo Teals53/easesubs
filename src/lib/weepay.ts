@@ -1,5 +1,4 @@
 import crypto from "crypto";
-import { secureLogger } from "./secure-logger";
 
 export interface WeepayConfig {
   merchantId: string;
@@ -100,11 +99,8 @@ export class Weepay {
         .digest('hex');
       
       return signature === expectedSignature;
-    } catch (error) {
-      secureLogger.error('Weepay webhook signature verification failed', error, {
-        action: 'weepay_webhook_verification'
-      });
-      return false;
+    } catch {
+            return false;
     }
   }
 
@@ -162,12 +158,7 @@ export class Weepay {
         ]
       };
 
-      secureLogger.info('Weepay API Request', {
-        url: `${this.config.baseUrl}/Payment/PaymentCreate`,
-        method: 'POST',
-        data: requestData
-      });
-
+      
       const response = await fetch(`${this.config.baseUrl}/Payment/PaymentCreate`, {
         method: 'POST',
         headers: {
@@ -178,13 +169,7 @@ export class Weepay {
       });
 
       const responseText = await response.text();
-      secureLogger.info('Weepay API Response', {
-        status: response.status,
-        statusText: response.statusText,
-        headers: Object.fromEntries(response.headers.entries()),
-        body: responseText
-      });
-
+      
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}, body: ${responseText}`);
       }
@@ -207,10 +192,7 @@ export class Weepay {
         };
       }
     } catch (error) {
-      secureLogger.error('Weepay payment creation failed', error, {
-        action: 'weepay_payment_create'
-      });
-      return {
+            return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
       };
@@ -272,13 +254,11 @@ export class Weepay {
         };
       }
     } catch (error) {
-      secureLogger.error('Weepay payment status check failed', error, {
-        action: 'weepay_payment_status'
-      });
-      return {
+            return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
       };
     }
   }
 } 
+

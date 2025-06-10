@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { securityMonitor } from "./security-monitor";
-import { secureLogger } from "./secure-logger";
 
 interface RequestAnalysis {
   ip: string;
@@ -28,8 +27,7 @@ export class MiddlewareSecurity {
     // Check if IP is blocked
     const isBlocked = await securityMonitor.isIPBlocked(ip);
     if (isBlocked) {
-      secureLogger.security("Blocked IP attempted access", { ip, pathname, method });
-      return {
+            return {
         ip,
         userAgent,
         pathname,
@@ -311,14 +309,7 @@ export class MiddlewareSecurity {
    * Handle blocked request
    */
   handleBlockedRequest(analysis: RequestAnalysis): NextResponse {
-    secureLogger.security("Request blocked by security middleware", {
-      ip: analysis.ip,
-      pathname: analysis.pathname,
-      method: analysis.method,
-      riskScore: analysis.riskScore,
-      threats: analysis.threats
-    });
-
+    
     // Return appropriate response based on threat type
     if (analysis.threats.includes("BLOCKED_IP")) {
       return new NextResponse("Access Denied", { status: 403 });
@@ -344,3 +335,4 @@ export const middlewareSecurity = new MiddlewareSecurity();
 
 // Export types
 export type { RequestAnalysis }; 
+

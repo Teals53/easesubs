@@ -2,7 +2,6 @@ import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
 import { TRPCError } from "@trpc/server";
 import bcrypt from "bcryptjs";
-import { secureLogger } from "@/lib/secure-logger";
 
 export const userRouter = createTRPCRouter({
   getProfile: protectedProcedure.query(async ({ ctx }) => {
@@ -52,14 +51,10 @@ export const userRouter = createTRPCRouter({
           success: true,
           message: "Profile updated successfully",
         };
-      } catch (error) {
-        secureLogger.error("Profile update failed", error, {
-          action: "profile_update",
-          userId: ctx.session.user.id
-        });
+      } catch {
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to update profile",
+          message: "Failed to update user",
         });
       }
     }),
@@ -333,11 +328,7 @@ export const userRouter = createTRPCRouter({
           success: true,
           message: "Account has been deactivated successfully",
         };
-      } catch (error) {
-        secureLogger.error("Account deletion failed", error, {
-          action: "account_deletion",
-          userId: ctx.session.user.id
-        });
+      } catch {
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: "Failed to delete account",
@@ -345,3 +336,5 @@ export const userRouter = createTRPCRouter({
       }
     }),
 });
+
+

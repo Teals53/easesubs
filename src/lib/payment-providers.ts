@@ -2,7 +2,6 @@
 import { Cryptomus, CreatePaymentRequest } from "./cryptomus";
 // Weepay integration
 import { Weepay, WeepayPaymentRequest, WeepayWebhookData } from "./weepay";
-import { secureLogger } from "./secure-logger";
 
 interface CryptomusPaymentData {
   orderId: string;
@@ -74,10 +73,7 @@ export class PaymentProviders {
         throw new Error(response.message || "Failed to create payment");
       }
     } catch (error) {
-      secureLogger.error("Cryptomus payment creation failed", error, {
-        action: "cryptomus_payment_create"
-      });
-      return {
+            return {
         success: false,
         error: error instanceof Error ? error.message : "Unknown error",
       };
@@ -138,10 +134,7 @@ export class PaymentProviders {
         throw new Error(response.error || "Failed to create weepay payment");
       }
     } catch (error) {
-      secureLogger.error("Weepay payment creation failed", error, {
-        action: "weepay_payment_create"
-      });
-      return {
+            return {
         success: false,
         error: error instanceof Error ? error.message : "Unknown error",
       };
@@ -202,10 +195,7 @@ export class PaymentProviders {
         throw new Error(response.error || "Failed to get payment info");
       }
     } catch (error) {
-      secureLogger.error("Weepay payment info retrieval failed", error, {
-        action: "weepay_payment_info"
-      });
-      return {
+            return {
         success: false,
         error: error instanceof Error ? error.message : "Unknown error",
       };
@@ -255,10 +245,7 @@ export class PaymentProviders {
         throw new Error(response.message || "Failed to get payment info");
       }
     } catch (error) {
-      secureLogger.error("Cryptomus payment info retrieval failed", error, {
-        action: "cryptomus_payment_info"
-      });
-      return {
+            return {
         success: false,
         error: error instanceof Error ? error.message : "Unknown error",
       };
@@ -302,10 +289,7 @@ export class PaymentProviders {
         throw new Error(response.message || "Failed to get payment services");
       }
     } catch (error) {
-      secureLogger.error("Cryptomus payment services retrieval failed", error, {
-        action: "cryptomus_payment_services"
-      });
-      return {
+            return {
         success: false,
         error: error instanceof Error ? error.message : "Unknown error",
       };
@@ -357,10 +341,7 @@ export class PaymentProviders {
         throw new Error(response.message || "Refund failed");
       }
     } catch (error) {
-      secureLogger.error("Cryptomus refund failed", error, {
-        action: "cryptomus_refund"
-      });
-      return {
+            return {
         success: false,
         error: error instanceof Error ? error.message : "Unknown error",
       };
@@ -414,10 +395,7 @@ export class PaymentProviders {
         throw new Error(response.message || "Wallet creation failed");
       }
     } catch (error) {
-      secureLogger.error("Cryptomus wallet creation failed", error, {
-        action: "cryptomus_wallet_create"
-      });
-      return {
+            return {
         success: false,
         error: error instanceof Error ? error.message : "Unknown error",
       };
@@ -461,13 +439,11 @@ export class PaymentProviders {
         throw new Error(response.message || "Failed to get balance");
       }
     } catch (error) {
-      secureLogger.error("Cryptomus balance retrieval failed", error, {
-        action: "cryptomus_balance"
-      });
-      return {
+            return {
         success: false,
         error: error instanceof Error ? error.message : "Unknown error",
       };
     }
   }
 }
+

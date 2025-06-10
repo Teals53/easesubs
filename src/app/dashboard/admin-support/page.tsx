@@ -18,6 +18,7 @@ import { trpc, invalidatePatterns } from "@/lib/trpc";
 import { useState } from "react";
 import { UserRole } from "@prisma/client";
 import Link from "next/link";
+import { toast } from "sonner";
 
 interface ExtendedUser {
   id: string;
@@ -70,9 +71,8 @@ export default function AdminSupportPage() {
       // Refetch the tickets data to update the UI
       refetch();
     },
-    onError: (error) => {
-      console.error("Failed to delete ticket:", error);
-      alert("Failed to delete ticket. Please try again.");
+    onError: () => {
+      toast.error("Failed to delete ticket. Please try again.");
     },
   });
 
@@ -516,3 +516,4 @@ export default function AdminSupportPage() {
     </div>
   );
 }
+

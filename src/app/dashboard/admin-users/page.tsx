@@ -20,6 +20,7 @@ import {
 import { trpc, invalidatePatterns } from "@/lib/trpc";
 import { useState } from "react";
 import { UserRole } from "@prisma/client";
+import { toast } from "sonner";
 
 interface ExtendedUser {
   id: string;
@@ -75,9 +76,8 @@ export default function AdminUsersPage() {
       invalidatePatterns.dashboard(utils);
       refetch();
     },
-    onError: (error) => {
-      console.error("Failed to update user role:", error);
-      alert("Failed to update user role. Please try again.");
+    onError: () => {
+      toast.error("Failed to update user role. Please try again.");
     },
   });
 
@@ -89,9 +89,8 @@ export default function AdminUsersPage() {
       refetch();
       setEditingUser(null);
     },
-    onError: (error) => {
-      console.error("Failed to update user:", error);
-      alert("Failed to update user. Please try again.");
+    onError: () => {
+      toast.error("Failed to update user. Please try again.");
     },
   });
 
@@ -102,9 +101,8 @@ export default function AdminUsersPage() {
       invalidatePatterns.dashboard(utils);
       refetch();
     },
-    onError: (error) => {
-      console.error("Failed to delete user:", error);
-      alert("Failed to delete user. Please try again.");
+    onError: () => {
+      toast.error("Failed to delete user. Please try again.");
     },
   });
 
@@ -126,8 +124,8 @@ export default function AdminUsersPage() {
         userId,
         role: newRole as "USER" | "ADMIN" | "SUPPORT_AGENT" | "MANAGER",
       });
-    } catch (error) {
-      console.error("Error updating user role:", error);
+    } catch {
+      // Error is handled by mutation onError callback
     }
   };
 
@@ -154,8 +152,8 @@ export default function AdminUsersPage() {
         role: editForm.role,
         isActive: editForm.isActive,
       });
-    } catch (error) {
-      console.error("Error updating user:", error);
+    } catch {
+      // Error is handled by mutation onError callback
     }
   };
 
@@ -167,8 +165,8 @@ export default function AdminUsersPage() {
     ) {
       try {
         await deleteUserMutation.mutateAsync({ userId });
-      } catch (error) {
-        console.error("Error deleting user:", error);
+      } catch {
+        // Error is handled by mutation onError callback
       }
     }
   };
@@ -707,3 +705,4 @@ export default function AdminUsersPage() {
     </div>
   );
 }
+

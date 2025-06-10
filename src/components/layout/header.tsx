@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { Menu, X, User, ShoppingCart } from "lucide-react";
+import { Menu, X, User, ShoppingCart, Home, Package, LifeBuoy, Settings, BarChart3, LogOut } from "lucide-react";
 import Link from "next/link";
 import { signOut } from "next-auth/react";
 import { useSessionContext } from "@/lib/session-context";
@@ -52,8 +52,8 @@ export function Header() {
     try {
       await signOut({ callbackUrl: "/" });
       setIsUserMenuOpen(false);
-    } catch (error) {
-      console.error("Sign out error:", error);
+    } catch {
+      // Silently handle sign out errors
     }
   };
 
@@ -83,8 +83,9 @@ export function Header() {
           >
             <Link
               href="/"
-              className="text-white font-bold text-lg md:text-2xl flex items-center focus:outline-none"
+              className="text-white font-bold text-lg md:text-2xl flex items-center focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-gray-900 rounded-lg"
               onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+              aria-label="EaseSubs - Go to homepage"
             >
               <motion.svg
                 whileHover={{ rotate: 10 }}
@@ -92,6 +93,8 @@ export function Header() {
                 viewBox="0 0 24 24"
                 fill="none"
                 xmlns="http://www.w3.org/2000/svg"
+                role="img"
+                aria-label="EaseSubs logo"
               >
                 <motion.path
                   initial={{ pathLength: 0 }}
@@ -112,126 +115,112 @@ export function Header() {
           </motion.div>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center space-x-4">
+          <nav className="hidden md:flex items-center space-x-8" role="navigation" aria-label="Main navigation">
             {/* Cart Button */}
             <motion.button
-              onClick={handleCartClick}
-              whileHover={{ scale: 1.05 }}
+              whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.95 }}
-              className="flex items-center justify-center text-gray-400 hover:text-white p-2 rounded-lg hover:bg-gray-800 transition-all relative"
+              onClick={handleCartClick}
+              className="relative p-2 text-white hover:text-purple-300 transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-gray-900 rounded-lg"
+              aria-label={`Shopping cart with ${isHydrated ? totalItems : 0} items`}
             >
-              <motion.div
-                animate={
-                  totalItems > 0
-                    ? {
-                        scale: [1, 1.1, 1],
-                        rotate: [0, 5, -5, 0],
-                      }
-                    : {}
-                }
-                transition={{ duration: 0.5 }}
-              >
-                <ShoppingCart className="w-5 h-5" />
-              </motion.div>
+              <ShoppingCart className="w-6 h-6" aria-hidden="true" />
               {isHydrated && totalItems > 0 && (
-                <motion.span
-                  key={totalItems}
-                  initial={{ scale: 0, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  exit={{ scale: 0, opacity: 0 }}
-                  transition={{
-                    type: "spring",
-                    stiffness: 500,
-                    damping: 15,
-                    duration: 0.3,
-                  }}
-                  className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold"
+                <span
+                  className="absolute -top-1 -right-1 bg-purple-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center"
+                  aria-label={`${totalItems} items in cart`}
                 >
-                  {totalItems > 99 ? "99+" : totalItems}
-                </motion.span>
+                  {totalItems}
+                </span>
               )}
             </motion.button>
 
             {session?.user ? (
               <div className="relative" ref={userMenuRef}>
                 <motion.button
-                  onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                  whileHover={{ scale: 1.05 }}
+                  whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.95 }}
-                  className="flex items-center justify-center text-white bg-purple-600 hover:bg-purple-700 p-2 rounded-full transition-all"
+                  onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                  className="flex items-center space-x-2 text-white hover:text-purple-300 transition-colors p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-gray-900"
+                  aria-expanded={isUserMenuOpen}
+                  aria-haspopup="true"
+                  aria-label={`User menu for ${session?.user?.name || "User"}`}
                 >
-                  <User className="w-5 h-5" />
+                  <User className="w-5 h-5" aria-hidden="true" />
+                  <span className="hidden lg:block text-sm">
+                    {session?.user?.name?.split(" ")[0] || "User"}
+                  </span>
                 </motion.button>
 
+                {/* User Dropdown */}
                 <AnimatePresence>
                   {isUserMenuOpen && (
                     <motion.div
                       initial={{ opacity: 0, y: -10 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -10 }}
-                      transition={{ duration: 0.2 }}
-                      className="absolute right-0 mt-2 w-48 py-2 bg-gray-800 border border-gray-700 rounded-lg shadow-xl z-50"
+                      className="absolute right-0 mt-2 w-48 bg-gray-800 rounded-lg shadow-lg border border-gray-700 z-50"
+                      role="menu"
+                      aria-label="User menu options"
                     >
-                      <div className="px-4 py-2 border-b border-gray-700">
-                        <p className="text-sm text-gray-400">Signed in as</p>
-                        <p className="text-sm font-bold text-white truncate">
-                          {session.user.email}
-                        </p>
-                      </div>
-                      <motion.div whileHover={{ backgroundColor: "#374151" }}>
+                      <div className="py-1">
                         <Link
                           href="/dashboard"
-                          className="block px-4 py-2 text-gray-300 hover:text-white"
+                          className="flex items-center px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-gray-700 transition-colors focus:outline-none focus:bg-gray-700"
                           onClick={() => setIsUserMenuOpen(false)}
+                          role="menuitem"
                         >
+                          <Home className="w-4 h-4 mr-2" aria-hidden="true" />
                           Dashboard
                         </Link>
-                      </motion.div>
-                      {session.user.role === "ADMIN" && (
-                        <motion.div whileHover={{ backgroundColor: "#374151" }}>
-                          <Link
-                            href="/dashboard/admin-dashboard"
-                            className="block px-4 py-2 text-gray-300 hover:text-white"
-                            onClick={() => setIsUserMenuOpen(false)}
-                          >
-                            Admin Dashboard
-                          </Link>
-                        </motion.div>
-                      )}
-                      <motion.div whileHover={{ backgroundColor: "#374151" }}>
                         <Link
                           href="/dashboard/orders"
-                          className="block px-4 py-2 text-gray-300 hover:text-white"
+                          className="flex items-center px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-gray-700 transition-colors focus:outline-none focus:bg-gray-700"
                           onClick={() => setIsUserMenuOpen(false)}
+                          role="menuitem"
                         >
-                          My Orders
+                          <Package className="w-4 h-4 mr-2" aria-hidden="true" />
+                          Orders
                         </Link>
-                      </motion.div>
-                      <motion.div whileHover={{ backgroundColor: "#374151" }}>
                         <Link
                           href="/dashboard/profile-settings"
-                          className="block px-4 py-2 text-gray-300 hover:text-white"
+                          className="flex items-center px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-gray-700 transition-colors focus:outline-none focus:bg-gray-700"
                           onClick={() => setIsUserMenuOpen(false)}
+                          role="menuitem"
                         >
-                          Profile Settings
+                          <Settings className="w-4 h-4 mr-2" aria-hidden="true" />
+                          Settings
                         </Link>
-                      </motion.div>
-                      <motion.div whileHover={{ backgroundColor: "#374151" }}>
                         <Link
                           href="/dashboard/support"
-                          className="block px-4 py-2 text-gray-300 hover:text-white"
+                          className="flex items-center px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-gray-700 transition-colors focus:outline-none focus:bg-gray-700"
                           onClick={() => setIsUserMenuOpen(false)}
+                          role="menuitem"
                         >
+                          <LifeBuoy className="w-4 h-4 mr-2" aria-hidden="true" />
                           Support
                         </Link>
-                      </motion.div>
-                      <motion.button
-                        whileHover={{ backgroundColor: "#374151" }}
-                        onClick={handleSignOut}
-                        className="block w-full text-left px-4 py-2 text-red-400 hover:text-red-300"
-                      >
-                        Sign Out
-                      </motion.button>
+                        {session?.user?.role === "ADMIN" && (
+                          <Link
+                            href="/dashboard/admin-dashboard"
+                            className="flex items-center px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-gray-700 transition-colors focus:outline-none focus:bg-gray-700"
+                            onClick={() => setIsUserMenuOpen(false)}
+                            role="menuitem"
+                          >
+                            <BarChart3 className="w-4 h-4 mr-2" aria-hidden="true" />
+                            Admin
+                          </Link>
+                        )}
+                        <hr className="my-1 border-gray-700" role="separator" />
+                        <button
+                          onClick={handleSignOut}
+                          className="flex items-center w-full px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-gray-700 transition-colors text-left focus:outline-none focus:bg-gray-700"
+                          role="menuitem"
+                        >
+                          <LogOut className="w-4 h-4 mr-2" aria-hidden="true" />
+                          Sign Out
+                        </button>
+                      </div>
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -311,12 +300,14 @@ export function Header() {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="text-white p-2 rounded-lg hover:bg-gray-800 transition-colors"
+              className="text-white p-2 rounded-lg hover:bg-gray-800 transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-gray-900"
+              aria-expanded={isMenuOpen}
+              aria-label="Toggle mobile menu"
             >
               {isMenuOpen ? (
-                <X className="w-6 h-6" />
+                <X className="w-6 h-6" aria-hidden="true" />
               ) : (
-                <Menu className="w-6 h-6" />
+                <Menu className="w-6 h-6" aria-hidden="true" />
               )}
             </motion.button>
           </div>
@@ -331,6 +322,8 @@ export function Header() {
               exit={{ opacity: 0, height: 0 }}
               transition={{ duration: 0.3 }}
               className="md:hidden mt-4 pb-4 border-t border-gray-700 bg-gray-900/95 backdrop-blur-md"
+              role="navigation"
+              aria-label="Mobile navigation"
             >
               <div className="flex flex-col space-y-3 pt-4">
                 {/* Discord Button for Mobile */}
@@ -361,45 +354,51 @@ export function Header() {
                     </div>
                     <Link
                       href="/dashboard"
-                      className="block px-4 py-2 text-gray-300 hover:text-white"
+                      className="flex items-center px-4 py-2 text-gray-300 hover:text-white"
                       onClick={() => setIsMenuOpen(false)}
                     >
+                      <Home className="w-4 h-4 mr-2" />
                       Dashboard
                     </Link>
                     {session.user.role === "ADMIN" && (
                       <Link
                         href="/dashboard/admin-dashboard"
-                        className="block px-4 py-2 text-gray-300 hover:text-white"
+                        className="flex items-center px-4 py-2 text-gray-300 hover:text-white"
                         onClick={() => setIsMenuOpen(false)}
                       >
+                        <BarChart3 className="w-4 h-4 mr-2" />
                         Admin Dashboard
                       </Link>
                     )}
                     <Link
                       href="/dashboard/orders"
-                      className="block px-4 py-2 text-gray-300 hover:text-white"
+                      className="flex items-center px-4 py-2 text-gray-300 hover:text-white"
                       onClick={() => setIsMenuOpen(false)}
                     >
+                      <Package className="w-4 h-4 mr-2" />
                       My Orders
                     </Link>
                     <Link
                       href="/dashboard/profile-settings"
-                      className="block px-4 py-2 text-gray-300 hover:text-white"
+                      className="flex items-center px-4 py-2 text-gray-300 hover:text-white"
                       onClick={() => setIsMenuOpen(false)}
                     >
+                      <Settings className="w-4 h-4 mr-2" />
                       Profile Settings
                     </Link>
                     <Link
                       href="/dashboard/support"
-                      className="block px-4 py-2 text-gray-300 hover:text-white"
+                      className="flex items-center px-4 py-2 text-gray-300 hover:text-white"
                       onClick={() => setIsMenuOpen(false)}
                     >
+                      <LifeBuoy className="w-4 h-4 mr-2" />
                       Support
                     </Link>
                     <button
                       onClick={handleSignOut}
-                      className="block w-full text-left px-4 py-2 text-red-400 hover:text-red-300"
+                      className="flex items-center w-full text-left px-4 py-2 text-red-400 hover:text-red-300"
                     >
+                      <LogOut className="w-4 h-4 mr-2" />
                       Sign Out
                     </button>
                   </>
@@ -420,3 +419,4 @@ export function Header() {
     </motion.header>
   );
 }
+

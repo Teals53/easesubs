@@ -53,8 +53,8 @@ export default function AdminStockPage() {
         planId: selectedPlan,
         content: newStockContent.trim(),
       });
-    } catch (error) {
-      console.error("Failed to add stock item:", error);
+    } catch {
+      // Error is handled by mutation onError callback
     }
   };
 
@@ -63,8 +63,8 @@ export default function AdminStockPage() {
 
     try {
       await deleteStockMutation.mutateAsync({ id: stockId });
-    } catch (error) {
-      console.error("Failed to delete stock item:", error);
+    } catch {
+      // Error is handled by mutation onError callback
     }
   };
 
@@ -283,3 +283,4 @@ export default function AdminStockPage() {
     </div>
   );
 }
+

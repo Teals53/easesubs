@@ -1,5 +1,4 @@
 import { db } from "@/lib/db";
-import { secureLogger } from "@/lib/secure-logger";
 import type { Prisma } from "@prisma/client";
 
 // Types for security monitoring
@@ -115,16 +114,10 @@ class SecurityMonitor {
 
       // Log based on severity
       if (fullEvent.severity === 'CRITICAL' || fullEvent.severity === 'HIGH') {
-        secureLogger.security(`Security event: ${fullEvent.type}`, {
-          severity: fullEvent.severity,
-          source: fullEvent.source,
-          ip: fullEvent.ip,
-          threats: threats.length
-        });
-      }
+              }
 
-    } catch (error) {
-      secureLogger.error('Failed to analyze security event', error);
+    } catch {
+      // Silently handle security event logging errors
     }
   }
 
@@ -157,9 +150,8 @@ class SecurityMonitor {
       this.lastCacheUpdate = Date.now();
       
       return isBlocked;
-    } catch (error) {
-      secureLogger.error('Failed to check blocked IP', error);
-      return false;
+    } catch {
+            return false;
     }
   }
 
@@ -192,10 +184,8 @@ class SecurityMonitor {
       // Update cache
       this.blockedIPCache.set(ip, true);
       
-      secureLogger.security('IP blocked', { ip, reason, expiresAt });
-    } catch (error) {
-      secureLogger.error('Failed to block IP', error);
-    }
+          } catch {
+          }
   }
 
   /**
@@ -211,10 +201,8 @@ class SecurityMonitor {
       // Update cache
       this.blockedIPCache.set(ip, false);
       
-      secureLogger.security('IP unblocked', { ip });
-    } catch (error) {
-      secureLogger.error('Failed to unblock IP', error);
-    }
+          } catch {
+          }
   }
 
   /**
@@ -272,9 +260,8 @@ class SecurityMonitor {
         severityDistribution,
         topThreats
       };
-    } catch (error) {
-      secureLogger.error('Failed to get security stats', error);
-      return {
+    } catch {
+            return {
         totalEvents: 0,
         last24Hours: 0,
         severityDistribution: { LOW: 0, MEDIUM: 0, HIGH: 0, CRITICAL: 0 },
@@ -324,8 +311,7 @@ class SecurityMonitor {
         user: event.user,
         riskScore: this.calculateRiskScore(event.severity, event.type)
       }));
-    } catch (error) {
-      secureLogger.error('Failed to get recent events', error);
+    } catch {
       return [];
     }
   }
@@ -359,8 +345,7 @@ class SecurityMonitor {
         blockedAt: ip.blockedAt,
         expiresAt: ip.expiresAt
       }));
-    } catch (error) {
-      secureLogger.error('Failed to get blocked IPs', error);
+    } catch {
       return [];
     }
   }
@@ -373,16 +358,14 @@ class SecurityMonitor {
       const cutoffDate = new Date();
       cutoffDate.setDate(cutoffDate.getDate() - daysToKeep);
 
-      const deletedCount = await db.securityEvent.deleteMany({
+      await db.securityEvent.deleteMany({
         where: {
           timestamp: { lt: cutoffDate }
         }
       });
 
-      secureLogger.info(`Cleaned up ${deletedCount.count} old security events`);
-    } catch (error) {
-      secureLogger.error('Failed to cleanup old events', error);
-    }
+          } catch {
+          }
   }
 
   /**
@@ -392,7 +375,7 @@ class SecurityMonitor {
     try {
       const now = new Date();
       
-      const updatedCount = await db.blockedIP.updateMany({
+      await db.blockedIP.updateMany({
         where: {
           isActive: true,
           expiresAt: { lt: now }
@@ -404,10 +387,8 @@ class SecurityMonitor {
       this.blockedIPCache.clear();
       this.lastCacheUpdate = 0;
 
-      secureLogger.info(`Cleaned up ${updatedCount.count} expired IP blocks`);
-    } catch (error) {
-      secureLogger.error('Failed to cleanup expired blocks', error);
-    }
+          } catch {
+          }
   }
 
   // Private helper methods
@@ -481,3 +462,4 @@ export const securityMonitor = new SecurityMonitor();
 
 // Export types
 export type { SecurityEvent, SecurityEventType, SecurityStats }; 
+

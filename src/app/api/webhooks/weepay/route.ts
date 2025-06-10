@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { PaymentProviders } from "@/lib/payment-providers";
 import { webhookRateLimit } from "@/lib/enhanced-rate-limit";
-import { secureLogger } from "@/lib/secure-logger";
 import { emailService } from "@/lib/email";
 import { WeepayWebhookData } from "@/lib/weepay";
 import { DeliveryService } from "@/lib/delivery-service";
@@ -22,13 +21,12 @@ export async function POST(request: NextRequest) {
     
     // Parse webhook data
     const webhookData: WeepayWebhookData = JSON.parse(body);
-    const { order_id, payment_id, status, amount, currency, signature } = webhookData;
+    const { order_id, payment_id, status } = webhookData;
 
     // Validate webhook signature
     const secretKey = process.env.WEEPAY_SECRET_KEY;
     if (!secretKey) {
-      secureLogger.error("WEEPAY_SECRET_KEY not configured");
-      return NextResponse.json(
+            return NextResponse.json(
         { error: "Webhook not configured" },
         { status: 500 },
       );
@@ -36,23 +34,10 @@ export async function POST(request: NextRequest) {
 
     const isValidSignature = PaymentProviders.verifyWeepayWebhook(webhookData, secretKey);
     if (!isValidSignature) {
-      secureLogger.security("Invalid Weepay webhook signature", { 
-        order_id,
-        payment_id,
-        hasSignature: !!signature 
-      });
-      return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
+            return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
     }
 
-    secureLogger.payment("Valid Weepay webhook received", {
-      order_id,
-      payment_id,
-      status,
-      amount,
-      currency,
-      timestamp: new Date().toISOString(),
-    });
-
+    
     if (!order_id || !status || !payment_id) {
       return NextResponse.json(
         { error: "Missing required fields" },
@@ -87,19 +72,10 @@ export async function POST(request: NextRequest) {
     });
 
     if (!payment) {
-      secureLogger.error("Payment not found for Weepay webhook", {
-        paymentId: order_id,
-        status: status
-      });
-      return NextResponse.json({ error: "Payment not found" }, { status: 404 });
+            return NextResponse.json({ error: "Payment not found" }, { status: 404 });
     }
 
-    secureLogger.payment("Current payment status check", {
-      paymentId: order_id,
-      currentStatus: payment.status,
-      webhookStatus: status
-    });
-
+    
     // Map Weepay status to our status
     let paymentStatus: "COMPLETED" | "FAILED" | "CANCELLED" = "FAILED";
     let orderStatus: "COMPLETED" | "FAILED" | "CANCELLED" = "FAILED";
@@ -126,18 +102,10 @@ export async function POST(request: NextRequest) {
       case "pending":
       case "processing":
         // Keep current status for pending states
-        secureLogger.info("Pending payment webhook received, keeping current status", {
-          paymentId: order_id,
-          status: status
-        });
-        return NextResponse.json({ received: true });
+                return NextResponse.json({ received: true });
       default:
         // For unknown statuses, don't update
-        secureLogger.warn("Unknown Weepay payment status received", {
-          paymentId: order_id,
-          status: status
-        });
-        return NextResponse.json({ received: true });
+                return NextResponse.json({ received: true });
     }
 
     // Enhanced payment processing with stock validation
@@ -168,11 +136,7 @@ export async function POST(request: NextRequest) {
 
         // If stock validation fails, cancel the order instead of completing it
         if (stockValidationErrors.length > 0) {
-          secureLogger.warn("Order stock validation failed", {
-            orderId: payment.orderId,
-            conflictingItems: stockValidationErrors.length
-          });
-
+          
           // Update payment as completed but order as cancelled due to stock
           const updatedPaymentRecord = await tx.payment.update({
             where: { id: payment.id },
@@ -210,9 +174,8 @@ export async function POST(request: NextRequest) {
                 <p>We apologize for the inconvenience.</p>
               `,
             });
-          } catch (emailError) {
-            secureLogger.error("Failed to send stock unavailable email", emailError);
-          }
+          } catch {
+                      }
 
           return { payment: updatedPaymentRecord, order: cancelledOrderRecord };
         }
@@ -251,11 +214,8 @@ export async function POST(request: NextRequest) {
               orderId: payment.order.id,
               orderItemId: item.id,
             });
-          } catch (deliveryError) {
-            secureLogger.error("Failed to process delivery for item", deliveryError, {
-              action: "delivery_processing"
-            });
-            // Continue with other items even if one fails
+          } catch {
+                        // Continue with other items even if one fails
           }
         }
 
@@ -273,36 +233,20 @@ export async function POST(request: NextRequest) {
           `,
         });
 
-        secureLogger.info("Order completed successfully", {
-          orderId: payment.order.id,
-          paymentId: payment.id,
-          totalAmount: payment.amount
-        });
-      } catch (error) {
-        secureLogger.error("Error in post-payment processing", error, {
-          action: "post_payment_processing"
-        });
-        // Don't fail the webhook for post-processing errors
+              } catch {
+                // Don't fail the webhook for post-processing errors
       }
     }
 
     // Log webhook processing completion
-    secureLogger.payment("Weepay webhook processed successfully", {
-      orderId: payment.order.id,
-      orderNumber: payment.order.orderNumber,
-      paymentStatus,
-      orderStatus,
-    });
-
-    return NextResponse.json({ success: true });
-  } catch (error) {
-          secureLogger.error("Weepay webhook processing error", error, {
-        action: "webhook_processing"
-      });
     
+    return NextResponse.json({ success: true });
+  } catch {
+              
     return NextResponse.json(
       { error: "Webhook processing failed" },
       { status: 500 }
     );
   }
 } 
+

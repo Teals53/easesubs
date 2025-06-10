@@ -145,3 +145,4 @@ export function generatePasswordSuggestion(): string {
   
   return `${adjective}${noun}${numbers}${symbol}`;
 } 
+

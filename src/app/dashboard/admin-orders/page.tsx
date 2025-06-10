@@ -22,6 +22,7 @@ import { useState } from "react";
 import { UserRole } from "@prisma/client";
 import Link from "next/link";
 import { trpc } from "@/lib/trpc";
+import { toast } from "sonner";
 
 interface ExtendedUser {
   id: string;
@@ -74,9 +75,8 @@ export default function AdminOrdersPage() {
       setSelectedOrder(null);
       setNewStatus("");
     },
-    onError: (error) => {
-      console.error("Failed to update order status:", error);
-      alert("Failed to update order status");
+    onError: () => {
+      toast.error("Failed to update order status");
     },
   });
 
@@ -152,8 +152,8 @@ export default function AdminOrdersPage() {
           | "CANCELLED"
           | "FAILED",
       });
-    } catch (error) {
-      console.error("Failed to update order status:", error);
+    } catch {
+      // Error handling is done by the mutation onError callback
     }
   };
 
@@ -454,3 +454,4 @@ export default function AdminOrdersPage() {
     </div>
   );
 }
+

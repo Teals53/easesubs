@@ -9,7 +9,6 @@ import { TRPCError } from "@trpc/server";
 import crypto from "crypto";
 import { emailService } from "@/lib/email";
 import { validatePassword, DEFAULT_PASSWORD_POLICY } from "@/lib/password-validator";
-import { secureLogger } from "@/lib/secure-logger";
 
 
 
@@ -76,11 +75,8 @@ export const authRouter = createTRPCRouter({
           message: "Account created successfully",
           userId: user.id,
         };
-      } catch (error) {
-        secureLogger.error("User registration failed", error, {
-          action: "user_registration"
-        });
-        throw new TRPCError({
+      } catch {
+                throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: "Failed to create account",
         });
@@ -136,11 +132,8 @@ export const authRouter = createTRPCRouter({
           message:
             "If an account with this email exists, you will receive a password reset link.",
         };
-      } catch (error) {
-        secureLogger.error("Password reset request failed", error, {
-          action: "password_reset_request"
-        });
-        throw new TRPCError({
+      } catch {
+                throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: "Failed to process password reset request",
         });
@@ -215,12 +208,8 @@ export const authRouter = createTRPCRouter({
           success: true,
           message: "Password has been reset successfully",
         };
-      } catch (error) {
-        secureLogger.error("Password reset failed", error, {
-          action: "password_reset",
-          userId: user.id
-        });
-        throw new TRPCError({
+      } catch {
+                throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: "Failed to reset password",
         });
@@ -295,12 +284,8 @@ export const authRouter = createTRPCRouter({
           success: true,
           message: "Password changed successfully",
         };
-      } catch (error) {
-        secureLogger.error("Password change failed", error, {
-          action: "password_change",
-          userId: userId
-        });
-        throw new TRPCError({
+      } catch {
+                throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: "Failed to change password",
         });
@@ -407,3 +392,5 @@ export const authRouter = createTRPCRouter({
       };
     }),
 });
+
+
