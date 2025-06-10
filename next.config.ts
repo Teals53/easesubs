@@ -1,5 +1,5 @@
 import type { NextConfig } from "next";
-import { CSP_DIRECTIVES, SECURITY_HEADERS, HTTPS_CONFIG, SECURITY_REDIRECTS } from "@/lib/security-config";
+import { SECURITY_HEADERS, HTTPS_CONFIG, SECURITY_REDIRECTS } from "@/lib/security-config";
 
 const nextConfig: NextConfig = {
   /* config options here */
@@ -20,12 +20,13 @@ const nextConfig: NextConfig = {
             key,
             value,
           })),
-          {
-            key: "Content-Security-Policy",
-            value: process.env.NODE_ENV === "development" 
-              ? CSP_DIRECTIVES.development.join("; ")
-              : CSP_DIRECTIVES.production().join("; "), // Note: nonce will be added at request time
-          },
+          // CSP header is now set dynamically in middleware.ts with nonces
+          // {
+          //   key: "Content-Security-Policy",
+          //   value: process.env.NODE_ENV === "development" 
+          //     ? CSP_DIRECTIVES.development.join("; ")
+          //     : CSP_DIRECTIVES.production().join("; "),
+          // },
           // Remove overly broad cache headers from global scope
         ],
       },

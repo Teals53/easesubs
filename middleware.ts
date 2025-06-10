@@ -120,11 +120,9 @@ export default async function middleware(request: NextRequest) {
   // Add nonce header for components to use
   response.headers.set('x-csp-nonce', nonce);
   
-  // Set CSP header with nonce if in production
-  if (process.env.NODE_ENV === 'production') {
-    const cspHeader = getCurrentCSP(nonce).join('; ');
-    response.headers.set('Content-Security-Policy', cspHeader);
-  }
+  // Set CSP header with nonce for all environments
+  const cspHeader = getCurrentCSP(nonce).join('; ');
+  response.headers.set('Content-Security-Policy', cspHeader);
 
   return response;
 }
