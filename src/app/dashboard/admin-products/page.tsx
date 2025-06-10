@@ -22,6 +22,7 @@ import { trpc } from "@/lib/trpc";
 import { ProductModal } from "@/components/product/product-modal";
 import { CategoryModal } from "@/components/product/category-modal";
 import { DynamicIcon } from "@/lib/icon-utils";
+import type { Product, ProductPlan } from "@/types/product";
 
 interface ExtendedUser {
   id: string;
@@ -44,21 +45,7 @@ export default function AdminProductsPage() {
 
   const utils = trpc.useUtils();
 
-  const [editingProduct, setEditingProduct] = useState<{
-    id: string;
-    name: string;
-    slug: string;
-    category: string;
-    logoUrl?: string | null;
-    
-    borderColor?: string | null;
-    isActive: boolean;
-    isFeatured: boolean;
-    displayOrder?: number | null;
-    seoTitle?: string | null;
-    seoDescription?: string | null;
-    plans?: unknown;
-  } | null>(null);
+  const [editingProduct, setEditingProduct] = useState<Partial<Product> | null>(null);
 
   // Properly typed user with role
   const user = session?.user as ExtendedUser | undefined;
@@ -190,8 +177,9 @@ export default function AdminProductsPage() {
     const productForModal = {
       ...product,
       category: product.category.name, // Use category name for backward compatibility
+      plans: product.plans as ProductPlan[] | undefined,
     };
-    setEditingProduct(productForModal);
+    setEditingProduct(productForModal as Partial<Product>);
     setIsProductModalOpen(true);
   };
 
