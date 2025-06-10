@@ -333,7 +333,7 @@ export default function ResetPasswordPage() {
                 </div>
               )}
               <p className="text-xs text-gray-500 mt-1">
-                Password must be at least 12 characters with uppercase,
+                Password must be at least 8 characters with uppercase,
                 lowercase, numbers, and special characters
               </p>
             </div>

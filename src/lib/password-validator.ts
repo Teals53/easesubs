@@ -18,7 +18,7 @@ export interface PasswordPolicy {
 
 // Default strong password policy
 export const DEFAULT_PASSWORD_POLICY: PasswordPolicy = {
-  minLength: 12,
+  minLength: 8,
   requireUppercase: true,
   requireLowercase: true,
   requireNumbers: true,

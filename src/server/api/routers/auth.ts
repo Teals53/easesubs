@@ -29,7 +29,7 @@ export const authRouter = createTRPCRouter({
           .string()
           .email("Invalid email address")
           .max(255, "Email must be less than 255 characters"),
-        password: z.string().min(12, "Password must be at least 12 characters"),
+        password: z.string().min(8, "Password must be at least 8 characters"),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -152,7 +152,7 @@ export const authRouter = createTRPCRouter({
     .input(
       z.object({
         token: z.string().min(1, "Reset token is required"),
-        password: z.string().min(12, "Password must be at least 12 characters"),
+        password: z.string().min(8, "Password must be at least 8 characters"),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -232,7 +232,7 @@ export const authRouter = createTRPCRouter({
         currentPassword: z.string().min(1, "Current password is required"),
         newPassword: z
           .string()
-          .min(12, "New password must be at least 12 characters"),
+          .min(8, "New password must be at least 8 characters"),
       }),
     )
     .mutation(async ({ ctx, input }) => {
