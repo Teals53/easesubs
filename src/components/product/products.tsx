@@ -451,6 +451,8 @@ export function Products() {
                                   }}
                                   sizes="80px"
                                   quality={85}
+                                  unoptimized
+                                  priority
                                 />
                               </div>
                             ) : (

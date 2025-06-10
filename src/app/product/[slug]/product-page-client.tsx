@@ -225,6 +225,7 @@ export default function ProductPageClient({ slug }: ProductPageClientProps) {
                     height={96}
                     className="rounded-lg object-cover"
                     unoptimized
+                    priority
                   />
                 ) : (
                   <div

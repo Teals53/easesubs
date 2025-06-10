@@ -437,6 +437,7 @@ export default function AdminProductsPage() {
                           height={64}
                           className="rounded-lg object-cover"
                           unoptimized
+                          priority
                         />
                       ) : (
                         <div

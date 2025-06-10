@@ -132,7 +132,7 @@ export const metadata: Metadata = {
     statusBarStyle: "black-translucent",
     startupImage: [
       {
-        url: "/apple-touch-icon.png",
+        url: "/favicon.svg",
         media: "(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2)",
       },
     ],
@@ -143,7 +143,7 @@ export const metadata: Metadata = {
     "apple-mobile-web-app-status-bar-style": "black-translucent",
     "format-detection": "telephone=no",
     "msapplication-TileColor": "#9333EA",
-    "msapplication-TileImage": "/icon-192.png",
+    "msapplication-TileImage": "/favicon.svg",
   },
 };
 
@@ -157,7 +157,8 @@ export default function RootLayout({
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link rel="icon" href="/favicon.ico" />
+        <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+        <link rel="apple-touch-icon" href="/favicon.svg" />
         <ResourceHints />
       </head>
       <body
