@@ -105,18 +105,18 @@ export function CategoryModal({
   const generateSlug = (name: string) => {
     return sanitizeText(name)
       .toLowerCase()
-      .replace(/[^a-z0-9\s-]/g, '')
-      .replace(/\s+/g, '-')
-      .replace(/-+/g, '-')
+      .replace(/[^a-z0-9\s-]/g, "")
+      .replace(/\s+/g, "-")
+      .replace(/-+/g, "-")
       .trim();
   };
 
   const handleNameChange = (value: string) => {
     const sanitizedName = sanitizeText(value);
-    setFormData((prev) => ({ 
-      ...prev, 
+    setFormData((prev) => ({
+      ...prev,
       name: sanitizedName,
-      slug: generateSlug(sanitizedName)
+      slug: generateSlug(sanitizedName),
     }));
   };
 
@@ -124,9 +124,9 @@ export function CategoryModal({
     try {
       const sanitizedSlug = sanitizeText(value)
         .toLowerCase()
-        .replace(/[^a-z0-9\s-]/g, '')
-        .replace(/\s+/g, '-')
-        .replace(/-+/g, '-')
+        .replace(/[^a-z0-9\s-]/g, "")
+        .replace(/\s+/g, "-")
+        .replace(/-+/g, "-")
         .trim();
       setFormData((prev) => ({ ...prev, slug: sanitizedSlug }));
     } catch {
@@ -434,4 +434,3 @@ export function CategoryModal({
     </AnimatePresence>
   );
 }
-

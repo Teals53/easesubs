@@ -15,7 +15,8 @@ export default function NotFound() {
     "@context": "https://schema.org",
     "@type": "WebPage",
     name: "Page Not Found - EaseSubs",
-    description: "The requested page could not be found on EaseSubs. Browse our subscription deals instead.",
+    description:
+      "The requested page could not be found on EaseSubs. Browse our subscription deals instead.",
     url: "https://easesubs.com/404",
     mainEntity: {
       "@type": "WebSite",
@@ -28,7 +29,10 @@ export default function NotFound() {
     <>
       <Head>
         <title>Page Not Found (404) | EaseSubs</title>
-        <meta name="description" content="The page you're looking for doesn't exist. Browse our premium subscription deals at discounted prices instead." />
+        <meta
+          name="description"
+          content="The page you're looking for doesn't exist. Browse our premium subscription deals at discounted prices instead."
+        />
         <meta name="robots" content="noindex, follow" />
         <link rel="canonical" href="https://easesubs.com/404" />
       </Head>
@@ -63,9 +67,12 @@ export default function NotFound() {
           </motion.header>
 
           <section className="mb-8">
-            <h2 className="text-2xl font-bold text-white mb-4">Page Not Found</h2>
+            <h2 className="text-2xl font-bold text-white mb-4">
+              Page Not Found
+            </h2>
             <p className="text-gray-400 mb-8">
-              The page you&apos;re looking for doesn&apos;t exist or has been moved.
+              The page you&apos;re looking for doesn&apos;t exist or has been
+              moved.
             </p>
           </section>
 
@@ -102,21 +109,27 @@ export default function NotFound() {
               >
                 Browse Products
               </Link>
-              <span className="text-gray-600" aria-hidden="true">•</span>
+              <span className="text-gray-600" aria-hidden="true">
+                •
+              </span>
               <Link
                 href="/legal/privacy-policy"
                 className="text-purple-400 hover:text-purple-300 text-sm underline transition-colors"
               >
                 Privacy Policy
               </Link>
-              <span className="text-gray-600" aria-hidden="true">•</span>
+              <span className="text-gray-600" aria-hidden="true">
+                •
+              </span>
               <Link
                 href="/legal/terms-of-service"
                 className="text-purple-400 hover:text-purple-300 text-sm underline transition-colors"
               >
                 Terms of Service
               </Link>
-              <span className="text-gray-600" aria-hidden="true">•</span>
+              <span className="text-gray-600" aria-hidden="true">
+                •
+              </span>
               <Link
                 href="/auth/signin"
                 className="text-purple-400 hover:text-purple-300 text-sm underline transition-colors"
@@ -130,4 +143,3 @@ export default function NotFound() {
     </>
   );
 }
-

@@ -12,7 +12,6 @@ import { DiscordCTA } from "@/components/marketing/discord-cta";
 import { Footer } from "@/components/layout/footer";
 import { HomePageSchema } from "@/components/seo/schema-markup";
 
-
 export default function HomePage() {
   const { data: session } = useSession();
 
@@ -24,7 +23,7 @@ export default function HomePage() {
 
         {/* Hero Section */}
         <main>
-          <section 
+          <section
             className="relative pt-28 pb-20 md:pt-36 md:pb-32 overflow-hidden"
             aria-labelledby="hero-heading"
           >
@@ -81,7 +80,7 @@ export default function HomePage() {
                       strokeLinejoin="round"
                     />
                   </motion.svg>
-                  <motion.h1 
+                  <motion.h1
                     id="hero-heading"
                     className="text-4xl md:text-5xl lg:text-6xl font-bold bg-gradient-to-r from-white via-purple-200 to-purple-100 bg-clip-text text-transparent"
                   >
@@ -167,8 +166,6 @@ export default function HomePage() {
             <Products />
           </section>
 
-
-
           {/* Why Choose Us Section */}
           <section aria-labelledby="why-choose-us-heading">
             <WhyChooseUs />
@@ -186,4 +183,3 @@ export default function HomePage() {
     </>
   );
 }
-

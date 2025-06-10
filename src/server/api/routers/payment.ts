@@ -148,7 +148,6 @@ export const paymentRouter = createTRPCRouter({
         });
       }
 
-      
       return updatedPayment;
     }),
 
@@ -183,11 +182,9 @@ export const paymentRouter = createTRPCRouter({
 
       // Process actual refund with payment provider
       try {
-        await processRefundWithProvider(
-          payment.method,
-        );
+        await processRefundWithProvider(payment.method);
       } catch {
-                throw new TRPCError({
+        throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: "Failed to process refund",
         });
@@ -253,9 +250,7 @@ async function verifyWebhookSignature(
 }
 
 // Helper function to process refunds with payment providers
-async function processRefundWithProvider(
-  method: string,
-): Promise<void> {
+async function processRefundWithProvider(method: string): Promise<void> {
   switch (method) {
     case "CRYPTOMUS":
       // Implement Cryptomus refund API call
@@ -267,5 +262,3 @@ async function processRefundWithProvider(
       throw new Error(`Unsupported payment method for refund: ${method}`);
   }
 }
-
-

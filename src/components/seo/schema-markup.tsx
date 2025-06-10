@@ -1,4 +1,4 @@
-import Script from 'next/script';
+import Script from "next/script";
 
 // Base organization schema
 export const organizationSchema = {
@@ -10,24 +10,22 @@ export const organizationSchema = {
     "@type": "ImageObject",
     url: "https://via.placeholder.com/1200x630/8B5CF6/FFFFFF?text=EaseSubs",
     width: 1200,
-    height: 630
+    height: 630,
   },
-  description: "Premium subscription services at discounted prices through legal regional pricing.",
+  description:
+    "Premium subscription services at discounted prices through legal regional pricing.",
   foundingDate: "2024",
   contactPoint: {
     "@type": "ContactPoint",
     contactType: "customer service",
     availableLanguage: ["English"],
-    url: "https://easesubs.com/dashboard/support"
+    url: "https://easesubs.com/dashboard/support",
   },
-  sameAs: [
-    "https://twitter.com/easesubs",
-    "https://discord.gg/easesubs"
-  ],
+  sameAs: ["https://twitter.com/easesubs", "https://discord.gg/easesubs"],
   address: {
     "@type": "PostalAddress",
-    addressCountry: "US"
-  }
+    addressCountry: "US",
+  },
 };
 
 // Website schema
@@ -36,19 +34,20 @@ export const websiteSchema = {
   "@type": "WebSite",
   name: "EaseSubs",
   url: "https://easesubs.com",
-  description: "Get your favorite subscriptions at a fraction of the cost through our legal regional pricing system.",
+  description:
+    "Get your favorite subscriptions at a fraction of the cost through our legal regional pricing system.",
   inLanguage: "en-US",
   potentialAction: {
     "@type": "SearchAction",
     target: {
       "@type": "EntryPoint",
-      urlTemplate: "https://easesubs.com/search?q={search_term_string}"
+      urlTemplate: "https://easesubs.com/search?q={search_term_string}",
     },
-    "query-input": "required name=search_term_string"
+    "query-input": "required name=search_term_string",
   },
   publisher: {
-    "@id": "https://easesubs.com/#organization"
-  }
+    "@id": "https://easesubs.com/#organization",
+  },
 };
 
 // Product schema generator
@@ -60,7 +59,7 @@ export function generateProductSchema(product: {
   currency: string;
   image?: string;
   slug: string;
-  availability?: 'InStock' | 'OutOfStock' | 'PreOrder';
+  availability?: "InStock" | "OutOfStock" | "PreOrder";
   category?: string;
 }) {
   return {
@@ -68,39 +67,41 @@ export function generateProductSchema(product: {
     "@type": "Product",
     name: product.name,
     description: product.description,
-          image: product.image || "https://via.placeholder.com/1200x630/8B5CF6/FFFFFF?text=EaseSubs",
+    image:
+      product.image ||
+      "https://via.placeholder.com/1200x630/8B5CF6/FFFFFF?text=EaseSubs",
     url: `https://easesubs.com/product/${product.slug}`,
     brand: {
       "@type": "Brand",
-      name: product.name.split(' ')[0] // First word as brand
+      name: product.name.split(" ")[0], // First word as brand
     },
     category: product.category || "Software",
     offers: {
       "@type": "Offer",
       price: product.price,
       priceCurrency: product.currency,
-      availability: `https://schema.org/${product.availability || 'InStock'}`,
+      availability: `https://schema.org/${product.availability || "InStock"}`,
       url: `https://easesubs.com/product/${product.slug}`,
       seller: {
         "@type": "Organization",
-        name: "EaseSubs"
+        name: "EaseSubs",
       },
       ...(product.originalPrice && {
         priceSpecification: {
           "@type": "PriceSpecification",
           price: product.originalPrice,
           priceCurrency: product.currency,
-          name: "Original Price"
-        }
-      })
+          name: "Original Price",
+        },
+      }),
     },
     aggregateRating: {
       "@type": "AggregateRating",
       ratingValue: "4.8",
       reviewCount: "127",
       bestRating: "5",
-      worstRating: "1"
-    }
+      worstRating: "1",
+    },
   };
 }
 
@@ -115,18 +116,18 @@ export const serviceSchema = {
   provider: {
     "@type": "Organization",
     name: "EaseSubs",
-    url: "https://easesubs.com"
+    url: "https://easesubs.com",
   },
   serviceType: "Digital Subscription Marketplace",
   audience: {
     "@type": "Audience",
-    name: "Digital Subscription Users"
+    name: "Digital Subscription Users",
   },
   availableChannel: {
     "@type": "ServiceChannel",
     serviceUrl: "https://easesubs.com",
-    serviceType: "Online"
-  }
+    serviceType: "Online",
+  },
 };
 
 // Webpage schema generator
@@ -144,10 +145,10 @@ export function generateWebPageSchema(page: {
     url: page.url,
     inLanguage: "en-US",
     isPartOf: {
-      "@id": "https://easesubs.com/#website"
+      "@id": "https://easesubs.com/#website",
     },
     about: {
-      "@id": "https://easesubs.com/#organization"
+      "@id": "https://easesubs.com/#organization",
     },
     ...(page.breadcrumb && {
       breadcrumb: {
@@ -160,12 +161,12 @@ export function generateWebPageSchema(page: {
             item: {
               "@type": "WebPage",
               "@id": item.url,
-              url: item.url
-            }
-          })
-        }))
-      }
-    })
+              url: item.url,
+            },
+          }),
+        })),
+      },
+    }),
   };
 }
 
@@ -176,16 +177,14 @@ interface SchemaMarkupProps {
 }
 
 export function SchemaMarkup({ schema, id }: SchemaMarkupProps) {
-  const schemaData = Array.isArray(schema) 
-    ? { "@graph": schema }
-    : schema;
+  const schemaData = Array.isArray(schema) ? { "@graph": schema } : schema;
 
   return (
     <Script
       id={id || `schema-${Math.random().toString(36).substr(2, 9)}`}
       type="application/ld+json"
       dangerouslySetInnerHTML={{
-        __html: JSON.stringify(schemaData)
+        __html: JSON.stringify(schemaData),
       }}
     />
   );
@@ -199,15 +198,18 @@ export function HomePageSchema() {
     serviceSchema,
     generateWebPageSchema({
       name: "EaseSubs - Same Subscriptions, Easier Prices | Save up to 80%",
-      description: "Get your favorite subscriptions at a fraction of the cost through our legal regional pricing system. Save up to 80% on premium services.",
-      url: "https://easesubs.com"
-    })
+      description:
+        "Get your favorite subscriptions at a fraction of the cost through our legal regional pricing system. Save up to 80% on premium services.",
+      url: "https://easesubs.com",
+    }),
   ];
 
   return <SchemaMarkup schema={schemas} id="home-page-schema" />;
 }
 
-export function ProductPageSchema({ product }: { 
+export function ProductPageSchema({
+  product,
+}: {
   product: {
     name: string;
     description: string;
@@ -216,9 +218,9 @@ export function ProductPageSchema({ product }: {
     currency: string;
     image?: string;
     slug: string;
-    availability?: 'InStock' | 'OutOfStock' | 'PreOrder';
+    availability?: "InStock" | "OutOfStock" | "PreOrder";
     category?: string;
-  }
+  };
 }) {
   const schemas = [
     organizationSchema,
@@ -230,10 +232,12 @@ export function ProductPageSchema({ product }: {
       breadcrumb: [
         { name: "Home", url: "https://easesubs.com" },
         { name: "Products", url: "https://easesubs.com/#products" },
-        { name: product.name }
-      ]
-    })
+        { name: product.name },
+      ],
+    }),
   ];
 
-  return <SchemaMarkup schema={schemas} id={`product-${product.slug}-schema`} />;
-} 
+  return (
+    <SchemaMarkup schema={schemas} id={`product-${product.slug}-schema`} />
+  );
+}

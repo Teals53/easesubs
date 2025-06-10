@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import Script from 'next/script';
-import { useEffect } from 'react';
+import Script from "next/script";
+import { useEffect } from "react";
 
 // Performance API type extensions
 // interface LayoutShift extends PerformanceEntry {
@@ -13,30 +13,37 @@ import { useEffect } from 'react';
 export function PerformanceSEO({ nonce }: { nonce?: string }) {
   useEffect(() => {
     // Track Core Web Vitals
-    if (typeof window !== 'undefined' && 'performance' in window && 'PerformanceObserver' in window) {
+    if (
+      typeof window !== "undefined" &&
+      "performance" in window &&
+      "PerformanceObserver" in window
+    ) {
       try {
         // LCP - Largest Contentful Paint
-        if ('PerformanceObserver' in window) {
+        if ("PerformanceObserver" in window) {
           new PerformanceObserver((entryList) => {
             for (const entry of entryList.getEntries()) {
-              console.log('LCP:', entry.startTime);
+              console.log("LCP:", entry.startTime);
               // Send to analytics
             }
-          }).observe({ entryTypes: ['largest-contentful-paint'] });
+          }).observe({ entryTypes: ["largest-contentful-paint"] });
         }
 
         // FID - First Input Delay
-        if ('PerformanceObserver' in window) {
+        if ("PerformanceObserver" in window) {
           new PerformanceObserver((entryList) => {
             for (const entry of entryList.getEntries()) {
               const fidEntry = entry as PerformanceEventTiming;
-              console.log('FID:', fidEntry.processingStart - fidEntry.startTime);
+              console.log(
+                "FID:",
+                fidEntry.processingStart - fidEntry.startTime,
+              );
               // Send to analytics
             }
-          }).observe({ entryTypes: ['first-input'] });
+          }).observe({ entryTypes: ["first-input"] });
         }
       } catch (error) {
-        console.warn('PerformanceObserver not fully supported:', error);
+        console.warn("PerformanceObserver not fully supported:", error);
       }
 
       // CLS - Cumulative Layout Shift (disabled to prevent dev tools conflicts)
@@ -59,20 +66,20 @@ export function PerformanceSEO({ nonce }: { nonce?: string }) {
       <link rel="preconnect" href="https://fonts.googleapis.com" />
       <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
       <link rel="preconnect" href="https://api.easesubs.com" />
-      
+
       {/* DNS prefetch for external resources */}
       <link rel="dns-prefetch" href="//www.google-analytics.com" />
       <link rel="dns-prefetch" href="//connect.facebook.net" />
-      
+
       {/* Prefetch critical resources */}
       <link rel="prefetch" href="/auth/signin" />
-      
+
       {/* Critical CSS inlined for faster FCP */}
       <style jsx>{`
         .hero-section {
           font-display: swap;
         }
-        
+
         .product-grid {
           /* Layout containment removed to prevent dev tools conflicts */
         }
@@ -136,7 +143,7 @@ export function CriticalCSS() {
         z-index: 50;
         backdrop-filter: blur(8px);
       }
-      
+
       .hero {
         min-height: 100vh;
         display: flex;
@@ -144,7 +151,7 @@ export function CriticalCSS() {
         justify-content: center;
         padding-top: 4rem;
       }
-      
+
       .cta-button {
         background: #9333ea;
         color: white;
@@ -153,32 +160,41 @@ export function CriticalCSS() {
         font-weight: 600;
         transition: background-color 0.2s;
       }
-      
+
       .cta-button:hover {
         background: #7c3aed;
       }
-      
+
       /* Optimize font rendering */
       html {
         font-display: swap;
       }
-      
+
       /* Prevent layout shift */
       img {
         max-width: 100%;
         height: auto;
       }
-      
+
       .loading-skeleton {
-        background: linear-gradient(90deg, #374151 25%, #4b5563 50%, #374151 75%);
+        background: linear-gradient(
+          90deg,
+          #374151 25%,
+          #4b5563 50%,
+          #374151 75%
+        );
         background-size: 200% 100%;
         animation: loading 1.5s infinite;
       }
-      
+
       @keyframes loading {
-        0% { background-position: 200% 0; }
-        100% { background-position: -200% 0; }
+        0% {
+          background-position: 200% 0;
+        }
+        100% {
+          background-position: -200% 0;
+        }
       }
     `}</style>
   );
-} 
+}

@@ -89,9 +89,7 @@ function SignInFormContent() {
               <LogIn className="w-8 h-8 text-white" />
             </motion.div>
             <h1 className="text-2xl font-bold text-white mb-2">Welcome Back</h1>
-            <p className="text-gray-400">
-              Sign in to your EaseSubs account
-            </p>
+            <p className="text-gray-400">Sign in to your EaseSubs account</p>
           </div>
 
           {/* Error Message */}
@@ -111,7 +109,7 @@ function SignInFormContent() {
           <form onSubmit={handleSubmit} className="space-y-6" noValidate>
             <fieldset className="space-y-6">
               <legend className="sr-only">Sign in credentials</legend>
-              
+
               <div>
                 <label
                   htmlFor="email"
@@ -120,7 +118,10 @@ function SignInFormContent() {
                   Email Address
                 </label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" aria-hidden="true" />
+                  <Mail
+                    className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400"
+                    aria-hidden="true"
+                  />
                   <input
                     id="email"
                     type="email"
@@ -144,7 +145,10 @@ function SignInFormContent() {
                   Password
                 </label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" aria-hidden="true" />
+                  <Lock
+                    className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400"
+                    aria-hidden="true"
+                  />
                   <input
                     id="password"
                     type={showPassword ? "text" : "password"}
@@ -160,7 +164,9 @@ function SignInFormContent() {
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-gray-800 rounded"
-                    aria-label={showPassword ? "Hide password" : "Show password"}
+                    aria-label={
+                      showPassword ? "Hide password" : "Show password"
+                    }
                     id="password-toggle"
                   >
                     {showPassword ? (
@@ -192,7 +198,7 @@ function SignInFormContent() {
             >
               {isLoading ? "Signing In..." : "Sign In"}
             </motion.button>
-            
+
             {isLoading && (
               <div id="loading-status" className="sr-only" aria-live="polite">
                 Signing you in, please wait...
@@ -201,7 +207,11 @@ function SignInFormContent() {
           </form>
 
           {/* Divider */}
-          <div className="my-6 flex items-center" role="separator" aria-label="or">
+          <div
+            className="my-6 flex items-center"
+            role="separator"
+            aria-label="or"
+          >
             <div className="flex-1 border-t border-gray-600"></div>
             <span className="px-4 text-gray-400 text-sm">or</span>
             <div className="flex-1 border-t border-gray-600"></div>
@@ -239,7 +249,7 @@ function SignInFormContent() {
 
           {/* Sign Up Link */}
           <p className="mt-6 text-center text-gray-400 text-sm">
-                         Don&apos;t have an account?{" "}
+            Don&apos;t have an account?{" "}
             <Link
               href="/auth/signup"
               className="text-purple-400 hover:text-purple-300 font-medium"
@@ -260,4 +270,3 @@ export function SignInForm() {
     </Suspense>
   );
 }
-

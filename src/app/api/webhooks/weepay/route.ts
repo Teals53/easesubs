@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.text();
-    
+
     // Parse webhook data
     const webhookData: WeepayWebhookData = JSON.parse(body);
     const { order_id, payment_id, status } = webhookData;
@@ -26,18 +26,20 @@ export async function POST(request: NextRequest) {
     // Validate webhook signature
     const secretKey = process.env.WEEPAY_SECRET_KEY;
     if (!secretKey) {
-            return NextResponse.json(
+      return NextResponse.json(
         { error: "Webhook not configured" },
         { status: 500 },
       );
     }
 
-    const isValidSignature = PaymentProviders.verifyWeepayWebhook(webhookData, secretKey);
+    const isValidSignature = PaymentProviders.verifyWeepayWebhook(
+      webhookData,
+      secretKey,
+    );
     if (!isValidSignature) {
-            return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
+      return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
     }
 
-    
     if (!order_id || !status || !payment_id) {
       return NextResponse.json(
         { error: "Missing required fields" },
@@ -49,7 +51,7 @@ export async function POST(request: NextRequest) {
     const payment = await db.payment.findFirst({
       where: {
         OR: [
-          { id: order_id },               // Primary: order_id is payment ID
+          { id: order_id }, // Primary: order_id is payment ID
           { providerPaymentId: payment_id }, // Secondary: by provider payment ID
         ],
       },
@@ -72,10 +74,9 @@ export async function POST(request: NextRequest) {
     });
 
     if (!payment) {
-            return NextResponse.json({ error: "Payment not found" }, { status: 404 });
+      return NextResponse.json({ error: "Payment not found" }, { status: 404 });
     }
 
-    
     // Map Weepay status to our status
     let paymentStatus: "COMPLETED" | "FAILED" | "CANCELLED" = "FAILED";
     let orderStatus: "COMPLETED" | "FAILED" | "CANCELLED" = "FAILED";
@@ -102,10 +103,10 @@ export async function POST(request: NextRequest) {
       case "pending":
       case "processing":
         // Keep current status for pending states
-                return NextResponse.json({ received: true });
+        return NextResponse.json({ received: true });
       default:
         // For unknown statuses, don't update
-                return NextResponse.json({ received: true });
+        return NextResponse.json({ received: true });
     }
 
     // Enhanced payment processing with stock validation
@@ -136,7 +137,6 @@ export async function POST(request: NextRequest) {
 
         // If stock validation fails, cancel the order instead of completing it
         if (stockValidationErrors.length > 0) {
-          
           // Update payment as completed but order as cancelled due to stock
           const updatedPaymentRecord = await tx.payment.update({
             where: { id: payment.id },
@@ -174,8 +174,7 @@ export async function POST(request: NextRequest) {
                 <p>We apologize for the inconvenience.</p>
               `,
             });
-          } catch {
-                      }
+          } catch {}
 
           return { payment: updatedPaymentRecord, order: cancelledOrderRecord };
         }
@@ -215,7 +214,7 @@ export async function POST(request: NextRequest) {
               orderItemId: item.id,
             });
           } catch {
-                        // Continue with other items even if one fails
+            // Continue with other items even if one fails
           }
         }
 
@@ -232,21 +231,18 @@ export async function POST(request: NextRequest) {
             <p>You can track your order status in your dashboard.</p>
           `,
         });
-
-              } catch {
-                // Don't fail the webhook for post-processing errors
+      } catch {
+        // Don't fail the webhook for post-processing errors
       }
     }
 
     // Log webhook processing completion
-    
+
     return NextResponse.json({ success: true });
   } catch {
-              
     return NextResponse.json(
       { error: "Webhook processing failed" },
-      { status: 500 }
+      { status: 500 },
     );
   }
-} 
-
+}

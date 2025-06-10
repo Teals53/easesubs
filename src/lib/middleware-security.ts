@@ -27,14 +27,14 @@ export class MiddlewareSecurity {
     // Check if IP is blocked
     const isBlocked = await securityMonitor.isIPBlocked(ip);
     if (isBlocked) {
-            return {
+      return {
         ip,
         userAgent,
         pathname,
         method,
         isBlocked: true,
         riskScore: 100,
-        threats: ["BLOCKED_IP"]
+        threats: ["BLOCKED_IP"],
       };
     }
 
@@ -48,8 +48,11 @@ export class MiddlewareSecurity {
       this.requestCounts = new Map();
     }
 
-    const requestData = this.requestCounts.get(rateLimitKey) || { count: 0, windowStart: now };
-    
+    const requestData = this.requestCounts.get(rateLimitKey) || {
+      count: 0,
+      windowStart: now,
+    };
+
     // Reset window if expired
     if (now - requestData.windowStart > windowMs) {
       requestData.count = 0;
@@ -60,7 +63,11 @@ export class MiddlewareSecurity {
     this.requestCounts.set(rateLimitKey, requestData);
 
     // Check if rate limit exceeded (exclude only signin/signup to prevent duplication with brute force detection)
-    if (requestData.count > maxRequests && !pathname.includes("/signin") && !pathname.includes("/signup")) {
+    if (
+      requestData.count > maxRequests &&
+      !pathname.includes("/signin") &&
+      !pathname.includes("/signup")
+    ) {
       await securityMonitor.analyzeEvent({
         type: "RATE_LIMIT_EXCEEDED",
         severity: "HIGH",
@@ -72,8 +79,8 @@ export class MiddlewareSecurity {
           method,
           requestCount: requestData.count,
           windowMs,
-          maxRequests
-        }
+          maxRequests,
+        },
       });
     }
 
@@ -82,7 +89,8 @@ export class MiddlewareSecurity {
       .filter(([key]) => key.startsWith(`${ip}:`))
       .reduce((sum, [, data]) => sum + data.count, 0);
 
-    if (totalRequestsFromIP > 500) { // Abnormal traffic threshold - keep this for all paths
+    if (totalRequestsFromIP > 500) {
+      // Abnormal traffic threshold - keep this for all paths
       await securityMonitor.analyzeEvent({
         type: "ABNORMAL_TRAFFIC",
         severity: "HIGH",
@@ -92,24 +100,36 @@ export class MiddlewareSecurity {
         details: {
           totalRequests: totalRequestsFromIP,
           timeWindow: windowMs,
-          detectionType: "high_volume_requests"
-        }
+          detectionType: "high_volume_requests",
+        },
       });
     }
 
     // Detect suspicious patterns
     const threats = this.detectSuspiciousPatterns(request);
-    
+
     // Calculate risk score
     const riskScore = this.calculateRequestRiskScore(request, threats);
 
     // Log high-risk requests with appropriate event type (avoid only signin/signup for brute force, keep others)
-    if (riskScore > 70 && !pathname.includes("/signin") && !pathname.includes("/signup")) {
-      let eventType: "MALICIOUS_PAYLOAD" | "INJECTION_ATTEMPT" | "SUSPICIOUS_FILE_ACCESS" | "POTENTIAL_BOT" | "UNAUTHORIZED_ACCESS" = "UNAUTHORIZED_ACCESS";
-      
+    if (
+      riskScore > 70 &&
+      !pathname.includes("/signin") &&
+      !pathname.includes("/signup")
+    ) {
+      let eventType:
+        | "MALICIOUS_PAYLOAD"
+        | "INJECTION_ATTEMPT"
+        | "SUSPICIOUS_FILE_ACCESS"
+        | "POTENTIAL_BOT"
+        | "UNAUTHORIZED_ACCESS" = "UNAUTHORIZED_ACCESS";
+
       if (threats.includes("MALICIOUS_PAYLOAD")) {
         eventType = "MALICIOUS_PAYLOAD";
-      } else if (threats.includes("SQL_INJECTION") || threats.includes("XSS_ATTEMPT")) {
+      } else if (
+        threats.includes("SQL_INJECTION") ||
+        threats.includes("XSS_ATTEMPT")
+      ) {
         eventType = "INJECTION_ATTEMPT";
       } else if (threats.includes("PATH_TRAVERSAL")) {
         eventType = "SUSPICIOUS_FILE_ACCESS";
@@ -118,7 +138,7 @@ export class MiddlewareSecurity {
       } else if (threats.includes("POTENTIAL_CSRF")) {
         eventType = "UNAUTHORIZED_ACCESS";
       }
-        
+
       await securityMonitor.analyzeEvent({
         type: eventType,
         severity: riskScore > 90 ? "CRITICAL" : "HIGH",
@@ -130,8 +150,8 @@ export class MiddlewareSecurity {
           method,
           threats,
           riskScore,
-          detectionType: "high_risk_request"
-        }
+          detectionType: "high_risk_request",
+        },
       });
     }
 
@@ -142,7 +162,7 @@ export class MiddlewareSecurity {
       method,
       isBlocked: false,
       riskScore,
-      threats
+      threats,
     };
   }
 
@@ -153,13 +173,14 @@ export class MiddlewareSecurity {
     const forwarded = request.headers.get("x-forwarded-for");
     const realIP = request.headers.get("x-real-ip");
     const cloudflareIP = request.headers.get("cf-connecting-ip");
-    
+
     if (cloudflareIP) return cloudflareIP;
     if (realIP) return realIP;
     if (forwarded) return forwarded.split(",")[0]?.trim() || "";
-    
+
     // For development/testing - use a more realistic IP for testing
-    const devIP = process.env.NODE_ENV === "development" ? "192.168.1.100" : "127.0.0.1";
+    const devIP =
+      process.env.NODE_ENV === "development" ? "192.168.1.100" : "127.0.0.1";
     return devIP;
   }
 
@@ -177,10 +198,10 @@ export class MiddlewareSecurity {
       /(\bunion\b.*\bselect\b)|(\bselect\b.*\bunion\b)/i,
       /(drop|create|alter|insert|delete|update)\s+(table|database|schema)/i,
       /(\bor\b|\band\b)\s*\d+\s*=\s*\d+/i,
-      /['";]\s*(or|and)\s*['"]?\d+['"]?\s*=\s*['"]?\d+/i
+      /['";]\s*(or|and)\s*['"]?\d+['"]?\s*=\s*['"]?\d+/i,
     ];
 
-    sqlPatterns.forEach(pattern => {
+    sqlPatterns.forEach((pattern) => {
       if (pattern.test(url)) {
         threats.push("SQL_INJECTION");
       }
@@ -191,10 +212,10 @@ export class MiddlewareSecurity {
       /<script[^>]*>.*?<\/script>/i,
       /javascript:/i,
       /on\w+\s*=\s*["'][^"']*["']/i,
-      /<iframe[^>]*>.*?<\/iframe>/i
+      /<iframe[^>]*>.*?<\/iframe>/i,
     ];
 
-    xssPatterns.forEach(pattern => {
+    xssPatterns.forEach((pattern) => {
       if (pattern.test(url)) {
         threats.push("XSS_ATTEMPT");
       }
@@ -209,10 +230,10 @@ export class MiddlewareSecurity {
     const botPatterns = [
       /bot|crawler|spider|scraper/i,
       /curl|wget|python|php/i,
-      /automated|headless/i
+      /automated|headless/i,
     ];
 
-    botPatterns.forEach(pattern => {
+    botPatterns.forEach((pattern) => {
       if (pattern.test(userAgent)) {
         threats.push("POTENTIAL_BOT");
       }
@@ -225,7 +246,11 @@ export class MiddlewareSecurity {
 
     // CSRF patterns (missing referer on sensitive endpoints)
     const sensitiveEndpoints = ["/api/auth", "/api/payment", "/api/admin"];
-    if (sensitiveEndpoints.some(endpoint => request.nextUrl.pathname.startsWith(endpoint))) {
+    if (
+      sensitiveEndpoints.some((endpoint) =>
+        request.nextUrl.pathname.startsWith(endpoint),
+      )
+    ) {
       if (!referer && request.method === "POST") {
         threats.push("POTENTIAL_CSRF");
       }
@@ -239,11 +264,11 @@ export class MiddlewareSecurity {
         /system\s*\(/i,
         /shell_exec/i,
         /base64_decode/i,
-        /file_get_contents/i
+        /file_get_contents/i,
       ];
 
       // Check URL for malicious patterns (since we can't easily access body in middleware)
-      maliciousPatterns.forEach(pattern => {
+      maliciousPatterns.forEach((pattern) => {
         if (pattern.test(url)) {
           threats.push("MALICIOUS_PAYLOAD");
         }
@@ -256,11 +281,14 @@ export class MiddlewareSecurity {
   /**
    * Calculate risk score for request
    */
-  private calculateRequestRiskScore(request: NextRequest, threats: string[]): number {
+  private calculateRequestRiskScore(
+    request: NextRequest,
+    threats: string[],
+  ): number {
     let score = 0;
 
     // Base threat scoring
-    threats.forEach(threat => {
+    threats.forEach((threat) => {
       switch (threat) {
         case "SQL_INJECTION":
         case "XSS_ATTEMPT":
@@ -287,13 +315,24 @@ export class MiddlewareSecurity {
     });
 
     // Method-based scoring
-    if (request.method === "POST" || request.method === "PUT" || request.method === "DELETE") {
+    if (
+      request.method === "POST" ||
+      request.method === "PUT" ||
+      request.method === "DELETE"
+    ) {
       score += 5;
     }
 
     // Sensitive endpoint scoring
-    const sensitivePaths = ["/api/auth", "/api/payment", "/api/admin", "/dashboard/admin"];
-    if (sensitivePaths.some(path => request.nextUrl.pathname.startsWith(path))) {
+    const sensitivePaths = [
+      "/api/auth",
+      "/api/payment",
+      "/api/admin",
+      "/dashboard/admin",
+    ];
+    if (
+      sensitivePaths.some((path) => request.nextUrl.pathname.startsWith(path))
+    ) {
       score += 10;
     }
 
@@ -309,30 +348,30 @@ export class MiddlewareSecurity {
    * Handle blocked request
    */
   handleBlockedRequest(analysis: RequestAnalysis): NextResponse {
-    
     // Return appropriate response based on threat type
     if (analysis.threats.includes("BLOCKED_IP")) {
       return new NextResponse("Access Denied", { status: 403 });
     }
 
     if (analysis.threats.includes("RATE_LIMIT_EXCEEDED")) {
-      return new NextResponse("Too Many Requests", { 
+      return new NextResponse("Too Many Requests", {
         status: 429,
         headers: {
-          "Retry-After": "60"
-        }
+          "Retry-After": "60",
+        },
       });
     }
 
     return new NextResponse("Security Check Failed", { status: 400 });
   }
 
-  private requestCounts: Map<string, { count: number; windowStart: number }> | undefined;
+  private requestCounts:
+    | Map<string, { count: number; windowStart: number }>
+    | undefined;
 }
 
 // Export singleton instance
 export const middlewareSecurity = new MiddlewareSecurity();
 
 // Export types
-export type { RequestAnalysis }; 
-
+export type { RequestAnalysis };

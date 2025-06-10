@@ -7,7 +7,10 @@ import { db } from "@/lib/db";
 import { securityMonitor } from "@/lib/security-monitor";
 
 // Simple in-memory store for failed login attempts (use Redis in production)
-const failedAttempts = new Map<string, { count: number; lastAttempt: number; lockedUntil?: number }>();
+const failedAttempts = new Map<
+  string,
+  { count: number; lastAttempt: number; lockedUntil?: number }
+>();
 
 const LOCKOUT_CONFIG = {
   maxFailedAttempts: 5,
@@ -36,15 +39,15 @@ async function recordFailedLogin(email: string): Promise<void> {
       details: {
         email,
         reason: "invalid_credentials",
-        attemptCount: attempts.count
-      }
+        attemptCount: attempts.count,
+      },
     });
   }
 
   // Lock account if max attempts reached
   if (attempts.count >= LOCKOUT_CONFIG.maxFailedAttempts) {
     attempts.lockedUntil = now + LOCKOUT_CONFIG.lockoutDuration;
-    
+
     // Log critical security event for account lockout
     await securityMonitor.analyzeEvent({
       type: "BRUTE_FORCE_ATTEMPT",
@@ -54,8 +57,8 @@ async function recordFailedLogin(email: string): Promise<void> {
         email,
         action: "account_locked",
         attemptCount: attempts.count,
-        lockoutDuration: LOCKOUT_CONFIG.lockoutDuration
-      }
+        lockoutDuration: LOCKOUT_CONFIG.lockoutDuration,
+      },
     });
   } else if (attempts.count >= 2) {
     // Log security event for brute force attempt (multiple failures, but not locked yet)
@@ -67,8 +70,8 @@ async function recordFailedLogin(email: string): Promise<void> {
         email,
         attemptCount: attempts.count,
         timeWindow: LOCKOUT_CONFIG.attemptWindow,
-        isLocked: false
-      }
+        isLocked: false,
+      },
     });
   }
 
@@ -80,7 +83,7 @@ function isAccountLocked(email: string): boolean {
   if (!attempts) return false;
 
   const now = Date.now();
-  
+
   // Check if lockout period has expired
   if (attempts.lockedUntil && now > attempts.lockedUntil) {
     failedAttempts.delete(email);
@@ -176,7 +179,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         // Check if account is locked due to too many failed attempts
         if (isAccountLocked(email)) {
-                    return null;
+          return null;
         }
 
         try {
@@ -215,7 +218,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
           // Successful login - clear any failed attempts
           clearFailedAttempts(email);
-          
+
           return {
             id: user.id,
             email: user.email,
@@ -223,7 +226,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             role: user.role,
           };
         } catch {
-                    await recordFailedLogin(email);
+          await recordFailedLogin(email);
           return null;
         }
       },
@@ -237,27 +240,27 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         if (url.startsWith("/")) {
           return `${baseUrl}${url}`;
         }
-        
+
         // Parse the URL to validate it
         const parsedUrl = new URL(url);
         const parsedBaseUrl = new URL(baseUrl);
-        
+
         // Only allow same origin redirects
         if (parsedUrl.origin === parsedBaseUrl.origin) {
           return url;
         }
-        
+
         // Allow specific trusted domains (add your production domains here)
         const trustedDomains = [
           "localhost:3000",
           "easesubs.com",
           "www.easesubs.com",
         ];
-        
+
         if (trustedDomains.includes(parsedUrl.host)) {
           return url;
         }
-        
+
         // Fallback to base URL for security
         return baseUrl;
       } catch {
@@ -270,12 +273,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.role = user.role;
         token.isActive = true; // Will be validated in session callback
       }
-      
+
       // Add timestamp for token freshness validation
       if (!token.iat) {
         token.iat = Math.floor(Date.now() / 1000);
       }
-      
+
       return token;
     },
     async session({ session, token }) {
@@ -296,7 +299,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             throw new Error("User account deactivated");
           }
         } catch {
-                    // On database error, allow session to continue but log the issue
+          // On database error, allow session to continue but log the issue
         }
       }
       return session;
@@ -307,24 +310,24 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         // For Google OAuth, ensure email is verified
         const googleProfile = profile as { email_verified?: boolean };
         if (!googleProfile.email_verified) {
-                    return false;
+          return false;
         }
-        
+
         // Check if user exists and is active
         try {
           const existingUser = await db.user.findUnique({
             where: { email: profile.email.toLowerCase() },
             select: { isActive: true },
           });
-          
+
           if (existingUser && !existingUser.isActive) {
-                        return false;
+            return false;
           }
         } catch {
-                    return false;
+          return false;
         }
       }
-      
+
       return true;
     },
   },
@@ -332,8 +335,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     async signIn({ user }) {
       // Enhanced security logging
       if (process.env.NODE_ENV === "production") {
-              }
-      
+      }
+
       // Update last login timestamp
       if (user.id) {
         try {
@@ -341,16 +344,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             where: { id: user.id },
             data: { updatedAt: new Date() },
           });
-        } catch {
-                  }
+        } catch {}
       }
     },
     async signOut() {
       if (process.env.NODE_ENV === "production") {
-              }
+      }
     },
   },
   // Enhanced security settings
   debug: false, // Always false for security
 });
-

@@ -118,10 +118,10 @@ const enforceUserIsAuthed = t.middleware(({ ctx, next }) => {
       source: "tRPC - Authentication Required",
       details: {
         reason: "no_session",
-        timestamp: new Date().toISOString()
-      }
+        timestamp: new Date().toISOString(),
+      },
     });
-    
+
     throw new TRPCError({ code: "UNAUTHORIZED" });
   }
   return next({
@@ -144,10 +144,10 @@ const enforceUserIsActive = t.middleware(async ({ ctx, next }) => {
       source: "tRPC - Active User Required",
       details: {
         reason: "no_session",
-        timestamp: new Date().toISOString()
-      }
+        timestamp: new Date().toISOString(),
+      },
     });
-    
+
     throw new TRPCError({ code: "UNAUTHORIZED" });
   }
 
@@ -171,10 +171,10 @@ const enforceUserIsActive = t.middleware(async ({ ctx, next }) => {
         details: {
           reason: user ? "inactive_user" : "user_not_found",
           userId,
-          timestamp: new Date().toISOString()
-        }
+          timestamp: new Date().toISOString(),
+        },
       });
-      
+
       throw new TRPCError({
         code: "FORBIDDEN",
         message: "Account is inactive or not found",
@@ -209,10 +209,10 @@ const enforceUserIsAdmin = t.middleware(({ ctx, next }) => {
       source: "tRPC - Admin Access Required",
       details: {
         reason: "no_session_admin_required",
-        timestamp: new Date().toISOString()
-      }
+        timestamp: new Date().toISOString(),
+      },
     });
-    
+
     throw new TRPCError({ code: "UNAUTHORIZED" });
   }
 
@@ -230,10 +230,10 @@ const enforceUserIsAdmin = t.middleware(({ ctx, next }) => {
         requiredRole: "ADMIN",
         userId: ctx.session.user.id,
         userEmail: ctx.session.user.email,
-        timestamp: new Date().toISOString()
-      }
+        timestamp: new Date().toISOString(),
+      },
     });
-    
+
     throw new TRPCError({
       code: "FORBIDDEN",
       message: "Admin access required",
@@ -269,81 +269,96 @@ export const activeUserProcedure = t.procedure.use(enforceUserIsActive);
  */
 const sanitizeResponse = t.middleware(async ({ ctx, next, path }) => {
   const result = await next();
-  
+
   // Only sanitize successful responses with data
-  if (result.ok && result.data && typeof result.data === 'object') {
+  if (result.ok && result.data && typeof result.data === "object") {
     let sanitizedData = result.data;
-    
+
     try {
       // Determine sanitization strategy based on the API path and user role
       const userRole = ctx.session?.user?.role as string;
-      const isOwner = path.includes('me') || path.includes('profile');
-      const isAdmin = userRole === 'ADMIN' || userRole === 'MANAGER';
-      
-      if (path.includes('user') || path.includes('profile') || path.includes('me')) {
+      const isOwner = path.includes("me") || path.includes("profile");
+      const isAdmin = userRole === "ADMIN" || userRole === "MANAGER";
+
+      if (
+        path.includes("user") ||
+        path.includes("profile") ||
+        path.includes("me")
+      ) {
         // User data sanitization
         if (Array.isArray(sanitizedData)) {
-          sanitizedData = sanitizedData.map(item => 
-            dataSanitizer.sanitizeUser(item as Record<string, unknown>, isOwner)
+          sanitizedData = sanitizedData.map((item) =>
+            dataSanitizer.sanitizeUser(
+              item as Record<string, unknown>,
+              isOwner,
+            ),
           );
         } else {
           sanitizedData = dataSanitizer.sanitizeUser(
-            sanitizedData as Record<string, unknown>, 
-            isOwner
+            sanitizedData as Record<string, unknown>,
+            isOwner,
           );
         }
-      } else if (path.includes('payment')) {
+      } else if (path.includes("payment")) {
         // Payment data sanitization
         if (Array.isArray(sanitizedData)) {
-          sanitizedData = sanitizedData.map(item => 
-            dataSanitizer.sanitizePayment(item as Record<string, unknown>)
+          sanitizedData = sanitizedData.map((item) =>
+            dataSanitizer.sanitizePayment(item as Record<string, unknown>),
           );
         } else {
-          sanitizedData = dataSanitizer.sanitizePayment(sanitizedData as Record<string, unknown>);
+          sanitizedData = dataSanitizer.sanitizePayment(
+            sanitizedData as Record<string, unknown>,
+          );
         }
-      } else if (path.includes('order')) {
+      } else if (path.includes("order")) {
         // Order data sanitization
         if (Array.isArray(sanitizedData)) {
-          sanitizedData = sanitizedData.map(item => 
-            dataSanitizer.sanitizeOrder(item as Record<string, unknown>, isOwner)
+          sanitizedData = sanitizedData.map((item) =>
+            dataSanitizer.sanitizeOrder(
+              item as Record<string, unknown>,
+              isOwner,
+            ),
           );
         } else {
           sanitizedData = dataSanitizer.sanitizeOrder(
-            sanitizedData as Record<string, unknown>, 
-            isOwner
+            sanitizedData as Record<string, unknown>,
+            isOwner,
           );
         }
-      } else if (path.includes('admin') && isAdmin) {
+      } else if (path.includes("admin") && isAdmin) {
         // Admin data sanitization (less restrictive but still secure)
         if (Array.isArray(sanitizedData)) {
-          sanitizedData = sanitizedData.map(item => 
-            dataSanitizer.sanitizeAdminData(item as Record<string, unknown>)
+          sanitizedData = sanitizedData.map((item) =>
+            dataSanitizer.sanitizeAdminData(item as Record<string, unknown>),
           );
         } else {
-          sanitizedData = dataSanitizer.sanitizeAdminData(sanitizedData as Record<string, unknown>);
+          sanitizedData = dataSanitizer.sanitizeAdminData(
+            sanitizedData as Record<string, unknown>,
+          );
         }
       }
       // For other endpoints, apply general sanitization by removing metadata
-      else if (sanitizedData && typeof sanitizedData === 'object') {
+      else if (sanitizedData && typeof sanitizedData === "object") {
         if (Array.isArray(sanitizedData)) {
-          sanitizedData = sanitizedData.map(item => 
-            dataSanitizer.removeMetadata(item as Record<string, unknown>)
+          sanitizedData = sanitizedData.map((item) =>
+            dataSanitizer.removeMetadata(item as Record<string, unknown>),
           );
         } else {
-          sanitizedData = dataSanitizer.removeMetadata(sanitizedData as Record<string, unknown>);
+          sanitizedData = dataSanitizer.removeMetadata(
+            sanitizedData as Record<string, unknown>,
+          );
         }
       }
-      
     } catch {
       // Log sanitization error but don't block request
     }
-    
+
     return {
       ...result,
-      data: sanitizedData
+      data: sanitizedData,
     };
   }
-  
+
   return result;
 });
 
@@ -356,7 +371,12 @@ export const adminProcedure = t.procedure.use(enforceUserIsAdmin);
  * Sanitized procedures - automatically sanitize response data
  */
 export const sanitizedPublicProcedure = t.procedure.use(sanitizeResponse);
-export const sanitizedProtectedProcedure = t.procedure.use(enforceUserIsAuthed).use(sanitizeResponse);
-export const sanitizedActiveUserProcedure = t.procedure.use(enforceUserIsActive).use(sanitizeResponse);
-export const sanitizedAdminProcedure = t.procedure.use(enforceUserIsAdmin).use(sanitizeResponse);
-
+export const sanitizedProtectedProcedure = t.procedure
+  .use(enforceUserIsAuthed)
+  .use(sanitizeResponse);
+export const sanitizedActiveUserProcedure = t.procedure
+  .use(enforceUserIsActive)
+  .use(sanitizeResponse);
+export const sanitizedAdminProcedure = t.procedure
+  .use(enforceUserIsAdmin)
+  .use(sanitizeResponse);

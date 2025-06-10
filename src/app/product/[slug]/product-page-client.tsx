@@ -116,7 +116,7 @@ export default function ProductPageClient({ slug }: ProductPageClientProps) {
       setAddToCartSuccess(true);
       setTimeout(() => setAddToCartSuccess(false), 2000);
     } catch {
-      if (process.env.NODE_ENV === 'development') {
+      if (process.env.NODE_ENV === "development") {
         // console.error("Error adding to cart:", error);
       }
       toast.error("Failed to add to cart. Please try again.");
@@ -150,8 +150,12 @@ export default function ProductPageClient({ slug }: ProductPageClientProps) {
     "@context": "https://schema.org/",
     "@type": "Product",
     name: product.name,
-    description: product.description || `Premium ${product.name} subscription plans at discounted prices`,
-            image: product.logoUrl || "https://via.placeholder.com/1200x630/8B5CF6/FFFFFF?text=EaseSubs",
+    description:
+      product.description ||
+      `Premium ${product.name} subscription plans at discounted prices`,
+    image:
+      product.logoUrl ||
+      "https://via.placeholder.com/1200x630/8B5CF6/FFFFFF?text=EaseSubs",
     brand: {
       "@type": "Brand",
       name: "EaseSubs",
@@ -166,7 +170,9 @@ export default function ProductPageClient({ slug }: ProductPageClientProps) {
         "@type": "Organization",
         name: "EaseSubs",
       },
-      priceValidUntil: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 1 year from now
+      priceValidUntil: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
+        .toISOString()
+        .split("T")[0], // 1 year from now
     })),
     aggregateRating: {
       "@type": "AggregateRating",
@@ -185,7 +191,7 @@ export default function ProductPageClient({ slug }: ProductPageClientProps) {
           __html: JSON.stringify(structuredData),
         }}
       />
-      
+
       <Header />
       <main className="min-h-screen bg-gray-900 pt-20">
         {/* Back to Products Navigation */}
@@ -531,4 +537,4 @@ export default function ProductPageClient({ slug }: ProductPageClientProps) {
       <Footer />
     </>
   );
-} 
+}

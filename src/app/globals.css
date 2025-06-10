@@ -96,11 +96,11 @@ body {
     --background: #000000;
     --foreground: #ffffff;
   }
-  
+
   .border {
     border-color: #ffffff !important;
   }
-  
+
   .text-gray-400 {
     color: #ffffff !important;
   }
@@ -116,7 +116,7 @@ body {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
-  
+
   .animate-fade-in {
     animation: none;
   }
@@ -129,10 +129,6 @@ body {
     -moz-osx-font-smoothing: grayscale;
   }
 }
-
-
-
-
 
 /* Prevent layout shift issues with dev tools element inspector */
 html {
@@ -148,5 +144,3 @@ html {
     --foreground: #1f2937;
   }
 }
-
-

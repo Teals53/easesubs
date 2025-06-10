@@ -1,6 +1,9 @@
 // Common animation variants for Framer Motion
 
-export const fadeIn = (direction: "up" | "down" | "left" | "right" = "up", delay = 0) => ({
+export const fadeIn = (
+  direction: "up" | "down" | "left" | "right" = "up",
+  delay = 0,
+) => ({
   hidden: {
     opacity: 0,
     y: direction === "up" ? 20 : direction === "down" ? -20 : 0,
@@ -72,4 +75,4 @@ export const modalContent = {
   initial: { opacity: 0, scale: 0.95, y: 20 },
   animate: { opacity: 1, scale: 1, y: 0 },
   exit: { opacity: 0, scale: 0.95, y: 20 },
-}; 
+};

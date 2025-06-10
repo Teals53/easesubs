@@ -78,4 +78,3 @@ export function getIconComponent(name?: string | null): LucideIcon {
   }
   return iconMap[name];
 }
-

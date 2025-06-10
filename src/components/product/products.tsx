@@ -81,7 +81,7 @@ export function Products() {
     },
     borderColor: dbProduct.borderColor,
     logoUrl: dbProduct.logoUrl,
-    
+
     isFeatured: dbProduct.isFeatured,
     slug: dbProduct.slug,
     displayOrder: dbProduct.displayOrder,
@@ -160,7 +160,10 @@ export function Products() {
   );
 
   return (
-    <section id="products" className="py-16 bg-gray-900 min-h-screen overflow-x-hidden">
+    <section
+      id="products"
+      className="py-16 bg-gray-900 min-h-screen overflow-x-hidden"
+    >
       <div className="container mx-auto px-4">
         {/* Header */}
         <motion.div
@@ -470,4 +473,3 @@ export function Products() {
     </section>
   );
 }
-

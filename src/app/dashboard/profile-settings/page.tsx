@@ -744,4 +744,3 @@ export default function ProfileSettingsPage() {
     </div>
   );
 }
-

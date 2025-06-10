@@ -63,7 +63,7 @@ export class PaymentProviders {
 
       // Format amount to ensure proper decimal formatting (max 2 decimal places for USD)
       const formattedAmount = data.amount.toFixed(2);
-      
+
       const paymentRequest: CreatePaymentRequest = {
         amount: formattedAmount,
         currency: data.currency, // Keep original currency (USD)
@@ -75,7 +75,10 @@ export class PaymentProviders {
         // Don't specify to_currency - let users choose any crypto on payment page
       };
 
-      console.log("Cryptomus payment request:", JSON.stringify(paymentRequest, null, 2));
+      console.log(
+        "Cryptomus payment request:",
+        JSON.stringify(paymentRequest, null, 2),
+      );
 
       const response = await cryptomus.createPayment(paymentRequest);
 
@@ -91,23 +94,26 @@ export class PaymentProviders {
           state: response.state,
           message: response.message,
           errors: response.errors,
-          paymentRequest
+          paymentRequest,
         });
-        
+
         let errorMessage = response.message || "Failed to create payment";
-        
+
         // Check for specific validation errors
         if (response.errors) {
           const errorDetails = Object.entries(response.errors)
-            .map(([field, messages]) => `${field}: ${Array.isArray(messages) ? messages.join(", ") : messages}`)
+            .map(
+              ([field, messages]) =>
+                `${field}: ${Array.isArray(messages) ? messages.join(", ") : messages}`,
+            )
             .join("; ");
           errorMessage = `Validation errors: ${errorDetails}`;
         }
-        
+
         throw new Error(errorMessage);
       }
     } catch (error) {
-            return {
+      return {
         success: false,
         error: error instanceof Error ? error.message : "Unknown error",
       };
@@ -126,7 +132,7 @@ export class PaymentProviders {
       const apiKey = process.env.WEEPAY_API_KEY;
       const secretKey = process.env.WEEPAY_SECRET_KEY;
       const isSandbox = process.env.WEEPAY_IS_SANDBOX === "true";
-      const baseUrl = isSandbox 
+      const baseUrl = isSandbox
         ? process.env.WEEPAY_SANDBOX_URL || "https://testapi.weepay.co"
         : process.env.WEEPAY_BASE_URL || "https://api.weepay.co";
 
@@ -168,7 +174,7 @@ export class PaymentProviders {
         throw new Error(response.error || "Failed to create weepay payment");
       }
     } catch (error) {
-            return {
+      return {
         success: false,
         error: error instanceof Error ? error.message : "Unknown error",
       };
@@ -181,7 +187,10 @@ export class PaymentProviders {
   }
 
   // Verify Weepay webhook signature
-  static verifyWeepayWebhook(data: WeepayWebhookData, secretKey: string): boolean {
+  static verifyWeepayWebhook(
+    data: WeepayWebhookData,
+    secretKey: string,
+  ): boolean {
     return Weepay.verifyWebhookSignature(data, secretKey);
   }
 
@@ -199,7 +208,7 @@ export class PaymentProviders {
       const apiKey = process.env.WEEPAY_API_KEY;
       const secretKey = process.env.WEEPAY_SECRET_KEY;
       const isSandbox = process.env.WEEPAY_IS_SANDBOX === "true";
-      const baseUrl = isSandbox 
+      const baseUrl = isSandbox
         ? process.env.WEEPAY_SANDBOX_URL || "https://testapi.weepay.co"
         : process.env.WEEPAY_BASE_URL || "https://api.weepay.co";
 
@@ -229,14 +238,12 @@ export class PaymentProviders {
         throw new Error(response.error || "Failed to get payment info");
       }
     } catch (error) {
-            return {
+      return {
         success: false,
         error: error instanceof Error ? error.message : "Unknown error",
       };
     }
   }
-
-
 
   // Get payment information
   static async getCryptomusPaymentInfo(
@@ -281,7 +288,7 @@ export class PaymentProviders {
         throw new Error(response.message || "Failed to get payment info");
       }
     } catch (error) {
-            return {
+      return {
         success: false,
         error: error instanceof Error ? error.message : "Unknown error",
       };
@@ -325,7 +332,7 @@ export class PaymentProviders {
         throw new Error(response.message || "Failed to get payment services");
       }
     } catch (error) {
-            return {
+      return {
         success: false,
         error: error instanceof Error ? error.message : "Unknown error",
       };
@@ -377,7 +384,7 @@ export class PaymentProviders {
         throw new Error(response.message || "Refund failed");
       }
     } catch (error) {
-            return {
+      return {
         success: false,
         error: error instanceof Error ? error.message : "Unknown error",
       };
@@ -431,7 +438,7 @@ export class PaymentProviders {
         throw new Error(response.message || "Wallet creation failed");
       }
     } catch (error) {
-            return {
+      return {
         success: false,
         error: error instanceof Error ? error.message : "Unknown error",
       };
@@ -475,11 +482,10 @@ export class PaymentProviders {
         throw new Error(response.message || "Failed to get balance");
       }
     } catch (error) {
-            return {
+      return {
         success: false,
         error: error instanceof Error ? error.message : "Unknown error",
       };
     }
   }
 }
-

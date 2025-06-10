@@ -5,11 +5,13 @@ A modern, secure subscription management platform built with Next.js 15, TypeScr
 ## 🚀 Features
 
 ### Payment Methods
+
 - **Cryptomus** - Cryptocurrency payments (Bitcoin, Ethereum, USDT, etc.)
 - **Weepay** - Credit card payments with 3D verification and secure redirect flow
 - **Admin Bypass** - Testing mode for administrators
 
 ### Core Features
+
 - User authentication with NextAuth.js v5
 - Role-based access control (User, Admin, Support Agent, Manager)
 - Product catalog with subscription plans
@@ -37,42 +39,48 @@ A modern, secure subscription management platform built with Next.js 15, TypeScr
 ## 🔧 Installation
 
 1. **Clone the repository**
+
    ```bash
    git clone https://github.com/your-repo/easesubs.git
    cd easesubs
    ```
 
 2. **Install dependencies**
+
    ```bash
    npm install
    ```
 
 3. **Set up environment variables**
+
    ```bash
    cp .env.example .env
    ```
-   
+
    Configure the following variables:
-   
+
    **Database**
+
    ```env
    DATABASE_URL="postgresql://username:password@host:5432/database"
    DIRECT_URL="postgresql://username:password@host:5432/database"
    ```
-   
+
    **Authentication**
+
    ```env
    AUTH_SECRET="your-32-character-secret"
    NEXTAUTH_URL="http://localhost:3000"
    ```
-   
+
    **Payment Providers**
+
    ```env
    # Cryptomus (Cryptocurrency)
    CRYPTOMUS_MERCHANT_ID="your-merchant-uuid"
    CRYPTOMUS_PAYMENT_API_KEY="your-payment-api-key"
    CRYPTOMUS_SECRET="your-secret"
-   
+
    # Weepay (Credit Cards)
    WEEPAY_MERCHANT_ID="your-weepay-merchant-id"
    WEEPAY_API_KEY="your-weepay-api-key"
@@ -81,6 +89,7 @@ A modern, secure subscription management platform built with Next.js 15, TypeScr
    ```
 
 4. **Set up the database**
+
    ```bash
    npx prisma generate
    npx prisma db push
@@ -104,6 +113,7 @@ The platform integrates with Weepay for secure credit card processing:
 - **Sandbox Support**: Test mode for development
 
 #### Payment Flow
+
 1. User selects Weepay payment method at checkout
 2. Order is created with `PENDING` status
 3. User is redirected to Weepay's secure payment page
@@ -126,14 +136,17 @@ Support for major cryptocurrencies:
 ### API Routes
 
 **Payment Creation**
+
 - `/api/payment/cryptomus/create` - Create cryptocurrency payment
 - `/api/payment/weepay/create` - Create credit card payment
 
 **Webhooks**
+
 - `/api/webhooks/cryptomus` - Process crypto payment callbacks
 - `/api/webhooks/weepay` - Process credit card payment callbacks
 
 **tRPC Routers**
+
 - `/api/trpc/[trpc]` - Type-safe API endpoints
 
 ### Database Schema
@@ -206,10 +219,11 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 ## 🆘 Support
 
 For support and questions:
+
 - Create an issue in the GitHub repository
 - Contact the development team
 - Check the documentation files
 
 ---
 
-Built with ❤️ using modern web technologies 
+Built with ❤️ using modern web technologies

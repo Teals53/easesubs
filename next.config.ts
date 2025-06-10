@@ -1,5 +1,9 @@
 import type { NextConfig } from "next";
-import { SECURITY_HEADERS, HTTPS_CONFIG, SECURITY_REDIRECTS } from "@/lib/security-config";
+import {
+  SECURITY_HEADERS,
+  HTTPS_CONFIG,
+  SECURITY_REDIRECTS,
+} from "@/lib/security-config";
 
 const nextConfig: NextConfig = {
   /* config options here */
@@ -23,7 +27,7 @@ const nextConfig: NextConfig = {
           // CSP header is now set dynamically in middleware.ts with nonces
           // {
           //   key: "Content-Security-Policy",
-          //   value: process.env.NODE_ENV === "development" 
+          //   value: process.env.NODE_ENV === "development"
           //     ? CSP_DIRECTIVES.development.join("; ")
           //     : CSP_DIRECTIVES.production().join("; "),
           // },
@@ -101,10 +105,10 @@ const nextConfig: NextConfig = {
   // Enhanced image optimization with security and performance
   images: {
     domains: [
-      "lh3.googleusercontent.com", 
+      "lh3.googleusercontent.com",
       "avatars.githubusercontent.com",
       "cdn.brandfetch.io",
-      "via.placeholder.com"
+      "via.placeholder.com",
     ],
     formats: ["image/avif", "image/webp"], // AVIF first for better compression
     minimumCacheTTL: 31536000, // 1 year
@@ -113,7 +117,7 @@ const nextConfig: NextConfig = {
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
     // Enhanced image optimization settings
-    loader: "default"
+    loader: "default",
   },
 
   // Enhanced compression
@@ -160,13 +164,19 @@ const nextConfig: NextConfig = {
   // Enhanced compiler optimizations
   compiler: {
     // Remove console logs in production
-    removeConsole: process.env.NODE_ENV === "production" ? {
-      exclude: ["error", "warn"] // Keep error and warning logs
-    } : false,
+    removeConsole:
+      process.env.NODE_ENV === "production"
+        ? {
+            exclude: ["error", "warn"], // Keep error and warning logs
+          }
+        : false,
     // Remove React dev tools and test attributes in production
-    reactRemoveProperties: process.env.NODE_ENV === "production" ? {
-      properties: ["^data-testid$"]
-    } : false,
+    reactRemoveProperties:
+      process.env.NODE_ENV === "production"
+        ? {
+            properties: ["^data-testid$"],
+          }
+        : false,
     // Enable SWC minification
     styledComponents: false, // We're using Tailwind
   },
@@ -175,27 +185,31 @@ const nextConfig: NextConfig = {
   async redirects() {
     return [
       // HTTPS enforcement - redirect HTTP to HTTPS in production
-      ...(HTTPS_CONFIG.enabled ? [{
-        source: '/:path*',
-        has: [
-          {
-            type: 'header',
-            key: 'x-forwarded-proto',
-            value: 'http',
-          },
-        ],
-        destination: `https://${HTTPS_CONFIG.domain}/:path*`,
-        permanent: true,
-      }] : []),
-      
+      ...(HTTPS_CONFIG.enabled
+        ? [
+            {
+              source: "/:path*",
+              has: [
+                {
+                  type: "header",
+                  key: "x-forwarded-proto",
+                  value: "http",
+                },
+              ],
+              destination: `https://${HTTPS_CONFIG.domain}/:path*`,
+              permanent: true,
+            },
+          ]
+        : []),
+
       // Force HTTPS for specific sensitive routes
-      ...HTTPS_CONFIG.sensitiveRoutes.map(route => ({
+      ...HTTPS_CONFIG.sensitiveRoutes.map((route) => ({
         source: `${route}/:path*`,
         has: [
           {
-            type: 'header',
-            key: 'x-forwarded-proto',
-            value: 'http',
+            type: "header",
+            key: "x-forwarded-proto",
+            value: "http",
           },
         ],
         destination: `https://${HTTPS_CONFIG.domain}${route}/:path*`,
@@ -203,32 +217,32 @@ const nextConfig: NextConfig = {
       })),
 
       // Redirect common attack vectors using centralized configuration
-      ...SECURITY_REDIRECTS.map(source => ({
+      ...SECURITY_REDIRECTS.map((source) => ({
         source,
-        destination: '/404',
+        destination: "/404",
         permanent: true,
       })),
 
       // SEO redirects for clean URLs
       {
-        source: '/index.html',
-        destination: '/',
+        source: "/index.html",
+        destination: "/",
         permanent: true,
       },
       {
-        source: '/index.php',
-        destination: '/',
+        source: "/index.php",
+        destination: "/",
         permanent: true,
       },
       {
-        source: '/home',
-        destination: '/',
+        source: "/home",
+        destination: "/",
         permanent: true,
       },
       // Redirect old product URLs if any
       {
-        source: '/products/:slug',
-        destination: '/product/:slug',
+        source: "/products/:slug",
+        destination: "/product/:slug",
         permanent: true,
       },
     ];
@@ -239,12 +253,12 @@ const nextConfig: NextConfig = {
     return [
       // Clean URLs for sitemap and robots
       {
-        source: '/sitemap.xml',
-        destination: '/sitemap',
+        source: "/sitemap.xml",
+        destination: "/sitemap",
       },
       {
-        source: '/robots.txt',
-        destination: '/robots',
+        source: "/robots.txt",
+        destination: "/robots",
       },
     ];
   },
@@ -284,4 +298,3 @@ const nextConfig: NextConfig = {
 };
 
 export default nextConfig;
-

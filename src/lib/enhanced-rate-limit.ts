@@ -33,7 +33,10 @@ const suspiciousIPs = new Set<string>();
 setInterval(() => {
   const now = Date.now();
   for (const [key, entry] of rateLimitStore.entries()) {
-    if (entry.resetTime < now && (!entry.blockUntil || entry.blockUntil < now)) {
+    if (
+      entry.resetTime < now &&
+      (!entry.blockUntil || entry.blockUntil < now)
+    ) {
       rateLimitStore.delete(key);
     }
   }
@@ -45,9 +48,9 @@ function getClientIdentifier(request: NextRequest): string {
   const realIp = request.headers.get("x-real-ip");
   const cfConnectingIp = request.headers.get("cf-connecting-ip"); // Cloudflare
   const xRealIp = request.headers.get("x-real-ip");
-  
+
   let ip = "unknown";
-  
+
   if (forwarded) {
     // X-Forwarded-For can contain multiple IPs, take the first one
     ip = forwarded.split(",")[0]?.trim() || "unknown";
@@ -68,8 +71,8 @@ export function createRateLimit(config: RateLimitConfig) {
   return {
     check: (request: NextRequest): RateLimitResult => {
       const now = Date.now();
-      const identifier = config.keyGenerator 
-        ? config.keyGenerator(request) 
+      const identifier = config.keyGenerator
+        ? config.keyGenerator(request)
         : config.identifier || getClientIdentifier(request);
 
       // Check if IP is marked as suspicious
@@ -115,19 +118,22 @@ export function createRateLimit(config: RateLimitConfig) {
         // Mark as blocked
         entry.blocked = true;
         entry.blockUntil = now + config.interval;
-        
+
         // Only mark IP as suspicious for extremely high abuse (5x the limit)
         // and only for a short time to avoid permanent blocking of legitimate users
         if (entry.count > config.maxRequests * 5) {
           suspiciousIPs.add(clientIp);
           // Remove from suspicious list after 30 minutes instead of 1 hour
-          setTimeout(() => {
-            suspiciousIPs.delete(clientIp);
-          }, 30 * 60 * 1000);
+          setTimeout(
+            () => {
+              suspiciousIPs.delete(clientIp);
+            },
+            30 * 60 * 1000,
+          );
         }
 
         rateLimitStore.set(identifier, entry);
-        
+
         return {
           success: false,
           limit: config.maxRequests,
@@ -157,7 +163,7 @@ export function createRateLimit(config: RateLimitConfig) {
         resetTime: now + config.interval,
         blocked: true,
       };
-      
+
       entry.blocked = true;
       entry.blockUntil = now + duration;
       rateLimitStore.set(identifier, entry);
@@ -182,7 +188,9 @@ export function createRateLimit(config: RateLimitConfig) {
       if (!entry) return null;
 
       return {
-        success: entry.count <= config.maxRequests && (!entry.blockUntil || now >= entry.blockUntil),
+        success:
+          entry.count <= config.maxRequests &&
+          (!entry.blockUntil || now >= entry.blockUntil),
         limit: config.maxRequests,
         remaining: Math.max(0, config.maxRequests - entry.count),
         resetTime: entry.resetTime,
@@ -250,5 +258,4 @@ export const contactRateLimit = createRateLimit({
 export const registrationRateLimit = createRateLimit({
   interval: 60 * 60 * 1000, // 1 hour
   maxRequests: 50,
-}); 
-
+});

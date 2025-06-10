@@ -38,12 +38,11 @@ class EmailService {
 
       this.transporter = nodemailer.createTransport(config);
     } catch {
-            this.transporter = null;
+      this.transporter = null;
     }
   }
 
-  private logTransporterError() {
-      }
+  private logTransporterError() {}
 
   async sendEmail(data: EmailData): Promise<boolean> {
     if (!this.transporter) {
@@ -53,10 +52,10 @@ class EmailService {
 
     try {
       await this.transporter.sendMail(data);
-            return true;
-      } catch {
-        return false;
-  }
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   // Order confirmation email
@@ -332,4 +331,3 @@ class EmailService {
 }
 
 export const emailService = new EmailService();
-

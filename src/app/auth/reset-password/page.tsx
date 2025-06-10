@@ -309,27 +309,32 @@ export default function ResetPasswordPage() {
                         passwordStrength.score < 2
                           ? "bg-red-500"
                           : passwordStrength.score < 3
-                          ? "bg-yellow-500"
-                          : passwordStrength.score < 4
-                          ? "bg-blue-500"
-                          : "bg-green-500"
+                            ? "bg-yellow-500"
+                            : passwordStrength.score < 4
+                              ? "bg-blue-500"
+                              : "bg-green-500"
                       }`}
-                      style={{ width: `${(passwordStrength.score / 4) * 100}%` }}
+                      style={{
+                        width: `${(passwordStrength.score / 4) * 100}%`,
+                      }}
                     />
                   </div>
                   {passwordStrength.errors.length > 0 && (
                     <div className="mt-1">
-                      {passwordStrength.errors.map((error: string, index: number) => (
-                        <p key={index} className="text-xs text-red-400">
-                          {error}
-                        </p>
-                      ))}
+                      {passwordStrength.errors.map(
+                        (error: string, index: number) => (
+                          <p key={index} className="text-xs text-red-400">
+                            {error}
+                          </p>
+                        ),
+                      )}
                     </div>
                   )}
                 </div>
               )}
               <p className="text-xs text-gray-500 mt-1">
-                Password must be at least 12 characters with uppercase, lowercase, numbers, and special characters
+                Password must be at least 12 characters with uppercase,
+                lowercase, numbers, and special characters
               </p>
             </div>
 
@@ -396,4 +401,3 @@ export default function ResetPasswordPage() {
     </div>
   );
 }
-

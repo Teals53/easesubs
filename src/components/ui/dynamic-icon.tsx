@@ -15,10 +15,10 @@ export const DynamicIcon = ({
   const IconComponent = LucideIcons[
     name as keyof typeof LucideIcons
   ] as React.ComponentType<{ className?: string; size?: number }>;
-  
+
   if (!IconComponent) {
     return <Package className={className} size={size} />;
   }
-  
+
   return <IconComponent className={className} size={size} />;
-}; 
+};

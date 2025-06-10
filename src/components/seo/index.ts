@@ -1,22 +1,22 @@
 // Core SEO Components
-export { AdvancedSEO, generateEnhancedMetadata } from './advanced-seo';
-export { PerformanceSEO, ResourceHints } from './performance-seo';
-export { SchemaMarkup } from './schema-markup';
+export { AdvancedSEO, generateEnhancedMetadata } from "./advanced-seo";
+export { PerformanceSEO, ResourceHints } from "./performance-seo";
+export { SchemaMarkup } from "./schema-markup";
 
 // SEO Utilities
-export { 
+export {
   generateCanonicalUrl,
   generateMetadata,
   generateTitle,
   generateDescription,
-  SEO_CONFIG
-} from './seo-utils';
+  SEO_CONFIG,
+} from "./seo-utils";
 
 // Schema Components
-export { 
+export {
   ECommerceSchema,
-  SubscriptionServiceSchema
-} from './local-business-schema';
+  SubscriptionServiceSchema,
+} from "./local-business-schema";
 
 // SEO Types
 export interface SEOData {
@@ -35,7 +35,7 @@ export interface ProductSEO {
   price: number;
   originalPrice?: number;
   currency: string;
-  availability: 'InStock' | 'OutOfStock' | 'PreOrder';
+  availability: "InStock" | "OutOfStock" | "PreOrder";
   brand?: string;
   category?: string;
   sku?: string;
@@ -60,6 +60,4 @@ export {
   organizationSchema,
   websiteSchema,
   serviceSchema,
-} from './advanced-seo';
-
- 
+} from "./advanced-seo";

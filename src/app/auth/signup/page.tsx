@@ -11,4 +11,3 @@ export default async function SignUpPage() {
   // Authenticated user redirects are handled by middleware
   return <SignUpForm />;
 }
-

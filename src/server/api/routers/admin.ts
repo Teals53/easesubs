@@ -6,7 +6,6 @@ import { securityMonitor } from "@/lib/security-monitor";
 
 export const adminRouter = createTRPCRouter({
   getDashboardStats: adminProcedure.query(async ({ ctx }) => {
-
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const startOfWeek = new Date(now);
@@ -114,7 +113,6 @@ export const adminRouter = createTRPCRouter({
   }),
 
   getRecentActivity: adminProcedure.query(async ({ ctx }) => {
-
     // Recent orders
     const recentOrders = await ctx.db.order.findMany({
       take: 15,
@@ -196,7 +194,6 @@ export const adminRouter = createTRPCRouter({
       }),
     )
     .query(async ({ ctx, input }) => {
-
       const { page, limit, search, role } = input;
       const skip = (page - 1) * limit;
 
@@ -215,8 +212,8 @@ export const adminRouter = createTRPCRouter({
             role,
             adminId: ctx.session.user.id,
             adminEmail: ctx.session.user.email,
-            timestamp: new Date().toISOString()
-          }
+            timestamp: new Date().toISOString(),
+          },
         });
       }
 
@@ -273,8 +270,8 @@ export const adminRouter = createTRPCRouter({
           limit,
           search,
           role,
-          adminId: ctx.session.user.id
-        }
+          adminId: ctx.session.user.id,
+        },
       });
 
       return {
@@ -293,11 +290,10 @@ export const adminRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-
       // Get current user data for logging
       const currentUser = await ctx.db.user.findUnique({
         where: { id: input.userId },
-        select: { role: true, email: true }
+        select: { role: true, email: true },
       });
 
       const user = await ctx.db.user.update({
@@ -318,8 +314,8 @@ export const adminRouter = createTRPCRouter({
           oldRole: currentUser?.role,
           newRole: input.role,
           adminId: ctx.session.user.id,
-          adminEmail: ctx.session.user.email
-        }
+          adminEmail: ctx.session.user.email,
+        },
       });
 
       // Log privilege escalation if promoting to admin
@@ -335,8 +331,8 @@ export const adminRouter = createTRPCRouter({
             targetUserEmail: currentUser?.email,
             oldRole: currentUser?.role,
             newRole: input.role,
-            adminId: ctx.session.user.id
-          }
+            adminId: ctx.session.user.id,
+          },
         });
       }
 
@@ -354,13 +350,12 @@ export const adminRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-
       const { userId, ...updateData } = input;
 
       // Get current user data for logging
       const currentUser = await ctx.db.user.findUnique({
         where: { id: userId },
-        select: { role: true, email: true, name: true, isActive: true }
+        select: { role: true, email: true, name: true, isActive: true },
       });
 
       // Check if email is already taken by another user
@@ -397,8 +392,8 @@ export const adminRouter = createTRPCRouter({
           targetUserEmail: currentUser?.email,
           changes: updateData,
           adminId: ctx.session.user.id,
-          adminEmail: ctx.session.user.email
-        }
+          adminEmail: ctx.session.user.email,
+        },
       });
 
       return user;
@@ -444,8 +439,8 @@ export const adminRouter = createTRPCRouter({
           oldStatus: user.isActive,
           newStatus: !user.isActive,
           adminId: ctx.session.user.id,
-          adminEmail: ctx.session.user.email
-        }
+          adminEmail: ctx.session.user.email,
+        },
       });
 
       return updatedUser;
@@ -473,7 +468,7 @@ export const adminRouter = createTRPCRouter({
       // Get user data for logging before deletion
       const userToDelete = await ctx.db.user.findUnique({
         where: { id: input.userId },
-        select: { email: true, role: true, name: true }
+        select: { email: true, role: true, name: true },
       });
 
       // Delete user and related data
@@ -571,8 +566,8 @@ export const adminRouter = createTRPCRouter({
           targetUserName: userToDelete?.name,
           adminId: ctx.session.user.id,
           adminEmail: ctx.session.user.email,
-          deletionTimestamp: new Date().toISOString()
-        }
+          deletionTimestamp: new Date().toISOString(),
+        },
       });
 
       return { success: true };
@@ -1805,30 +1800,35 @@ export const adminRouter = createTRPCRouter({
 
   // Security monitoring endpoints
   getSecurityStats: adminProcedure
-    .input(z.object({
-      timeRange: z.enum(["1h", "24h", "7d", "30d"]).default("24h")
-    }))
+    .input(
+      z.object({
+        timeRange: z.enum(["1h", "24h", "7d", "30d"]).default("24h"),
+      }),
+    )
     .query(async () => {
-
       const stats = await securityMonitor.getSecurityStats();
       return {
         totalEvents: stats.totalEvents,
         last24Hours: stats.last24Hours,
         severityDistribution: stats.severityDistribution,
-        topThreats: stats.topThreats
+        topThreats: stats.topThreats,
       };
     }),
 
   getSecurityEvents: adminProcedure
-    .input(z.object({
-      limit: z.number().min(1).max(100).default(50),
-      timeRange: z.enum(["1h", "24h", "7d", "30d"]).default("24h"),
-      severity: z.enum(["LOW", "MEDIUM", "HIGH", "CRITICAL"]).optional()
-    }))
+    .input(
+      z.object({
+        limit: z.number().min(1).max(100).default(50),
+        timeRange: z.enum(["1h", "24h", "7d", "30d"]).default("24h"),
+        severity: z.enum(["LOW", "MEDIUM", "HIGH", "CRITICAL"]).optional(),
+      }),
+    )
     .query(async ({ input }) => {
-
       // Get real events from database-backed security monitor
-      const events = await securityMonitor.getRecentEvents(input.limit, input.severity);
+      const events = await securityMonitor.getRecentEvents(
+        input.limit,
+        input.severity,
+      );
 
       return events.map((event) => ({
         type: event.type,
@@ -1836,38 +1836,41 @@ export const adminRouter = createTRPCRouter({
         source: event.source,
         ip: event.ip, // Keep as null if not available
         riskScore: event.riskScore,
-        timestamp: event.timestamp
+        timestamp: event.timestamp,
       }));
     }),
 
-  getBlockedIPs: adminProcedure
-    .query(async () => {
-
-      // Get real blocked IPs from database
-      const blockedIPs = await securityMonitor.getBlockedIPsWithDetails();
-      return blockedIPs;
-    }),
+  getBlockedIPs: adminProcedure.query(async () => {
+    // Get real blocked IPs from database
+    const blockedIPs = await securityMonitor.getBlockedIPsWithDetails();
+    return blockedIPs;
+  }),
 
   unblockIP: adminProcedure
-    .input(z.object({
-      ip: z.string()
-    }))
+    .input(
+      z.object({
+        ip: z.string(),
+      }),
+    )
     .mutation(async ({ input }) => {
-
       await securityMonitor.unblockIP(input.ip);
       return { success: true };
     }),
 
   blockIP: adminProcedure
-    .input(z.object({
-      ip: z.string(),
-      reason: z.string(),
-      duration: z.number().min(60).max(86400).default(3600)
-    }))
+    .input(
+      z.object({
+        ip: z.string(),
+        reason: z.string(),
+        duration: z.number().min(60).max(86400).default(3600),
+      }),
+    )
     .mutation(async ({ input }) => {
-
-      await securityMonitor.blockIP(input.ip, input.reason, Math.floor(input.duration / 60));
+      await securityMonitor.blockIP(
+        input.ip,
+        input.reason,
+        Math.floor(input.duration / 60),
+      );
       return { success: true };
     }),
 });
-

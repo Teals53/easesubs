@@ -4,7 +4,16 @@ import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { Eye, EyeOff, Mail, Lock, User, UserPlus, CheckCircle, XCircle } from "lucide-react";
+import {
+  Eye,
+  EyeOff,
+  Mail,
+  Lock,
+  User,
+  UserPlus,
+  CheckCircle,
+  XCircle,
+} from "lucide-react";
 import Link from "next/link";
 import { trpc } from "@/lib/trpc";
 import { validatePassword } from "@/lib/password-validator";
@@ -16,28 +25,42 @@ interface PasswordStrengthIndicatorProps {
   email: string;
 }
 
-function PasswordStrengthIndicator({ password, name, email }: PasswordStrengthIndicatorProps) {
+function PasswordStrengthIndicator({
+  password,
+  name,
+  email,
+}: PasswordStrengthIndicatorProps) {
   if (!password) return null;
 
   const validation = validatePassword(password, undefined, { name, email });
-  
+
   const getStrengthColor = (strength: string) => {
     switch (strength) {
-      case 'weak': return 'text-red-400';
-      case 'medium': return 'text-yellow-400';
-      case 'strong': return 'text-blue-400';
-      case 'very-strong': return 'text-green-400';
-      default: return 'text-gray-400';
+      case "weak":
+        return "text-red-400";
+      case "medium":
+        return "text-yellow-400";
+      case "strong":
+        return "text-blue-400";
+      case "very-strong":
+        return "text-green-400";
+      default:
+        return "text-gray-400";
     }
   };
 
   const getStrengthWidth = (strength: string) => {
     switch (strength) {
-      case 'weak': return 'w-1/4';
-      case 'medium': return 'w-1/2';
-      case 'strong': return 'w-3/4';
-      case 'very-strong': return 'w-full';
-      default: return 'w-0';
+      case "weak":
+        return "w-1/4";
+      case "medium":
+        return "w-1/2";
+      case "strong":
+        return "w-3/4";
+      case "very-strong":
+        return "w-full";
+      default:
+        return "w-0";
     }
   };
 
@@ -45,23 +68,29 @@ function PasswordStrengthIndicator({ password, name, email }: PasswordStrengthIn
     <div className="mt-2 space-y-2">
       <div className="flex items-center space-x-2">
         <span className="text-xs text-gray-400">Strength:</span>
-        <span className={`text-xs font-medium ${getStrengthColor(validation.strength)}`}>
-          {validation.strength.charAt(0).toUpperCase() + validation.strength.slice(1).replace('-', ' ')}
+        <span
+          className={`text-xs font-medium ${getStrengthColor(validation.strength)}`}
+        >
+          {validation.strength.charAt(0).toUpperCase() +
+            validation.strength.slice(1).replace("-", " ")}
         </span>
         <span className="text-xs text-gray-400">({validation.score}/100)</span>
       </div>
-      
+
       <div className="w-full bg-gray-600 rounded-full h-1">
-        <div 
+        <div
           className={`h-1 rounded-full transition-all duration-300 ${
-            validation.strength === 'weak' ? 'bg-red-400' :
-            validation.strength === 'medium' ? 'bg-yellow-400' :
-            validation.strength === 'strong' ? 'bg-blue-400' :
-            'bg-green-400'
+            validation.strength === "weak"
+              ? "bg-red-400"
+              : validation.strength === "medium"
+                ? "bg-yellow-400"
+                : validation.strength === "strong"
+                  ? "bg-blue-400"
+                  : "bg-green-400"
           } ${getStrengthWidth(validation.strength)}`}
         />
       </div>
-      
+
       {validation.errors.length > 0 && (
         <div className="space-y-1">
           {validation.errors.slice(0, 3).map((error, index) => (
@@ -131,7 +160,9 @@ export function SignUpForm() {
       });
 
       if (!passwordValidation.isValid) {
-        setError(`Password requirements not met: ${passwordValidation.errors[0]}`);
+        setError(
+          `Password requirements not met: ${passwordValidation.errors[0]}`,
+        );
         setIsLoading(false);
         return;
       }
@@ -281,11 +312,11 @@ export function SignUpForm() {
                   )}
                 </button>
               </div>
-              
-              <PasswordStrengthIndicator 
-                password={password} 
-                name={name} 
-                email={email} 
+
+              <PasswordStrengthIndicator
+                password={password}
+                name={name}
+                email={email}
               />
             </div>
 
@@ -319,18 +350,22 @@ export function SignUpForm() {
                   )}
                 </button>
               </div>
-              
+
               {confirmPassword && password !== confirmPassword && (
                 <div className="mt-1 flex items-center space-x-1">
                   <XCircle className="w-3 h-3 text-red-400" />
-                  <span className="text-xs text-red-400">Passwords do not match</span>
+                  <span className="text-xs text-red-400">
+                    Passwords do not match
+                  </span>
                 </div>
               )}
-              
+
               {confirmPassword && password === confirmPassword && (
                 <div className="mt-1 flex items-center space-x-1">
                   <CheckCircle className="w-3 h-3 text-green-400" />
-                  <span className="text-xs text-green-400">Passwords match</span>
+                  <span className="text-xs text-green-400">
+                    Passwords match
+                  </span>
                 </div>
               )}
             </div>
@@ -397,4 +432,3 @@ export function SignUpForm() {
     </div>
   );
 }
-

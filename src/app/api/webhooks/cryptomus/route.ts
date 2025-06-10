@@ -7,7 +7,7 @@ import { DeliveryService } from "@/lib/delivery-service";
 
 async function verifyWebhookSignature(
   body: string,
-  signature: string
+  signature: string,
 ): Promise<boolean> {
   const cryptomusSecret = process.env.CRYPTOMUS_PAYMENT_API_KEY;
   if (!cryptomusSecret) {
@@ -43,7 +43,10 @@ export async function POST(request: NextRequest) {
 
     const apiKey = process.env.CRYPTOMUS_PAYMENT_API_KEY;
     if (!apiKey) {
-      return NextResponse.json({ error: "API key not configured" }, { status: 500 });
+      return NextResponse.json(
+        { error: "API key not configured" },
+        { status: 500 },
+      );
     }
 
     if (!(await verifyWebhookSignature(body, signature))) {
@@ -55,7 +58,10 @@ export async function POST(request: NextRequest) {
     const { order_id, status, uuid } = webhookData;
 
     if (!uuid || !order_id || !status) {
-      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Missing required fields" },
+        { status: 400 },
+      );
     }
 
     // Find payment record
@@ -64,8 +70,8 @@ export async function POST(request: NextRequest) {
       where: {
         OR: [
           { order: { orderNumber: order_id } }, // Primary: order_id is order number
-          { providerPaymentId: uuid },          // Secondary: by provider payment ID
-          { id: order_id },                     // Fallback: order_id is payment ID (legacy)
+          { providerPaymentId: uuid }, // Secondary: by provider payment ID
+          { id: order_id }, // Fallback: order_id is payment ID (legacy)
         ],
       },
       include: {
@@ -369,4 +375,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-

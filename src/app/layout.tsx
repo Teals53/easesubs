@@ -6,7 +6,10 @@ import { SessionContextProvider } from "@/lib/session-context";
 import { CartSidebar } from "@/components/cart/cart-sidebar";
 import { AdvancedSEO } from "@/components/seo/advanced-seo";
 import { ResourceHints } from "@/components/seo/performance-seo";
-import { ECommerceSchema, SubscriptionServiceSchema } from "@/components/seo/local-business-schema";
+import {
+  ECommerceSchema,
+  SubscriptionServiceSchema,
+} from "@/components/seo/local-business-schema";
 import { ServerNonceProvider } from "@/components/seo/nonce-provider";
 import { NonceAwareScripts } from "@/components/seo/nonce-aware-scripts";
 import "./globals.css";
@@ -15,23 +18,23 @@ import { Toaster } from "sonner";
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
-  display: 'swap',
+  display: "swap",
   preload: true,
 });
 
 export const viewport: Viewport = {
-  width: 'device-width',
+  width: "device-width",
   initialScale: 1,
   maximumScale: 2,
   minimumScale: 1,
   userScalable: true,
-  viewportFit: 'cover',
-  colorScheme: 'dark',
+  viewportFit: "cover",
+  colorScheme: "dark",
   themeColor: [
-    { media: '(prefers-color-scheme: dark)', color: '#9333EA' },
-    { media: '(prefers-color-scheme: light)', color: '#9333EA' }
+    { media: "(prefers-color-scheme: dark)", color: "#9333EA" },
+    { media: "(prefers-color-scheme: light)", color: "#9333EA" },
   ],
-}
+};
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://easesubs.com"),
@@ -70,8 +73,8 @@ export const metadata: Metadata = {
   alternates: {
     canonical: "/",
     languages: {
-      'en-US': '/en-US',
-      'en': '/en',
+      "en-US": "/en-US",
+      en: "/en",
     },
   },
   openGraph: {
@@ -134,7 +137,8 @@ export const metadata: Metadata = {
     startupImage: [
       {
         url: "/favicon.svg",
-        media: "(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2)",
+        media:
+          "(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2)",
       },
     ],
   },
@@ -189,14 +193,14 @@ export default function RootLayout({
             <TRPCProvider>
               <SessionProvider>
                 <SessionContextProvider>
-                  <Toaster 
-                    position="top-right" 
+                  <Toaster
+                    position="top-right"
                     toastOptions={{
                       duration: 4000,
                       style: {
-                        background: '#1f2937',
-                        color: '#ffffff',
-                        border: '1px solid #374151',
+                        background: "#1f2937",
+                        color: "#ffffff",
+                        border: "1px solid #374151",
                       },
                     }}
                   />
@@ -213,4 +217,3 @@ export default function RootLayout({
     </html>
   );
 }
-

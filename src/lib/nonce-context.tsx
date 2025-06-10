@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, ReactNode } from 'react';
+import { createContext, useContext, ReactNode } from "react";
 
 interface NonceContextType {
   nonce?: string;
@@ -20,8 +20,6 @@ interface NonceProviderProps {
 
 export function NonceProvider({ nonce, children }: NonceProviderProps) {
   return (
-    <NonceContext.Provider value={{ nonce }}>
-      {children}
-    </NonceContext.Provider>
+    <NonceContext.Provider value={{ nonce }}>{children}</NonceContext.Provider>
   );
-} 
+}

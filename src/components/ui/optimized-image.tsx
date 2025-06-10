@@ -18,7 +18,7 @@ interface OptimizedImageProps {
   placeholder?: "blur" | "empty";
   blurDataURL?: string;
   caption?: string;
-  loading?: 'lazy' | 'eager';
+  loading?: "lazy" | "eager";
   // SEO enhancements
   title?: string;
   seoKeywords?: string[];
@@ -39,7 +39,7 @@ export function OptimizedImage({
   placeholder = "empty",
   blurDataURL,
   caption,
-  loading = 'lazy',
+  loading = "lazy",
   title,
   seoKeywords = [],
 }: OptimizedImageProps) {
@@ -48,9 +48,8 @@ export function OptimizedImage({
   const [isLoading, setIsLoading] = useState(true);
 
   // Enhance alt text with SEO keywords if provided
-  const enhancedAlt = seoKeywords.length > 0 
-    ? `${alt} - ${seoKeywords.join(', ')}`
-    : alt;
+  const enhancedAlt =
+    seoKeywords.length > 0 ? `${alt} - ${seoKeywords.join(", ")}` : alt;
 
   const handleError = () => {
     if (!hasError && fallbackSrc) {
@@ -68,10 +67,10 @@ export function OptimizedImage({
 
   if (hasError && !fallbackSrc) {
     return (
-      <div 
+      <div
         className={cn(
           "flex items-center justify-center bg-gray-700/30 rounded-lg",
-          className
+          className,
         )}
         style={{ width, height }}
         role="img"
@@ -86,7 +85,7 @@ export function OptimizedImage({
   const imageContent = (
     <div className={cn("relative overflow-hidden", className)}>
       {isLoading && (
-        <div 
+        <div
           className="absolute inset-0 bg-gray-700/20 animate-pulse rounded-lg"
           style={{ width, height }}
           aria-hidden="true"
@@ -101,16 +100,22 @@ export function OptimizedImage({
         fill={fill}
         priority={priority}
         quality={quality}
-        sizes={sizes || `(max-width: 768px) 100vw, (max-width: 1200px) 50vw, ${width}px`}
+        sizes={
+          sizes ||
+          `(max-width: 768px) 100vw, (max-width: 1200px) 50vw, ${width}px`
+        }
         placeholder={placeholder}
-        blurDataURL={blurDataURL || "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q=="}
+        blurDataURL={
+          blurDataURL ||
+          "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q=="
+        }
         loading={loading}
         onError={handleError}
         onLoad={handleLoad}
         className={cn(
           "transition-opacity duration-300",
           isLoading ? "opacity-0" : "opacity-100",
-          fill ? "object-contain" : "max-w-full max-h-full object-contain"
+          fill ? "object-contain" : "max-w-full max-h-full object-contain",
         )}
       />
     </div>
@@ -151,10 +156,11 @@ export function ImageSchema({
     url: src,
     name: alt,
     description: caption || alt,
-    ...(width && height && {
-      width: width,
-      height: height,
-    }),
+    ...(width &&
+      height && {
+        width: width,
+        height: height,
+      }),
   };
 
   return (
@@ -163,5 +169,4 @@ export function ImageSchema({
       dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
     />
   );
-} 
-
+}

@@ -110,7 +110,7 @@ async function main() {
     slug: string;
     description: string;
     categoryId: string;
-  
+
     logoUrl?: string;
     borderColor?: string;
     isFeatured: boolean;
@@ -175,8 +175,10 @@ async function main() {
       borderColor: "#1DB954",
       isFeatured: true,
       displayOrder: 2,
-      seoTitle: "Buy Spotify Premium Subscriptions - Individual, Duo & Family Plans | EaseSubs",
-      seoDescription: "Get Spotify Premium subscriptions up to 80% off retail prices. Choose from Individual, Duo, or Family plans with ad-free music, offline downloads, and unlimited skips. Instant delivery.",
+      seoTitle:
+        "Buy Spotify Premium Subscriptions - Individual, Duo & Family Plans | EaseSubs",
+      seoDescription:
+        "Get Spotify Premium subscriptions up to 80% off retail prices. Choose from Individual, Duo, or Family plans with ad-free music, offline downloads, and unlimited skips. Instant delivery.",
       plans: [
         {
           name: "12M Individual Own Account Upgrade",
@@ -343,8 +345,10 @@ async function main() {
       borderColor: "#E50914",
       isFeatured: true,
       displayOrder: 3,
-      seoTitle: "Buy Netflix Subscriptions - Basic, Standard & Premium Plans | EaseSubs",
-      seoDescription: "Get Netflix subscriptions up to 70% off retail prices. Choose from Basic (720p), Standard (1080p), or Premium (4K) plans. Watch unlimited movies and TV shows with instant access.",
+      seoTitle:
+        "Buy Netflix Subscriptions - Basic, Standard & Premium Plans | EaseSubs",
+      seoDescription:
+        "Get Netflix subscriptions up to 70% off retail prices. Choose from Basic (720p), Standard (1080p), or Premium (4K) plans. Watch unlimited movies and TV shows with instant access.",
       plans: [
         {
           name: "Basic 6 Month",
@@ -428,7 +432,8 @@ async function main() {
       isFeatured: false,
       displayOrder: 4,
       seoTitle: "Buy Disney Plus Subscription - 12 Months | EaseSubs",
-      seoDescription: "Get Disney+ 12-month subscription at 45% off retail price. Access Disney, Pixar, Marvel, Star Wars content in 4K Ultra HD. Family-friendly streaming with instant delivery.",
+      seoDescription:
+        "Get Disney+ 12-month subscription at 45% off retail price. Access Disney, Pixar, Marvel, Star Wars content in 4K Ultra HD. Family-friendly streaming with instant delivery.",
       plans: [
         {
           name: "Individual 12 Month",
@@ -450,15 +455,18 @@ async function main() {
     {
       name: "Crunchyroll",
       slug: "crunchyroll",
-      description: "Immerse yourself in the ultimate anime streaming experience with Crunchyroll, the world's largest anime library. Access over 1,000 anime series including simulcasts of the latest episodes from Japan, classic series, and exclusive Crunchyroll Originals. Enjoy ad-free viewing with premium membership, offline downloads for mobile viewing, and access to manga and drama content. From popular series like Attack on Titan and Demon Slayer to hidden gems and classics, Crunchyroll offers something for every anime fan. Watch in HD quality with multiple subtitle and dub language options.",
+      description:
+        "Immerse yourself in the ultimate anime streaming experience with Crunchyroll, the world's largest anime library. Access over 1,000 anime series including simulcasts of the latest episodes from Japan, classic series, and exclusive Crunchyroll Originals. Enjoy ad-free viewing with premium membership, offline downloads for mobile viewing, and access to manga and drama content. From popular series like Attack on Titan and Demon Slayer to hidden gems and classics, Crunchyroll offers something for every anime fan. Watch in HD quality with multiple subtitle and dub language options.",
       categoryId: categoryMap["streaming-media"],
       logoUrl:
         "https://cdn.brandfetch.io/id0XKwSDEq/w/200/h/200/theme/dark/icon.jpeg?c=1dxbfHSJFAPEGdCLU4o5B",
       borderColor: "#FF6500",
       isFeatured: false,
       displayOrder: 5,
-      seoTitle: "Buy Crunchyroll Premium Subscription - Mega Fan Plan | EaseSubs",
-      seoDescription: "Get Crunchyroll Mega Fan subscription at 60% off retail price. Ad-free anime streaming, offline downloads, and access to 1000+ anime series with instant delivery.",
+      seoTitle:
+        "Buy Crunchyroll Premium Subscription - Mega Fan Plan | EaseSubs",
+      seoDescription:
+        "Get Crunchyroll Mega Fan subscription at 60% off retail price. Ad-free anime streaming, offline downloads, and access to 1000+ anime series with instant delivery.",
       plans: [
         {
           name: "Mega Fan 1 Month",
@@ -497,15 +505,18 @@ async function main() {
     {
       name: "Discord",
       slug: "discord",
-      description: "Elevate your Discord experience with Nitro, the premium subscription that transforms how you communicate and game with friends. Enjoy enhanced file upload limits up to 500MB, stream and share your screen in crisp 4K resolution at 60fps, and express yourself with custom emoji anywhere on Discord. Access exclusive Nitro-only features like animated avatars, profile banners, and premium stickers. Boost your favorite servers to unlock community perks including better audio quality, custom server banners, and increased emoji slots. Perfect for gamers, communities, and anyone who wants the ultimate Discord experience.",
+      description:
+        "Elevate your Discord experience with Nitro, the premium subscription that transforms how you communicate and game with friends. Enjoy enhanced file upload limits up to 500MB, stream and share your screen in crisp 4K resolution at 60fps, and express yourself with custom emoji anywhere on Discord. Access exclusive Nitro-only features like animated avatars, profile banners, and premium stickers. Boost your favorite servers to unlock community perks including better audio quality, custom server banners, and increased emoji slots. Perfect for gamers, communities, and anyone who wants the ultimate Discord experience.",
       categoryId: categoryMap["social-communication"],
       logoUrl:
         "https://cdn.brandfetch.io/idM8Hlme1a/w/400/h/400/theme/dark/icon.png?c=1dxbfHSJFAPEGdCLU4o5B",
       borderColor: "#5865F2",
       isFeatured: true,
       displayOrder: 6,
-      seoTitle: "Buy Discord Nitro Subscriptions - Boost & Classic Plans | EaseSubs",
-      seoDescription: "Get Discord Nitro subscriptions up to 60% off retail prices. Enhanced file uploads, 4K streaming, custom emoji, and server boosts. Instant activation.",
+      seoTitle:
+        "Buy Discord Nitro Subscriptions - Boost & Classic Plans | EaseSubs",
+      seoDescription:
+        "Get Discord Nitro subscriptions up to 60% off retail prices. Enhanced file uploads, 4K streaming, custom emoji, and server boosts. Instant activation.",
       plans: [
         {
           name: "Yearly Nitro Boost",
@@ -561,14 +572,16 @@ async function main() {
     {
       name: "Telegram",
       slug: "telegram",
-      description: "Enhance your messaging experience with Telegram Premium, the advanced version of the world's most secure messaging platform. Enjoy increased file sharing limits up to 4GB, faster download speeds, exclusive animated emoji and stickers, and the ability to organize chats with unlimited folders. Access advanced features like transcription for voice messages, translation tools, and premium reactions. Create a personalized experience with unique usernames, custom app icons, and animated profile pictures. Perfect for power users, content creators, and anyone who values privacy and advanced messaging features in their daily communication.",
+      description:
+        "Enhance your messaging experience with Telegram Premium, the advanced version of the world's most secure messaging platform. Enjoy increased file sharing limits up to 4GB, faster download speeds, exclusive animated emoji and stickers, and the ability to organize chats with unlimited folders. Access advanced features like transcription for voice messages, translation tools, and premium reactions. Create a personalized experience with unique usernames, custom app icons, and animated profile pictures. Perfect for power users, content creators, and anyone who values privacy and advanced messaging features in their daily communication.",
       categoryId: categoryMap["social-communication"],
       logoUrl:
         "https://cdn.brandfetch.io/id68S6e-Gp/w/400/h/400/theme/dark/icon.jpeg?c=1dxbfHSJFAPEGdCLU4o5B",
       borderColor: "#0088CC",
       isFeatured: true,
       displayOrder: 7,
-      seoTitle: "Buy Telegram Premium Subscriptions - Gift Plans Available | EaseSubs",
+      seoTitle:
+        "Buy Telegram Premium Subscriptions - Gift Plans Available | EaseSubs",
       seoDescription:
         "Get Telegram Premium subscriptions up to 70% off retail prices. Enhanced messaging, 4GB file sharing, exclusive stickers, and advanced features. Gift options available.",
       plans: [
@@ -806,15 +819,18 @@ async function main() {
     {
       name: "Duolingo",
       slug: "duolingo",
-      description: "Master new languages with Duolingo Plus, the world's most popular language learning platform used by over 500 million learners. Break down language barriers with interactive lessons that make learning fun and effective through gamification, streaks, and achievements. Access ad-free learning experiences, download lessons for offline study during commutes or travel, and never worry about running out of hearts with unlimited mistakes. Get detailed progress tracking, advanced learning features, and personalized lesson plans that adapt to your learning style. Perfect for beginners and advanced learners alike, supporting over 40 languages including Spanish, French, German, Japanese, Korean, and many more.",
+      description:
+        "Master new languages with Duolingo Plus, the world's most popular language learning platform used by over 500 million learners. Break down language barriers with interactive lessons that make learning fun and effective through gamification, streaks, and achievements. Access ad-free learning experiences, download lessons for offline study during commutes or travel, and never worry about running out of hearts with unlimited mistakes. Get detailed progress tracking, advanced learning features, and personalized lesson plans that adapt to your learning style. Perfect for beginners and advanced learners alike, supporting over 40 languages including Spanish, French, German, Japanese, Korean, and many more.",
       categoryId: categoryMap["learning-education"],
       logoUrl:
         "https://cdn.brandfetch.io/id4D-_pnvt/w/400/h/400/theme/dark/icon.png?c=1dxbfHSJFAPEGdCLU4o5B",
       borderColor: "#58CC02",
       isFeatured: true,
       displayOrder: 10,
-      seoTitle: "Buy Duolingo Plus Subscriptions - Individual & Family Plans | EaseSubs",
-      seoDescription: "Get Duolingo Plus subscriptions up to 70% off retail prices. Ad-free language learning, offline lessons, unlimited hearts for 40+ languages. Own account upgrades available.",
+      seoTitle:
+        "Buy Duolingo Plus Subscriptions - Individual & Family Plans | EaseSubs",
+      seoDescription:
+        "Get Duolingo Plus subscriptions up to 70% off retail prices. Ad-free language learning, offline lessons, unlimited hearts for 40+ languages. Own account upgrades available.",
       plans: [
         {
           name: "Plus 12M Individual Own Account Upgrade",
@@ -861,15 +877,18 @@ async function main() {
     {
       name: "Busuu",
       slug: "busuu",
-      description: "Accelerate your language learning journey with Busuu, the AI-powered language learning platform trusted by over 120 million users worldwide. Experience personalized lesson plans tailored to your learning style, receive feedback from native speakers in the global community, and practice with speech recognition technology. Access comprehensive courses for 12 languages including Spanish, French, German, Italian, Portuguese, Russian, Chinese, Japanese, and more. Study at your own pace with offline lessons, earn official McGraw-Hill Education certificates, and track your progress with detailed analytics. Perfect for serious language learners who want to achieve fluency faster.",
+      description:
+        "Accelerate your language learning journey with Busuu, the AI-powered language learning platform trusted by over 120 million users worldwide. Experience personalized lesson plans tailored to your learning style, receive feedback from native speakers in the global community, and practice with speech recognition technology. Access comprehensive courses for 12 languages including Spanish, French, German, Italian, Portuguese, Russian, Chinese, Japanese, and more. Study at your own pace with offline lessons, earn official McGraw-Hill Education certificates, and track your progress with detailed analytics. Perfect for serious language learners who want to achieve fluency faster.",
       categoryId: categoryMap["learning-education"],
       logoUrl:
         "https://cdn.brandfetch.io/id-_d9IzaF/w/400/h/400/theme/dark/icon.png?c=1dxbfHSJFAPEGdCLU4o5B",
       borderColor: "#1FB6E5",
       isFeatured: false,
       displayOrder: 11,
-      seoTitle: "Buy Busuu Premium Subscription - AI Language Learning | EaseSubs",
-      seoDescription: "Get Busuu Premium 12-month subscription at 65% off retail price. AI-powered language learning with native speaker feedback for 12 languages. Own account upgrade.",
+      seoTitle:
+        "Buy Busuu Premium Subscription - AI Language Learning | EaseSubs",
+      seoDescription:
+        "Get Busuu Premium 12-month subscription at 65% off retail price. AI-powered language learning with native speaker feedback for 12 languages. Own account upgrade.",
       plans: [
         {
           name: "12M Individual Own Account Upgrade",
@@ -1198,8 +1217,10 @@ async function main() {
       borderColor: "#00C4CC",
       isFeatured: true,
       displayOrder: 17,
-      seoTitle: "Buy Canva Pro Subscription - 12 Months Premium Design Tools | EaseSubs",
-      seoDescription: "Get Canva Pro 12-month subscription at 65% off retail price. Access 100M+ premium assets, AI tools, brand kit, and collaboration features. Own account upgrade.",
+      seoTitle:
+        "Buy Canva Pro Subscription - 12 Months Premium Design Tools | EaseSubs",
+      seoDescription:
+        "Get Canva Pro 12-month subscription at 65% off retail price. Access 100M+ premium assets, AI tools, brand kit, and collaboration features. Own account upgrade.",
       plans: [
         {
           name: "12M Individual Own Account Upgrade",
@@ -1421,4 +1442,3 @@ main()
   .finally(async () => {
     await prisma.$disconnect();
   });
-

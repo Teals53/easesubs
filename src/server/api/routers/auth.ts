@@ -8,18 +8,26 @@ import {
 import { TRPCError } from "@trpc/server";
 import crypto from "crypto";
 import { emailService } from "@/lib/email";
-import { validatePassword, DEFAULT_PASSWORD_POLICY } from "@/lib/password-validator";
-
-
+import {
+  validatePassword,
+  DEFAULT_PASSWORD_POLICY,
+} from "@/lib/password-validator";
 
 export const authRouter = createTRPCRouter({
   register: publicProcedure
     .input(
       z.object({
-        name: z.string().min(2, "Name must be at least 2 characters")
+        name: z
+          .string()
+          .min(2, "Name must be at least 2 characters")
           .max(50, "Name must be less than 50 characters")
-          .regex(/^[a-zA-Z\s'-]+$/, "Name can only contain letters, spaces, hyphens, and apostrophes"),
-        email: z.string().email("Invalid email address")
+          .regex(
+            /^[a-zA-Z\s'-]+$/,
+            "Name can only contain letters, spaces, hyphens, and apostrophes",
+          ),
+        email: z
+          .string()
+          .email("Invalid email address")
           .max(255, "Email must be less than 255 characters"),
         password: z.string().min(12, "Password must be at least 12 characters"),
       }),
@@ -28,10 +36,14 @@ export const authRouter = createTRPCRouter({
       const { name, email, password } = input;
 
       // Validate password strength
-      const passwordValidation = validatePassword(password, DEFAULT_PASSWORD_POLICY, {
-        name,
-        email,
-      });
+      const passwordValidation = validatePassword(
+        password,
+        DEFAULT_PASSWORD_POLICY,
+        {
+          name,
+          email,
+        },
+      );
 
       if (!passwordValidation.isValid) {
         throw new TRPCError({
@@ -76,14 +88,12 @@ export const authRouter = createTRPCRouter({
           userId: user.id,
         };
       } catch {
-                throw new TRPCError({
+        throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: "Failed to create account",
         });
       }
     }),
-
-
 
   requestPasswordReset: publicProcedure
     .input(
@@ -93,8 +103,6 @@ export const authRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       const { email } = input;
-
-
 
       // Find user
       const user = await ctx.db.user.findUnique({
@@ -133,7 +141,7 @@ export const authRouter = createTRPCRouter({
             "If an account with this email exists, you will receive a password reset link.",
         };
       } catch {
-                throw new TRPCError({
+        throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: "Failed to process password reset request",
         });
@@ -168,10 +176,14 @@ export const authRouter = createTRPCRouter({
       }
 
       // Validate new password strength
-      const passwordValidation = validatePassword(password, DEFAULT_PASSWORD_POLICY, {
-        name: user.name || undefined,
-        email: user.email,
-      });
+      const passwordValidation = validatePassword(
+        password,
+        DEFAULT_PASSWORD_POLICY,
+        {
+          name: user.name || undefined,
+          email: user.email,
+        },
+      );
 
       if (!passwordValidation.isValid) {
         throw new TRPCError({
@@ -181,7 +193,7 @@ export const authRouter = createTRPCRouter({
       }
 
       // Check if new password is same as current password
-      if (user.password && await bcrypt.compare(password, user.password)) {
+      if (user.password && (await bcrypt.compare(password, user.password))) {
         throw new TRPCError({
           code: "BAD_REQUEST",
           message: "New password must be different from your current password",
@@ -202,14 +214,12 @@ export const authRouter = createTRPCRouter({
           },
         });
 
-
-
         return {
           success: true,
           message: "Password has been reset successfully",
         };
       } catch {
-                throw new TRPCError({
+        throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: "Failed to reset password",
         });
@@ -220,7 +230,9 @@ export const authRouter = createTRPCRouter({
     .input(
       z.object({
         currentPassword: z.string().min(1, "Current password is required"),
-        newPassword: z.string().min(12, "New password must be at least 12 characters"),
+        newPassword: z
+          .string()
+          .min(12, "New password must be at least 12 characters"),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -241,7 +253,10 @@ export const authRouter = createTRPCRouter({
       }
 
       // Verify current password
-      const isCurrentPasswordValid = await bcrypt.compare(currentPassword, user.password);
+      const isCurrentPasswordValid = await bcrypt.compare(
+        currentPassword,
+        user.password,
+      );
       if (!isCurrentPasswordValid) {
         throw new TRPCError({
           code: "UNAUTHORIZED",
@@ -250,10 +265,14 @@ export const authRouter = createTRPCRouter({
       }
 
       // Validate new password strength
-      const passwordValidation = validatePassword(newPassword, DEFAULT_PASSWORD_POLICY, {
-        name: user.name || undefined,
-        email: user.email,
-      });
+      const passwordValidation = validatePassword(
+        newPassword,
+        DEFAULT_PASSWORD_POLICY,
+        {
+          name: user.name || undefined,
+          email: user.email,
+        },
+      );
 
       if (!passwordValidation.isValid) {
         throw new TRPCError({
@@ -285,7 +304,7 @@ export const authRouter = createTRPCRouter({
           message: "Password changed successfully",
         };
       } catch {
-                throw new TRPCError({
+        throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: "Failed to change password",
         });
@@ -309,7 +328,8 @@ export const authRouter = createTRPCRouter({
       if (input.name && !/^[a-zA-Z\s'-]+$/.test(input.name)) {
         throw new TRPCError({
           code: "BAD_REQUEST",
-          message: "Name can only contain letters, spaces, hyphens, and apostrophes",
+          message:
+            "Name can only contain letters, spaces, hyphens, and apostrophes",
         });
       }
 
@@ -323,8 +343,6 @@ export const authRouter = createTRPCRouter({
 
       return { success: true };
     }),
-
-
 
   deleteAccount: protectedProcedure
     .input(
@@ -392,5 +410,3 @@ export const authRouter = createTRPCRouter({
       };
     }),
 });
-
-

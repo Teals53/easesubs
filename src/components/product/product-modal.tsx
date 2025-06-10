@@ -15,7 +15,7 @@ interface ProductModalProps {
   product?: Partial<Product> | null;
 }
 
-interface PlanData extends Omit<ProductPlan, 'billingPeriod' | 'features'> {
+interface PlanData extends Omit<ProductPlan, "billingPeriod" | "features"> {
   billingPeriod: BillingPeriod;
   features: string[];
 }
@@ -921,4 +921,3 @@ export function ProductModal({
     </AnimatePresence>
   );
 }
-

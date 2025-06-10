@@ -284,4 +284,3 @@ export function useCart() {
     isClearing: clearMutation.isPending,
   };
 }
-

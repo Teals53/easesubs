@@ -1,7 +1,18 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Menu, X, User, ShoppingCart, Home, Package, LifeBuoy, Settings, BarChart3, LogOut } from "lucide-react";
+import {
+  Menu,
+  X,
+  User,
+  ShoppingCart,
+  Home,
+  Package,
+  LifeBuoy,
+  Settings,
+  BarChart3,
+  LogOut,
+} from "lucide-react";
 import Link from "next/link";
 import { signOut } from "next-auth/react";
 import { useSessionContext } from "@/lib/session-context";
@@ -116,7 +127,11 @@ export function Header() {
           </motion.div>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center space-x-8" role="navigation" aria-label="Main navigation">
+          <nav
+            className="hidden md:flex items-center space-x-8"
+            role="navigation"
+            aria-label="Main navigation"
+          >
             {/* Cart Button */}
             <motion.button
               {...iconHover}
@@ -178,7 +193,10 @@ export function Header() {
                           onClick={() => setIsUserMenuOpen(false)}
                           role="menuitem"
                         >
-                          <Package className="w-4 h-4 mr-2" aria-hidden="true" />
+                          <Package
+                            className="w-4 h-4 mr-2"
+                            aria-hidden="true"
+                          />
                           Orders
                         </Link>
                         <Link
@@ -187,7 +205,10 @@ export function Header() {
                           onClick={() => setIsUserMenuOpen(false)}
                           role="menuitem"
                         >
-                          <Settings className="w-4 h-4 mr-2" aria-hidden="true" />
+                          <Settings
+                            className="w-4 h-4 mr-2"
+                            aria-hidden="true"
+                          />
                           Settings
                         </Link>
                         <Link
@@ -196,7 +217,10 @@ export function Header() {
                           onClick={() => setIsUserMenuOpen(false)}
                           role="menuitem"
                         >
-                          <LifeBuoy className="w-4 h-4 mr-2" aria-hidden="true" />
+                          <LifeBuoy
+                            className="w-4 h-4 mr-2"
+                            aria-hidden="true"
+                          />
                           Support
                         </Link>
                         {session?.user?.role === "ADMIN" && (
@@ -206,7 +230,10 @@ export function Header() {
                             onClick={() => setIsUserMenuOpen(false)}
                             role="menuitem"
                           >
-                            <BarChart3 className="w-4 h-4 mr-2" aria-hidden="true" />
+                            <BarChart3
+                              className="w-4 h-4 mr-2"
+                              aria-hidden="true"
+                            />
                             Admin
                           </Link>
                         )}
@@ -418,4 +445,3 @@ export function Header() {
     </motion.header>
   );
 }
-

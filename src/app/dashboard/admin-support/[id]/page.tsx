@@ -78,12 +78,12 @@ export default function AdminTicketDetailPage() {
       invalidatePatterns.tickets(utils);
       refetch();
     },
-          onError: () => {
-        if (process.env.NODE_ENV === 'development') {
-          // console.error("Failed to add message:", error);
-        }
-        toast.error("Failed to add message. Please try again.");
-      },
+    onError: () => {
+      if (process.env.NODE_ENV === "development") {
+        // console.error("Failed to add message:", error);
+      }
+      toast.error("Failed to add message. Please try again.");
+    },
   });
 
   const updateStatusMutation = trpc.admin.updateTicketStatus.useMutation({
@@ -94,12 +94,12 @@ export default function AdminTicketDetailPage() {
       invalidatePatterns.dashboard(utils);
       refetch();
     },
-          onError: () => {
-        if (process.env.NODE_ENV === 'development') {
-          // console.error("Failed to update status:", error);
-        }
-        toast.error("Failed to update ticket status. Please try again.");
-      },
+    onError: () => {
+      if (process.env.NODE_ENV === "development") {
+        // console.error("Failed to update status:", error);
+      }
+      toast.error("Failed to update ticket status. Please try again.");
+    },
   });
 
   const deleteTicketMutation = trpc.admin.deleteTicket.useMutation({
@@ -109,12 +109,12 @@ export default function AdminTicketDetailPage() {
       invalidatePatterns.dashboard(utils);
       router.push("/dashboard/admin-support");
     },
-          onError: () => {
-        if (process.env.NODE_ENV === 'development') {
-          // console.error("Failed to delete ticket:", error);
-        }
-        toast.error("Failed to delete ticket. Please try again.");
-      },
+    onError: () => {
+      if (process.env.NODE_ENV === "development") {
+        // console.error("Failed to delete ticket:", error);
+      }
+      toast.error("Failed to delete ticket. Please try again.");
+    },
   });
 
   if (status === "loading") {

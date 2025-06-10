@@ -128,7 +128,9 @@ export default function ReviewableItems() {
                     {item.plan.product.name}
                   </h4>
                   <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-4 text-sm text-gray-400">
-                    <span className="truncate">Order #{item.order.orderNumber}</span>
+                    <span className="truncate">
+                      Order #{item.order.orderNumber}
+                    </span>
                     <div className="flex items-center space-x-1">
                       <Calendar className="h-3 w-3" />
                       <span>{formatDate(item.order.completedAt)}</span>
@@ -182,4 +184,3 @@ export default function ReviewableItems() {
     </div>
   );
 }
-

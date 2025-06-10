@@ -58,7 +58,7 @@ export default function TicketDetailPage() {
       refetch();
     },
     onError: () => {
-      if (process.env.NODE_ENV === 'development') {
+      if (process.env.NODE_ENV === "development") {
         // console.error("Failed to send message:", error);
       }
       toast.error("Failed to send message. Please try again.");
@@ -88,7 +88,7 @@ export default function TicketDetailPage() {
         message: newMessage.trim(),
       });
     } catch {
-      if (process.env.NODE_ENV === 'development') {
+      if (process.env.NODE_ENV === "development") {
         // console.error("Failed to send message:", error);
       }
       toast.error("Failed to send message. Please try again.");

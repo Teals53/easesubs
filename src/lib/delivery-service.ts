@@ -252,4 +252,3 @@ Please process the delivery for this customer.`;
     }
   }
 }
-

@@ -36,4 +36,3 @@ export default function ProductRating({ productId }: ProductRatingProps) {
     </div>
   );
 }
-

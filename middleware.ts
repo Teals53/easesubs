@@ -7,34 +7,29 @@ import { generateNonce, getCurrentCSP } from "@/lib/csp-utils";
 const middlewareSecurity = new MiddlewareSecurity();
 
 // Define protected routes (require authentication)
-const protectedRoutes = [
-  "/dashboard",
-  "/checkout"
-];
+const protectedRoutes = ["/dashboard", "/checkout"];
 
 // Define auth routes (should redirect authenticated users)
 const authRoutes = [
   "/auth/signin",
-  "/auth/signup", 
+  "/auth/signup",
   "/auth/forgot-password",
-  "/auth/reset-password"
+  "/auth/reset-password",
 ];
 
 // Define admin routes (require admin/manager role)
 const adminRoutes = [
   "/dashboard/admin-dashboard",
-  "/dashboard/admin-orders", 
+  "/dashboard/admin-orders",
   "/dashboard/admin-products",
   "/dashboard/admin-security",
   "/dashboard/admin-stock",
   "/dashboard/admin-support",
-  "/dashboard/admin-users"
+  "/dashboard/admin-users",
 ];
 
 // Support routes that support agents can access
-const supportRoutes = [
-  "/dashboard/admin-support"
-];
+const supportRoutes = ["/dashboard/admin-support"];
 
 // Admin roles that can access admin pages
 const adminRoles = ["ADMIN", "MANAGER"];
@@ -49,13 +44,13 @@ export default async function middleware(request: NextRequest) {
   // Run security analysis first
   try {
     const analysis = await middlewareSecurity.analyzeRequest(request);
-    
+
     // Block malicious requests
     if (analysis.isBlocked || analysis.riskScore > 95) {
       return middlewareSecurity.handleBlockedRequest(analysis);
     }
   } catch {
-    if (process.env.NODE_ENV === 'development') {
+    if (process.env.NODE_ENV === "development") {
       // console.error("Security middleware error:", error);
     }
     return NextResponse.next();
@@ -65,20 +60,16 @@ export default async function middleware(request: NextRequest) {
   const session = await auth();
 
   // Check route types
-  const isProtectedRoute = protectedRoutes.some(route => 
-    pathname.startsWith(route)
+  const isProtectedRoute = protectedRoutes.some((route) =>
+    pathname.startsWith(route),
   );
 
-  const isAuthRoute = authRoutes.some(route => 
-    pathname.startsWith(route)
-  );
+  const isAuthRoute = authRoutes.some((route) => pathname.startsWith(route));
 
-  const isAdminRoute = adminRoutes.some(route => 
-    pathname.startsWith(route)
-  );
+  const isAdminRoute = adminRoutes.some((route) => pathname.startsWith(route));
 
-  const isSupportRoute = supportRoutes.some(route => 
-    pathname.startsWith(route)
+  const isSupportRoute = supportRoutes.some((route) =>
+    pathname.startsWith(route),
   );
 
   // RULE 1: Non-authenticated users must not access protected routes (dashboard, checkout)
@@ -96,7 +87,7 @@ export default async function middleware(request: NextRequest) {
   // RULE 3: Non-admin users must not access admin pages
   if (isAdminRoute && session?.user) {
     const userRole = session.user.role as string;
-    
+
     // Support routes can be accessed by support agents, admins, and managers
     if (isSupportRoute && !supportRoles.includes(userRole)) {
       return NextResponse.redirect(new URL("/dashboard", request.url));
@@ -116,13 +107,13 @@ export default async function middleware(request: NextRequest) {
 
   // Create response and add security headers
   const response = NextResponse.next();
-  
+
   // Add nonce header for components to use
-  response.headers.set('x-csp-nonce', nonce);
-  
+  response.headers.set("x-csp-nonce", nonce);
+
   // Set CSP header with nonce for all environments
-  const cspHeader = getCurrentCSP(nonce).join('; ');
-  response.headers.set('Content-Security-Policy', cspHeader);
+  const cspHeader = getCurrentCSP(nonce).join("; ");
+  response.headers.set("Content-Security-Policy", cspHeader);
 
   return response;
 }
@@ -137,6 +128,6 @@ export const config = {
      * - favicon.svg (favicon file)
      * - public files (images, etc.)
      */
-    "/((?!api|_next/static|_next/image|favicon.svg|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)"
-  ]
-}; 
+    "/((?!api|_next/static|_next/image|favicon.svg|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+  ],
+};

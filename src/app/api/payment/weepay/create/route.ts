@@ -17,11 +17,11 @@ export async function POST(request: NextRequest) {
   try {
     // Get the session to verify authentication
     const session = await auth();
-    
+
     if (!session) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
     if (!body.orderId || !body.amount) {
       return NextResponse.json(
         { success: false, error: "Missing required payment information" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -40,13 +40,13 @@ export async function POST(request: NextRequest) {
     if (body.amount <= 0) {
       return NextResponse.json(
         { success: false, error: "Invalid amount" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     // Verify the order exists and belongs to the user
     const { db } = await import("@/lib/db");
-    
+
     const order = await db.order.findFirst({
       where: {
         id: body.orderId,
@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
     if (!order) {
       return NextResponse.json(
         { success: false, error: "Order not found or not pending" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -88,8 +88,11 @@ export async function POST(request: NextRequest) {
       orderId: payment.id, // Use payment ID for tracking
       amount: body.amount,
       currency: body.currency || "TL",
-      returnUrl: body.returnUrl || `${process.env.NEXTAUTH_URL}/dashboard/orders/${order.id}`,
-      notifyUrl: body.notifyUrl || `${process.env.NEXTAUTH_URL}/api/webhooks/weepay`,
+      returnUrl:
+        body.returnUrl ||
+        `${process.env.NEXTAUTH_URL}/dashboard/orders/${order.id}`,
+      notifyUrl:
+        body.notifyUrl || `${process.env.NEXTAUTH_URL}/api/webhooks/weepay`,
       customerName: body.customerName || order.user.name || "Customer",
       customerEmail: body.customerEmail || order.user.email || "",
       description: body.description || `Payment for order ${order.orderNumber}`,
@@ -130,14 +133,13 @@ export async function POST(request: NextRequest) {
           success: false,
           error: result.error,
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
   } catch {
-        return NextResponse.json(
+    return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
-} 
-
+}

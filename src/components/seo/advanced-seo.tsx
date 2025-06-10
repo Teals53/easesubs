@@ -1,78 +1,80 @@
-import Script from 'next/script';
-import { Metadata } from 'next';
+import Script from "next/script";
+import { Metadata } from "next";
 
 // Enhanced Organization Schema
 export const organizationSchema = {
   "@context": "https://schema.org",
   "@type": "Organization",
-  "name": "EaseSubs",
-  "alternateName": ["Ease Subs", "EaseSubscriptions"],
-  "url": "https://easesubs.com",
-  "logo": {
+  name: "EaseSubs",
+  alternateName: ["Ease Subs", "EaseSubscriptions"],
+  url: "https://easesubs.com",
+  logo: {
     "@type": "ImageObject",
-    "url": "https://easesubs.com/logo.png",
-    "width": 512,
-    "height": 512
+    url: "https://easesubs.com/logo.png",
+    width: 512,
+    height: 512,
   },
-      "image": "https://via.placeholder.com/1200x630/8B5CF6/FFFFFF?text=EaseSubs",
-  "description": "Get your favorite subscriptions at a fraction of the cost through our legal regional pricing system. Save up to 80% on premium services.",
-  "sameAs": [
+  image: "https://via.placeholder.com/1200x630/8B5CF6/FFFFFF?text=EaseSubs",
+  description:
+    "Get your favorite subscriptions at a fraction of the cost through our legal regional pricing system. Save up to 80% on premium services.",
+  sameAs: [
     "https://twitter.com/easesubs",
     "https://facebook.com/easesubs",
-    "https://linkedin.com/company/easesubs"
+    "https://linkedin.com/company/easesubs",
   ],
-  "contactPoint": {
+  contactPoint: {
     "@type": "ContactPoint",
-    "contactType": "customer service",
-    "email": "support@easesubs.com",
-    "availableLanguage": ["English"],
-    "areaServed": "Worldwide"
+    contactType: "customer service",
+    email: "support@easesubs.com",
+    availableLanguage: ["English"],
+    areaServed: "Worldwide",
   },
-  "address": {
+  address: {
     "@type": "PostalAddress",
-    "addressCountry": "US",
-    "addressRegion": "Worldwide"
+    addressCountry: "US",
+    addressRegion: "Worldwide",
   },
-  "founder": {
+  founder: {
     "@type": "Person",
-    "name": "EaseSubs Team"
+    name: "EaseSubs Team",
   },
-  "foundingDate": "2024",
-  "numberOfEmployees": "10-50",
-  "slogan": "Same Subscriptions, Easier Prices",
-  "knowsAbout": [
+  foundingDate: "2024",
+  numberOfEmployees: "10-50",
+  slogan: "Same Subscriptions, Easier Prices",
+  knowsAbout: [
     "Subscription Services",
     "Digital Products",
     "Regional Pricing",
     "E-commerce",
-    "Software Licensing"
-  ]
+    "Software Licensing",
+  ],
 };
 
 // Website Schema
 export const websiteSchema = {
   "@context": "https://schema.org",
   "@type": "WebSite",
-  "name": "EaseSubs",
-  "url": "https://easesubs.com",
-  "description": "Premium subscription services at discounted prices through legal regional pricing",
-  "publisher": {
+  name: "EaseSubs",
+  url: "https://easesubs.com",
+  description:
+    "Premium subscription services at discounted prices through legal regional pricing",
+  publisher: {
     "@type": "Organization",
-    "name": "EaseSubs"
+    name: "EaseSubs",
   },
-  "potentialAction": {
+  potentialAction: {
     "@type": "SearchAction",
-    "target": {
+    target: {
       "@type": "EntryPoint",
-      "urlTemplate": "https://easesubs.com/search?q={search_term_string}"
+      urlTemplate: "https://easesubs.com/search?q={search_term_string}",
     },
-    "query-input": "required name=search_term_string"
+    "query-input": "required name=search_term_string",
   },
-  "mainEntity": {
+  mainEntity: {
     "@type": "ItemList",
-    "name": "Subscription Services",
-    "description": "Premium subscription services at discount prices"
-  }
+    name: "Subscription Services",
+    description: "Premium subscription services at discount prices",
+  },
 };
 
 // Product Schema Generator
@@ -90,69 +92,75 @@ export function generateProductSchema(product: {
   return {
     "@context": "https://schema.org",
     "@type": "Product",
-    "name": product.name,
-    "description": product.description,
-    "image": [product.image],
-    "brand": {
+    name: product.name,
+    description: product.description,
+    image: [product.image],
+    brand: {
       "@type": "Brand",
-      "name": product.name.split(' ')[0]
+      name: product.name.split(" ")[0],
     },
-    "category": product.category,
-    "url": `https://easesubs.com/product/${product.slug}`,
-    "offers": {
+    category: product.category,
+    url: `https://easesubs.com/product/${product.slug}`,
+    offers: {
       "@type": "Offer",
-      "price": product.price,
-      "priceCurrency": product.currency,
-      "availability": `https://schema.org/${product.availability}`,
-      "seller": {
+      price: product.price,
+      priceCurrency: product.currency,
+      availability: `https://schema.org/${product.availability}`,
+      seller: {
         "@type": "Organization",
-        "name": "EaseSubs"
+        name: "EaseSubs",
       },
-      "priceValidUntil": new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 30 days
-      "hasMerchantReturnPolicy": {
+      priceValidUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+        .toISOString()
+        .split("T")[0], // 30 days
+      hasMerchantReturnPolicy: {
         "@type": "MerchantReturnPolicy",
-        "returnPolicyCategory": "https://schema.org/MerchantReturnFiniteReturnWindow",
-        "merchantReturnDays": 7
-      }
+        returnPolicyCategory:
+          "https://schema.org/MerchantReturnFiniteReturnWindow",
+        merchantReturnDays: 7,
+      },
     },
-    "aggregateRating": {
+    aggregateRating: {
       "@type": "AggregateRating",
-      "ratingValue": "4.8",
-      "reviewCount": "150",
-      "bestRating": "5",
-      "worstRating": "1"
+      ratingValue: "4.8",
+      reviewCount: "150",
+      bestRating: "5",
+      worstRating: "1",
     },
-    "review": [
+    review: [
       {
         "@type": "Review",
-        "reviewRating": {
+        reviewRating: {
           "@type": "Rating",
-          "ratingValue": "5",
-          "bestRating": "5"
+          ratingValue: "5",
+          bestRating: "5",
         },
-        "author": {
+        author: {
           "@type": "Person",
-          "name": "Verified Customer"
+          name: "Verified Customer",
         },
-        "reviewBody": "Great service, significant savings on premium subscriptions!"
-      }
-    ]
+        reviewBody:
+          "Great service, significant savings on premium subscriptions!",
+      },
+    ],
   };
 }
 
 // FAQ Schema Generator
-export function generateFAQSchema(faqs: Array<{ question: string; answer: string }>) {
+export function generateFAQSchema(
+  faqs: Array<{ question: string; answer: string }>,
+) {
   return {
     "@context": "https://schema.org",
     "@type": "FAQPage",
-    "mainEntity": faqs.map(faq => ({
+    mainEntity: faqs.map((faq) => ({
       "@type": "Question",
-      "name": faq.question,
-      "acceptedAnswer": {
+      name: faq.question,
+      acceptedAnswer: {
         "@type": "Answer",
-        "text": faq.answer
-      }
-    }))
+        text: faq.answer,
+      },
+    })),
   };
 }
 
@@ -169,27 +177,27 @@ export function generateArticleSchema(article: {
   return {
     "@context": "https://schema.org",
     "@type": "Article",
-    "headline": article.title,
-    "description": article.description,
-    "image": [article.image],
-    "author": {
+    headline: article.title,
+    description: article.description,
+    image: [article.image],
+    author: {
       "@type": "Person",
-      "name": article.author
+      name: article.author,
     },
-    "publisher": {
+    publisher: {
       "@type": "Organization",
-      "name": "EaseSubs",
-      "logo": {
+      name: "EaseSubs",
+      logo: {
         "@type": "ImageObject",
-        "url": "https://easesubs.com/logo.png"
-      }
+        url: "https://easesubs.com/logo.png",
+      },
     },
-    "datePublished": article.publishDate,
-    "dateModified": article.modifiedDate || article.publishDate,
-    "mainEntityOfPage": {
+    datePublished: article.publishDate,
+    dateModified: article.modifiedDate || article.publishDate,
+    mainEntityOfPage: {
       "@type": "WebPage",
-      "@id": article.url
-    }
+      "@id": article.url,
+    },
   };
 }
 
@@ -197,40 +205,40 @@ export function generateArticleSchema(article: {
 export const serviceSchema = {
   "@context": "https://schema.org",
   "@type": "Service",
-  "name": "Discount Subscription Services",
-  "description": "Legal regional pricing for premium subscription services",
-  "provider": {
+  name: "Discount Subscription Services",
+  description: "Legal regional pricing for premium subscription services",
+  provider: {
     "@type": "Organization",
-    "name": "EaseSubs"
+    name: "EaseSubs",
   },
-  "serviceType": "E-commerce Platform",
-  "areaServed": "Worldwide",
-  "hasOfferCatalog": {
+  serviceType: "E-commerce Platform",
+  areaServed: "Worldwide",
+  hasOfferCatalog: {
     "@type": "OfferCatalog",
-    "name": "Subscription Services",
-    "itemListElement": [
+    name: "Subscription Services",
+    itemListElement: [
       {
         "@type": "OfferCatalog",
-        "name": "Streaming Services",
-        "itemListElement": [
+        name: "Streaming Services",
+        itemListElement: [
           {
             "@type": "Offer",
-            "itemOffered": {
+            itemOffered: {
               "@type": "Service",
-              "name": "Netflix Premium Subscription"
-            }
+              name: "Netflix Premium Subscription",
+            },
           },
           {
             "@type": "Offer",
-            "itemOffered": {
+            itemOffered: {
               "@type": "Service",
-              "name": "Disney Plus Subscription"
-            }
-          }
-        ]
-      }
-    ]
-  }
+              name: "Disney Plus Subscription",
+            },
+          },
+        ],
+      },
+    ],
+  },
 };
 
 // Enhanced Metadata Generator
@@ -239,11 +247,11 @@ export function generateEnhancedMetadata({
   description,
   canonical,
   keywords = [],
-      ogImage = 'https://via.placeholder.com/1200x630/8B5CF6/FFFFFF?text=EaseSubs',
-  type = 'website',
+  ogImage = "https://via.placeholder.com/1200x630/8B5CF6/FFFFFF?text=EaseSubs",
+  type = "website",
   publishedTime,
   modifiedTime,
-  author = 'EaseSubs Team',
+  author = "EaseSubs Team",
   section,
   tags = [],
 }: {
@@ -259,25 +267,35 @@ export function generateEnhancedMetadata({
   section?: string;
   tags?: string[];
 }): Metadata {
-  const fullCanonical = canonical.startsWith('http') ? canonical : `https://easesubs.com${canonical}`;
-  const fullOgImage = ogImage.startsWith('http') ? ogImage : `https://easesubs.com${ogImage}`;
+  const fullCanonical = canonical.startsWith("http")
+    ? canonical
+    : `https://easesubs.com${canonical}`;
+  const fullOgImage = ogImage.startsWith("http")
+    ? ogImage
+    : `https://easesubs.com${ogImage}`;
 
   return {
     title,
     description,
-    keywords: [...keywords, 'discount subscriptions', 'cheap subscriptions', 'subscription deals', 'regional pricing'].slice(0, 20),
+    keywords: [
+      ...keywords,
+      "discount subscriptions",
+      "cheap subscriptions",
+      "subscription deals",
+      "regional pricing",
+    ].slice(0, 20),
     authors: [{ name: author }],
     creator: author,
-    publisher: 'EaseSubs',
+    publisher: "EaseSubs",
     alternates: {
       canonical: fullCanonical,
     },
     openGraph: {
-      type: type as 'website' | 'article',
+      type: type as "website" | "article",
       title,
       description,
       url: fullCanonical,
-      siteName: 'EaseSubs',
+      siteName: "EaseSubs",
       images: [
         {
           url: fullOgImage,
@@ -286,7 +304,7 @@ export function generateEnhancedMetadata({
           alt: title,
         },
       ],
-      locale: 'en_US',
+      locale: "en_US",
       ...(publishedTime && { publishedTime }),
       ...(modifiedTime && { modifiedTime }),
       ...(author && { authors: [author] }),
@@ -294,12 +312,12 @@ export function generateEnhancedMetadata({
       ...(tags.length > 0 && { tags }),
     },
     twitter: {
-      card: 'summary_large_image',
+      card: "summary_large_image",
       title,
       description,
       images: [fullOgImage],
-      creator: '@easesubs',
-      site: '@easesubs',
+      creator: "@easesubs",
+      site: "@easesubs",
     },
     robots: {
       index: true,
@@ -309,9 +327,9 @@ export function generateEnhancedMetadata({
         index: true,
         follow: true,
         noimageindex: false,
-        'max-video-preview': -1,
-        'max-image-preview': 'large',
-        'max-snippet': -1,
+        "max-video-preview": -1,
+        "max-image-preview": "large",
+        "max-snippet": -1,
       },
     },
   };
@@ -328,7 +346,7 @@ export function AdvancedSEO({ schemas = [], children }: AdvancedSEOProps) {
     organizationSchema,
     websiteSchema,
     serviceSchema,
-    ...schemas
+    ...schemas,
   ];
 
   return (
@@ -340,11 +358,11 @@ export function AdvancedSEO({ schemas = [], children }: AdvancedSEOProps) {
         dangerouslySetInnerHTML={{
           __html: JSON.stringify({
             "@context": "https://schema.org",
-            "@graph": combinedSchemas
-          })
+            "@graph": combinedSchemas,
+          }),
         }}
       />
       {children}
     </>
   );
-} 
+}

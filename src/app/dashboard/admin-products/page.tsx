@@ -45,7 +45,9 @@ export default function AdminProductsPage() {
 
   const utils = trpc.useUtils();
 
-  const [editingProduct, setEditingProduct] = useState<Partial<Product> | null>(null);
+  const [editingProduct, setEditingProduct] = useState<Partial<Product> | null>(
+    null,
+  );
 
   // Properly typed user with role
   const user = session?.user as ExtendedUser | undefined;
@@ -164,7 +166,7 @@ export default function AdminProductsPage() {
       name: string;
     };
     logoUrl?: string | null;
-    
+
     borderColor?: string | null;
     isActive: boolean;
     isFeatured: boolean;
@@ -816,4 +818,3 @@ function CategoriesTab({
     </>
   );
 }
-

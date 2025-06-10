@@ -11,4 +11,4 @@ export function NonceAwareScripts() {
       <PerformanceSEO nonce={nonce} />
     </>
   );
-} 
+}

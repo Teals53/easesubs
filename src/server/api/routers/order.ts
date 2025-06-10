@@ -33,7 +33,6 @@ export const orderRouter = createTRPCRouter({
         });
       }
 
-      
       try {
         // Get plan details and validate
         const planIds = input.items.map((item) => item.planId);
@@ -748,5 +747,3 @@ export const orderRouter = createTRPCRouter({
       };
     }),
 });
-
-

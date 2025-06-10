@@ -1,50 +1,60 @@
-import { Metadata } from 'next';
+import { Metadata } from "next";
 
 // SEO Configuration Constants
 export const SEO_CONFIG = {
-  defaultTitle: 'EaseSubs - Same Subscriptions, Easier Prices | Save up to 80%',
-  defaultDescription: 'Get your favorite subscriptions at a fraction of the cost through our legal regional pricing system. Save up to 80% on premium services like Netflix, Spotify, Adobe Creative Cloud, and more.',
-  siteUrl: 'https://easesubs.com',
-  siteName: 'EaseSubs',
-  twitterHandle: '@easesubs',
-  defaultImage: 'https://via.placeholder.com/1200x630/8B5CF6/FFFFFF?text=EaseSubs',
+  defaultTitle: "EaseSubs - Same Subscriptions, Easier Prices | Save up to 80%",
+  defaultDescription:
+    "Get your favorite subscriptions at a fraction of the cost through our legal regional pricing system. Save up to 80% on premium services like Netflix, Spotify, Adobe Creative Cloud, and more.",
+  siteUrl: "https://easesubs.com",
+  siteName: "EaseSubs",
+  twitterHandle: "@easesubs",
+  defaultImage:
+    "https://via.placeholder.com/1200x630/8B5CF6/FFFFFF?text=EaseSubs",
   defaultKeywords: [
-    'cheap subscriptions',
-    'discount subscriptions',
-    'netflix discount',
-    'spotify premium cheap',
-    'adobe creative cloud discount',
-    'subscription deals',
-    'regional pricing',
-    'streaming services discount'
-  ]
+    "cheap subscriptions",
+    "discount subscriptions",
+    "netflix discount",
+    "spotify premium cheap",
+    "adobe creative cloud discount",
+    "subscription deals",
+    "regional pricing",
+    "streaming services discount",
+  ],
 };
 
 // Generate optimized title tags
-export function generateTitle(pageTitle?: string, includeDefault = true): string {
+export function generateTitle(
+  pageTitle?: string,
+  includeDefault = true,
+): string {
   if (!pageTitle) return SEO_CONFIG.defaultTitle;
-  
+
   if (includeDefault) {
     return `${pageTitle} | EaseSubs`;
   }
-  
+
   return pageTitle;
 }
 
 // Generate meta description with optimal length
-export function generateDescription(description: string, maxLength = 160): string {
+export function generateDescription(
+  description: string,
+  maxLength = 160,
+): string {
   if (description.length <= maxLength) return description;
-  
+
   // Truncate at word boundary
   const truncated = description.substring(0, maxLength);
-  const lastSpaceIndex = truncated.lastIndexOf(' ');
-  
-  return lastSpaceIndex > 0 ? truncated.substring(0, lastSpaceIndex) + '...' : truncated + '...';
+  const lastSpaceIndex = truncated.lastIndexOf(" ");
+
+  return lastSpaceIndex > 0
+    ? truncated.substring(0, lastSpaceIndex) + "..."
+    : truncated + "...";
 }
 
 // Generate canonical URL
 export function generateCanonicalUrl(path: string): string {
-  const cleanPath = path.startsWith('/') ? path : `/${path}`;
+  const cleanPath = path.startsWith("/") ? path : `/${path}`;
   return `${SEO_CONFIG.siteUrl}${cleanPath}`;
 }
 
@@ -63,13 +73,16 @@ export function preloadCriticalResources() {
 }
 
 // Generate hreflang tags for internationalization
-export function generateHreflangTags(currentPath: string, locales: string[] = ['en']) {
-  return locales.map(locale => (
+export function generateHreflangTags(
+  currentPath: string,
+  locales: string[] = ["en"],
+) {
+  return locales.map((locale) => (
     <link
       key={locale}
       rel="alternate"
       hrefLang={locale}
-      href={`${SEO_CONFIG.siteUrl}${locale === 'en' ? '' : `/${locale}`}${currentPath}`}
+      href={`${SEO_CONFIG.siteUrl}${locale === "en" ? "" : `/${locale}`}${currentPath}`}
     />
   ));
 }
@@ -82,7 +95,7 @@ interface GenerateMetadataProps {
   keywords?: string[];
   image?: string;
   imageAlt?: string;
-  type?: 'website' | 'article';
+  type?: "website" | "article";
   publishedTime?: string;
   modifiedTime?: string;
   author?: string;
@@ -93,31 +106,35 @@ interface GenerateMetadataProps {
 export function generateMetadata({
   title,
   description,
-  path = '',
+  path = "",
   keywords = [],
   image,
   imageAlt,
-  type = 'website',
+  type = "website",
   publishedTime,
   modifiedTime,
-  author = 'EaseSubs Team',
+  author = "EaseSubs Team",
   noIndex = false,
-  noFollow = false
+  noFollow = false,
 }: GenerateMetadataProps): Metadata {
   const fullTitle = generateTitle(title);
-  const fullDescription = generateDescription(description || SEO_CONFIG.defaultDescription);
+  const fullDescription = generateDescription(
+    description || SEO_CONFIG.defaultDescription,
+  );
   const canonicalUrl = generateCanonicalUrl(path);
-  const fullImage = image?.startsWith('http') ? image : `${SEO_CONFIG.siteUrl}${image || SEO_CONFIG.defaultImage}`;
+  const fullImage = image?.startsWith("http")
+    ? image
+    : `${SEO_CONFIG.siteUrl}${image || SEO_CONFIG.defaultImage}`;
   const allKeywords = [...SEO_CONFIG.defaultKeywords, ...keywords];
-  
+
   // Generate robots directive
   const robotsDirectives = [];
-  if (noIndex) robotsDirectives.push('noindex');
-  else robotsDirectives.push('index');
-  
-  if (noFollow) robotsDirectives.push('nofollow');
-  else robotsDirectives.push('follow');
-  
+  if (noIndex) robotsDirectives.push("noindex");
+  else robotsDirectives.push("index");
+
+  if (noFollow) robotsDirectives.push("nofollow");
+  else robotsDirectives.push("follow");
+
   return {
     title: fullTitle,
     description: fullDescription,
@@ -126,8 +143,8 @@ export function generateMetadata({
     creator: author,
     publisher: SEO_CONFIG.siteName,
     applicationName: SEO_CONFIG.siteName,
-    generator: 'Next.js',
-    referrer: 'origin-when-cross-origin',
+    generator: "Next.js",
+    referrer: "origin-when-cross-origin",
     alternates: {
       canonical: canonicalUrl,
     },
@@ -139,14 +156,14 @@ export function generateMetadata({
         index: !noIndex,
         follow: !noFollow,
         noimageindex: false,
-        'max-video-preview': -1,
-        'max-image-preview': 'large',
-        'max-snippet': -1,
+        "max-video-preview": -1,
+        "max-image-preview": "large",
+        "max-snippet": -1,
       },
     },
     openGraph: {
       type,
-      locale: 'en_US',
+      locale: "en_US",
       url: canonicalUrl,
       title: fullTitle,
       description: fullDescription,
@@ -157,18 +174,20 @@ export function generateMetadata({
           width: 1200,
           height: 630,
           alt: imageAlt || fullTitle,
-          type: 'image/jpeg',
+          type: "image/jpeg",
         },
       ],
-      ...(type === 'article' && publishedTime && {
-        publishedTime,
-      }),
-      ...(type === 'article' && modifiedTime && {
-        modifiedTime,
-      }),
+      ...(type === "article" &&
+        publishedTime && {
+          publishedTime,
+        }),
+      ...(type === "article" &&
+        modifiedTime && {
+          modifiedTime,
+        }),
     },
     twitter: {
-      card: 'summary_large_image',
+      card: "summary_large_image",
       title: fullTitle,
       description: fullDescription,
       images: [fullImage],
@@ -181,12 +200,15 @@ export function generateMetadata({
 // Analytics, CriticalCSS, and PerformanceMonitoring functions removed - not being used
 
 // Utility to extract text content for meta descriptions from rich content
-export function extractTextContent(htmlString: string, maxLength = 160): string {
+export function extractTextContent(
+  htmlString: string,
+  maxLength = 160,
+): string {
   // Remove HTML tags
-  const text = htmlString.replace(/<[^>]*>/g, ' ');
+  const text = htmlString.replace(/<[^>]*>/g, " ");
   // Clean up whitespace
-  const cleaned = text.replace(/\s+/g, ' ').trim();
-  
+  const cleaned = text.replace(/\s+/g, " ").trim();
+
   return generateDescription(cleaned, maxLength);
 }
 
@@ -196,8 +218,8 @@ export function generateOGImageUrl(title: string, subtitle?: string): string {
     title: title.slice(0, 60), // Limit title length
     ...(subtitle && { subtitle: subtitle.slice(0, 80) }),
   });
-  
+
   return `/api/og?${params.toString()}`;
 }
 
-// Product rich snippet function removed - not being used 
+// Product rich snippet function removed - not being used

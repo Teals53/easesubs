@@ -20,11 +20,13 @@ export interface Product {
   name: string;
   slug: string;
   description?: string | null;
-  category: {
-    id: string;
-    name: string;
-    slug: string;
-  } | string;
+  category:
+    | {
+        id: string;
+        name: string;
+        slug: string;
+      }
+    | string;
   logoUrl?: string | null;
   borderColor?: string | null;
   isActive?: boolean;
@@ -48,4 +50,4 @@ export interface ExtendedCategory extends Category {
   color: string;
   icon: string;
   description: string;
-} 
+}

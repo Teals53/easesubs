@@ -43,33 +43,38 @@ export function CheckoutForm() {
   const searchParams = useSearchParams();
 
   // Check for error parameters from payment redirects
-  const errorParam = searchParams.get('error');
+  const errorParam = searchParams.get("error");
   if (errorParam && !errorMessage) {
     let errorTitle = "Payment Error";
     let errorDescription = "An error occurred during payment processing.";
-    
+
     switch (errorParam) {
-      case 'configuration':
+      case "configuration":
         errorTitle = "Configuration Error";
-        errorDescription = "Payment system is not properly configured. Please contact support.";
+        errorDescription =
+          "Payment system is not properly configured. Please contact support.";
         break;
-      case 'payment_failed':
+      case "payment_failed":
         errorTitle = "Payment Failed";
-        errorDescription = "Your payment could not be processed. Please try again.";
+        errorDescription =
+          "Your payment could not be processed. Please try again.";
         break;
-      case 'payment_not_found':
+      case "payment_not_found":
         errorTitle = "Payment Not Found";
-        errorDescription = "Payment record could not be found. Please try creating a new order.";
+        errorDescription =
+          "Payment record could not be found. Please try creating a new order.";
         break;
-      case 'database_error':
+      case "database_error":
         errorTitle = "System Error";
-        errorDescription = "A system error occurred. Please try again or contact support.";
+        errorDescription =
+          "A system error occurred. Please try again or contact support.";
         break;
-      case 'server_error':
+      case "server_error":
         errorTitle = "Server Error";
-        errorDescription = "An internal server error occurred. Please try again later.";
+        errorDescription =
+          "An internal server error occurred. Please try again later.";
         break;
-      case 'missing_token':
+      case "missing_token":
         errorTitle = "Invalid Payment";
         errorDescription = "Payment verification failed. Please try again.";
         break;
@@ -77,17 +82,17 @@ export function CheckoutForm() {
         errorTitle = "Unknown Error";
         errorDescription = "An unknown error occurred during payment.";
     }
-    
+
     setErrorMessage({
       type: "error",
       title: errorTitle,
       message: errorDescription,
     });
-    
+
     // Clear the error parameter from URL
     const newUrl = new URL(window.location.href);
-    newUrl.searchParams.delete('error');
-    window.history.replaceState({}, '', newUrl.toString());
+    newUrl.searchParams.delete("error");
+    window.history.replaceState({}, "", newUrl.toString());
   }
 
   // Check if user is admin
@@ -105,7 +110,10 @@ export function CheckoutForm() {
           setErrorMessage({
             type: "error",
             title: "Payment Error",
-            message: error instanceof Error ? error.message : "Failed to initialize payment. Please try again.",
+            message:
+              error instanceof Error
+                ? error.message
+                : "Failed to initialize payment. Please try again.",
           });
         }
       } else {
@@ -185,7 +193,9 @@ export function CheckoutForm() {
       // Redirect to Cryptomus payment page
       window.location.href = result.paymentUrl;
     } else {
-      throw new Error(result.error || "Failed to create Cryptomus payment session");
+      throw new Error(
+        result.error || "Failed to create Cryptomus payment session",
+      );
     }
   };
 
@@ -194,7 +204,7 @@ export function CheckoutForm() {
     // Convert USD to TL since Weepay dealer only accepts Turkish Lira
     // Using approximate exchange rate: 1 USD = 30 TL
     const amountInTL = Math.round(totalPrice * 40 * 100) / 100;
-    
+
     const response = await fetch("/api/payment/weepay/create", {
       method: "POST",
       headers: {
@@ -220,7 +230,9 @@ export function CheckoutForm() {
       // Redirect to Weepay payment page
       window.location.href = result.paymentUrl;
     } else {
-      throw new Error(result.error || "Failed to create Weepay payment session");
+      throw new Error(
+        result.error || "Failed to create Weepay payment session",
+      );
     }
   };
 
@@ -281,13 +293,13 @@ export function CheckoutForm() {
           quantity: item.quantity,
         })),
         paymentMethod:
-          selectedPayment === "admin_bypass" 
-            ? "ADMIN_BYPASS" 
-            : selectedPayment === "cryptomus" 
-            ? "CRYPTOMUS"
-            : selectedPayment === "weepay"
-            ? "WEEPAY"
-            : "CRYPTOMUS",
+          selectedPayment === "admin_bypass"
+            ? "ADMIN_BYPASS"
+            : selectedPayment === "cryptomus"
+              ? "CRYPTOMUS"
+              : selectedPayment === "weepay"
+                ? "WEEPAY"
+                : "CRYPTOMUS",
       });
 
       if (selectedPayment === "admin_bypass") {
@@ -776,4 +788,3 @@ export function CheckoutForm() {
     </div>
   );
 }
-

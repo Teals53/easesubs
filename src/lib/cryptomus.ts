@@ -271,7 +271,8 @@ export class Cryptomus {
     this.merchantId = config.merchantId;
     this.paymentApiKey = config.paymentApiKey;
     this.payoutApiKey = config.payoutApiKey;
-    this.baseUrl = process.env.CRYPTOMUS_BASE_URL || "https://api.cryptomus.com";
+    this.baseUrl =
+      process.env.CRYPTOMUS_BASE_URL || "https://api.cryptomus.com";
   }
 
   // Signature generation
@@ -316,11 +317,11 @@ export class Cryptomus {
 
     if (!response.ok) {
       let errorMessage = `Cryptomus API error: ${response.status} ${response.statusText}`;
-      
+
       try {
         const errorBody = await response.text();
         console.error("Cryptomus API error details:", errorBody);
-        
+
         // Try to parse error body for more details
         const errorData = JSON.parse(errorBody);
         if (errorData.message) {
@@ -328,14 +329,17 @@ export class Cryptomus {
         }
         if (errorData.errors) {
           const errorDetails = Object.entries(errorData.errors)
-            .map(([field, messages]) => `${field}: ${Array.isArray(messages) ? messages.join(", ") : messages}`)
+            .map(
+              ([field, messages]) =>
+                `${field}: ${Array.isArray(messages) ? messages.join(", ") : messages}`,
+            )
             .join("; ");
           errorMessage += ` - Validation errors: ${errorDetails}`;
         }
       } catch {
         // If we can't parse the error body, just use the basic error
       }
-      
+
       throw new Error(errorMessage);
     }
 
@@ -391,10 +395,7 @@ export class Cryptomus {
   async blockWallet(
     data: BlockWalletRequest,
   ): Promise<CryptomusResponse<BlockWalletResult>> {
-    return this.makeRequest<BlockWalletResult>(
-      "/wallet/block-address",
-      data,
-    );
+    return this.makeRequest<BlockWalletResult>("/wallet/block-address", data);
   }
 
   // Payout methods
@@ -489,4 +490,3 @@ export class Cryptomus {
 }
 
 export default Cryptomus;
-

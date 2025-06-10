@@ -64,9 +64,7 @@ export const ticketRouter = createTRPCRouter({
       z.object({
         limit: z.number().min(1).max(100).default(20),
         cursor: z.string().optional(),
-        status: z
-          .enum(["OPEN", "IN_PROGRESS", "CLOSED"])
-          .optional(),
+        status: z.enum(["OPEN", "IN_PROGRESS", "CLOSED"]).optional(),
       }),
     )
     .query(async ({ ctx, input }) => {
@@ -325,4 +323,3 @@ export const ticketRouter = createTRPCRouter({
     };
   }),
 });
-
