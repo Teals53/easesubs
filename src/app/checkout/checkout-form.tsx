@@ -238,7 +238,7 @@ export function CheckoutForm() {
       id: "cryptomus",
       name: "Crypto",
       description:
-        "Pay with Bitcoin, Ethereum, USDT, or other cryptocurrencies",
+        "Pay with Bitcoin, Ethereum, USDT, BNB, SOL, DOGE, or any supported cryptocurrency",
       icon: <Shield className="w-5 h-5" />,
       currency: "Cryptomus",
       color: "bg-orange-600",

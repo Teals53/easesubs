@@ -70,13 +70,14 @@ export async function POST(request: NextRequest) {
         providerData: {
           returnUrl: body.returnUrl,
           callbackUrl: body.callbackUrl,
+          cryptomusOrderId: order.orderNumber, // Track the order number used for Cryptomus
         },
       },
     });
 
     // Create Cryptomus payment
     const result = await PaymentProviders.createCryptomusPayment({
-      orderId: payment.id, // Use payment ID for tracking
+      orderId: order.orderNumber, // Use order number for Cryptomus (must be unique and alphanumeric)
       amount: body.amount,
       currency: body.currency,
       returnUrl: body.returnUrl || `${process.env.NEXTAUTH_URL}/dashboard/orders/${order.id}`,

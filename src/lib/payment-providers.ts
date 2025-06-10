@@ -24,6 +24,8 @@ interface WeepayPaymentData {
 
 export class PaymentProviders {
   // Cryptomus Payment Integration
+  // Supported cryptocurrencies include: BTC, ETH, BNB, USDT, USDC, TON, TRX, LTC, DOGE, DAI, DASH, BCH, SOL
+  // Users can choose from all available cryptocurrencies on the Cryptomus payment page
   static async createCryptomusPayment(data: CryptomusPaymentData): Promise<{
     success: boolean;
     paymentId?: string;
@@ -48,18 +50,32 @@ export class PaymentProviders {
       const cryptomus = new Cryptomus({
         merchantId,
         paymentApiKey,
+        payoutApiKey: process.env.CRYPTOMUS_PAYOUT_API_KEY,
       });
 
+      // Validate minimum amount (Cryptomus typically requires at least $1 USD equivalent)
+      if (data.amount < 1) {
+        return {
+          success: false,
+          error: "Minimum payment amount is $1 USD",
+        };
+      }
+
+      // Format amount to ensure proper decimal formatting (max 2 decimal places for USD)
+      const formattedAmount = data.amount.toFixed(2);
+      
       const paymentRequest: CreatePaymentRequest = {
-        amount: data.amount.toString(),
-        currency: data.currency,
+        amount: formattedAmount,
+        currency: data.currency, // Keep original currency (USD)
         order_id: data.orderId,
         url_return: data.returnUrl,
         url_callback: data.callbackUrl,
         is_payment_multiple: false,
-        lifetime: 7200, // 2 hours
-        to_currency: data.currency,
+        lifetime: 7200, // 2 hours (must be between 300-43200 seconds)
+        // Don't specify to_currency - let users choose any crypto on payment page
       };
+
+      console.log("Cryptomus payment request:", JSON.stringify(paymentRequest, null, 2));
 
       const response = await cryptomus.createPayment(paymentRequest);
 
@@ -70,7 +86,25 @@ export class PaymentProviders {
           paymentUrl: response.result.url,
         };
       } else {
-        throw new Error(response.message || "Failed to create payment");
+        // Log detailed error information for debugging
+        console.error("Cryptomus payment creation failed:", {
+          state: response.state,
+          message: response.message,
+          errors: response.errors,
+          paymentRequest
+        });
+        
+        let errorMessage = response.message || "Failed to create payment";
+        
+        // Check for specific validation errors
+        if (response.errors) {
+          const errorDetails = Object.entries(response.errors)
+            .map(([field, messages]) => `${field}: ${Array.isArray(messages) ? messages.join(", ") : messages}`)
+            .join("; ");
+          errorMessage = `Validation errors: ${errorDetails}`;
+        }
+        
+        throw new Error(errorMessage);
       }
     } catch (error) {
             return {
@@ -201,6 +235,8 @@ export class PaymentProviders {
       };
     }
   }
+
+
 
   // Get payment information
   static async getCryptomusPaymentInfo(

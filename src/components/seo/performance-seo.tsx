@@ -4,43 +4,52 @@ import Script from 'next/script';
 import { useEffect } from 'react';
 
 // Performance API type extensions
-interface LayoutShift extends PerformanceEntry {
-  value: number;
-  hadRecentInput: boolean;
-}
+// interface LayoutShift extends PerformanceEntry {
+//   value: number;
+//   hadRecentInput: boolean;
+// }
 
 // Core Web Vitals tracking for SEO
 export function PerformanceSEO({ nonce }: { nonce?: string }) {
   useEffect(() => {
     // Track Core Web Vitals
-    if (typeof window !== 'undefined' && 'performance' in window) {
-      // LCP - Largest Contentful Paint
-      new PerformanceObserver((entryList) => {
-        for (const entry of entryList.getEntries()) {
-          console.log('LCP:', entry.startTime);
-          // Send to analytics
+    if (typeof window !== 'undefined' && 'performance' in window && 'PerformanceObserver' in window) {
+      try {
+        // LCP - Largest Contentful Paint
+        if ('PerformanceObserver' in window) {
+          new PerformanceObserver((entryList) => {
+            for (const entry of entryList.getEntries()) {
+              console.log('LCP:', entry.startTime);
+              // Send to analytics
+            }
+          }).observe({ entryTypes: ['largest-contentful-paint'] });
         }
-      }).observe({ entryTypes: ['largest-contentful-paint'] });
 
-      // FID - First Input Delay
-      new PerformanceObserver((entryList) => {
-        for (const entry of entryList.getEntries()) {
-          const fidEntry = entry as PerformanceEventTiming;
-          console.log('FID:', fidEntry.processingStart - fidEntry.startTime);
-          // Send to analytics
+        // FID - First Input Delay
+        if ('PerformanceObserver' in window) {
+          new PerformanceObserver((entryList) => {
+            for (const entry of entryList.getEntries()) {
+              const fidEntry = entry as PerformanceEventTiming;
+              console.log('FID:', fidEntry.processingStart - fidEntry.startTime);
+              // Send to analytics
+            }
+          }).observe({ entryTypes: ['first-input'] });
         }
-      }).observe({ entryTypes: ['first-input'], buffered: true });
+      } catch (error) {
+        console.warn('PerformanceObserver not fully supported:', error);
+      }
 
-      // CLS - Cumulative Layout Shift
-      new PerformanceObserver((entryList) => {
-        for (const entry of entryList.getEntries()) {
-          const clsEntry = entry as LayoutShift;
-          if (!clsEntry.hadRecentInput) {
-            console.log('CLS:', clsEntry.value);
-            // Send to analytics
-          }
-        }
-      }).observe({ entryTypes: ['layout-shift'], buffered: true });
+      // CLS - Cumulative Layout Shift (disabled to prevent dev tools conflicts)
+      // Layout shift observation can interfere with browser dev tools element inspection
+      // new PerformanceObserver((entryList) => {
+      //   for (const entry of entryList.getEntries()) {
+      //     const clsEntry = entry as LayoutShift;
+      //     if (!clsEntry.hadRecentInput) {
+      //       console.log('CLS:', clsEntry.value);
+      //       // Send to analytics
+      //     }
+      //   }
+      // }).observe({ entryTypes: ['layout-shift'], buffered: true });
     }
   }, []);
 
@@ -56,26 +65,16 @@ export function PerformanceSEO({ nonce }: { nonce?: string }) {
       <link rel="dns-prefetch" href="//connect.facebook.net" />
       
       {/* Prefetch critical resources */}
-      <link rel="prefetch" href="/api/products" />
       <link rel="prefetch" href="/auth/signin" />
       
       {/* Critical CSS inlined for faster FCP */}
       <style jsx>{`
         .hero-section {
           font-display: swap;
-          contain: layout;
         }
         
         .product-grid {
-          contain: layout style;
-          will-change: transform;
-        }
-        
-        /* Optimize font loading */
-        @font-face {
-          font-family: 'Inter';
-          font-display: swap;
-          src: url('/fonts/inter-var.woff2') format('woff2');
+          /* Layout containment removed to prevent dev tools conflicts */
         }
       `}</style>
 
@@ -117,16 +116,6 @@ export function PerformanceSEO({ nonce }: { nonce?: string }) {
 export function ResourceHints() {
   return (
     <>
-      {/* Preload critical resources */}
-      <link rel="preload" href="/fonts/inter-var.woff2" as="font" type="font/woff2" crossOrigin="" />
-      <link rel="preload" href="/og-image.jpg" as="image" />
-      
-      {/* Preload above-the-fold images */}
-      <link rel="preload" href="/hero-bg.webp" as="image" />
-      
-      {/* Module preload for critical JS */}
-      <link rel="modulepreload" href="/_next/static/chunks/pages/_app.js" />
-      
       {/* Prefetch likely next pages */}
       <link rel="prefetch" href="/product/netflix-premium" />
       <link rel="prefetch" href="/product/spotify-premium" />

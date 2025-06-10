@@ -327,9 +327,9 @@ export function CategoryModal({
                       onClick={() =>
                         setFormData((prev) => ({ ...prev, color }))
                       }
-                      className={`w-8 h-8 rounded-lg border-2 transition-all ${
+                      className={`w-8 h-8 rounded-lg border-2 transition-all hover:scale-105 ${
                         formData.color === color
-                          ? "border-white scale-110"
+                          ? "border-white ring-2 ring-white ring-offset-2 ring-offset-gray-800"
                           : "border-gray-600 hover:border-gray-400"
                       }`}
                       style={{ backgroundColor: color }}

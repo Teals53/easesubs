@@ -7,7 +7,7 @@ export const SEO_CONFIG = {
   siteUrl: 'https://easesubs.com',
   siteName: 'EaseSubs',
   twitterHandle: '@easesubs',
-  defaultImage: '/og-image.jpg',
+  defaultImage: 'https://via.placeholder.com/1200x630/8B5CF6/FFFFFF?text=EaseSubs',
   defaultKeywords: [
     'cheap subscriptions',
     'discount subscriptions',
@@ -54,21 +54,10 @@ export function generateCanonicalUrl(path: string): string {
 export function preloadCriticalResources() {
   return (
     <>
-      {/* Preload critical fonts */}
-      <link
-        rel="preload"
-        href="/fonts/inter-var.woff2"
-        as="font"
-        type="font/woff2"
-        crossOrigin="anonymous"
-      />
-      
-      {/* Preload critical images */}
-      <link rel="preload" href="/og-image.jpg" as="image" type="image/jpeg" />
-      
       {/* DNS prefetch for external resources */}
       <link rel="dns-prefetch" href="//fonts.googleapis.com" />
       <link rel="dns-prefetch" href="//fonts.gstatic.com" />
+      <link rel="dns-prefetch" href="//via.placeholder.com" />
     </>
   );
 }

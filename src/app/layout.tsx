@@ -22,7 +22,8 @@ const inter = Inter({
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 5,
+  maximumScale: 2,
+  minimumScale: 1,
   userScalable: true,
   viewportFit: 'cover',
   colorScheme: 'dark',
@@ -83,11 +84,11 @@ export const metadata: Metadata = {
     siteName: "EaseSubs",
     images: [
       {
-        url: "/og-image.jpg",
+        url: "https://via.placeholder.com/1200x630/8B5CF6/FFFFFF?text=EaseSubs",
         width: 1200,
         height: 630,
         alt: "EaseSubs - Discount Subscriptions Platform",
-        type: "image/jpeg",
+        type: "image/png",
       },
     ],
   },
@@ -98,7 +99,7 @@ export const metadata: Metadata = {
       "Save up to 80% on premium subscriptions like Netflix, Spotify, Adobe Creative Cloud, and more.",
     images: [
       {
-        url: "/og-image.jpg",
+        url: "https://via.placeholder.com/1200x630/8B5CF6/FFFFFF?text=EaseSubs",
         alt: "EaseSubs - Discount Subscriptions Platform",
       },
     ],
@@ -156,7 +157,6 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <head>
         <meta charSet="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
         <link rel="apple-touch-icon" href="/favicon.svg" />
         <ResourceHints />

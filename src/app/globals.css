@@ -130,17 +130,15 @@ body {
   }
 }
 
-/* Touch targets for mobile */
-@media (pointer: coarse) {
-  button,
-  [role="button"],
-  input[type="button"],
-  input[type="submit"],
-  input[type="reset"],
-  a {
-    min-height: 44px;
-    min-width: 44px;
-  }
+
+
+
+
+/* Prevent layout shift issues with dev tools element inspector */
+html {
+  font-size: 16px; /* Fixed base font size */
+  -webkit-text-size-adjust: 100%; /* Prevent iOS zoom on focus */
+  text-size-adjust: 100%; /* Prevent zoom on focus */
 }
 
 /* Dark mode adjustments */
@@ -150,3 +148,5 @@ body {
     --foreground: #1f2937;
   }
 }
+
+

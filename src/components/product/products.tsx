@@ -151,7 +151,6 @@ export function Products() {
     if (!borderColor) return {};
     return {
       borderColor,
-      borderWidth: "2px",
       boxShadow: `0 0 20px ${borderColor}20`,
     };
   };
@@ -210,7 +209,7 @@ export function Products() {
                     whileHover={{ scale: 1.01 }}
                     whileTap={{ scale: 0.99 }}
                     onClick={() => setActiveCategory(category.key)}
-                    className={`w-full p-4 rounded-xl text-left transition-all duration-300 group ${
+                    className={`w-full p-4 rounded-xl text-left transition-all duration-300 group focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-gray-900 ${
                       activeCategory === category.key
                         ? "bg-gradient-to-r from-purple-600/20 to-purple-500/20 border-2 border-purple-500/50 shadow-lg shadow-purple-500/20"
                         : "bg-gray-700/50 border-2 border-transparent hover:bg-gray-700/70 hover:border-gray-600"
@@ -436,9 +435,9 @@ export function Products() {
 
                           {/* View Details button */}
                           <div className="mt-auto">
-                            <div className="w-full font-semibold py-3 px-6 rounded-xl shadow-lg transition-all text-center bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white shadow-purple-600/30 group-hover:shadow-purple-600/50 transform group-hover:scale-105">
+                            <button className="w-full font-semibold py-3 px-6 rounded-xl shadow-lg transition-all duration-300 text-center bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white shadow-purple-600/30 hover:shadow-purple-600/50 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-gray-900">
                               View Details & Plans
-                            </div>
+                            </button>
                           </div>
                         </div>
                       </Link>

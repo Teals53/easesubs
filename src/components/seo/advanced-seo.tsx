@@ -14,7 +14,7 @@ export const organizationSchema = {
     "width": 512,
     "height": 512
   },
-  "image": "https://easesubs.com/og-image.jpg",
+      "image": "https://via.placeholder.com/1200x630/8B5CF6/FFFFFF?text=EaseSubs",
   "description": "Get your favorite subscriptions at a fraction of the cost through our legal regional pricing system. Save up to 80% on premium services.",
   "sameAs": [
     "https://twitter.com/easesubs",
@@ -239,7 +239,7 @@ export function generateEnhancedMetadata({
   description,
   canonical,
   keywords = [],
-  ogImage = '/og-image.jpg',
+      ogImage = 'https://via.placeholder.com/1200x630/8B5CF6/FFFFFF?text=EaseSubs',
   type = 'website',
   publishedTime,
   modifiedTime,

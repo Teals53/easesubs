@@ -8,7 +8,7 @@ export const organizationSchema = {
   url: "https://easesubs.com",
   logo: {
     "@type": "ImageObject",
-    url: "https://easesubs.com/og-image.jpg",
+    url: "https://via.placeholder.com/1200x630/8B5CF6/FFFFFF?text=EaseSubs",
     width: 1200,
     height: 630
   },
@@ -68,7 +68,7 @@ export function generateProductSchema(product: {
     "@type": "Product",
     name: product.name,
     description: product.description,
-    image: product.image || "https://easesubs.com/og-image.jpg",
+          image: product.image || "https://via.placeholder.com/1200x630/8B5CF6/FFFFFF?text=EaseSubs",
     url: `https://easesubs.com/product/${product.slug}`,
     brand: {
       "@type": "Brand",

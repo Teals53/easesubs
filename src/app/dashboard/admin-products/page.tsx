@@ -489,10 +489,10 @@ export default function AdminProductsPage() {
                         <Calendar className="h-3 w-3 mr-1" />
                         {formatDate(product.createdAt)}
                       </div>
-                      <div className="flex space-x-2">
+                      <div className="flex space-x-2 flex-shrink-0">
                         <button
                           onClick={() => handleEditProduct(product)}
-                          className="p-2 bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors"
+                          className="p-2 bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors flex-shrink-0 w-10 h-10 flex items-center justify-center"
                           title="Edit Product"
                         >
                           <Edit className="h-4 w-4 text-white" />
@@ -500,7 +500,7 @@ export default function AdminProductsPage() {
                         <button
                           onClick={() => handleToggleStatus(product.id)}
                           disabled={toggleProductStatusMutation.isPending}
-                          className={`p-2 rounded-lg transition-colors ${
+                          className={`p-2 rounded-lg transition-colors flex-shrink-0 w-10 h-10 flex items-center justify-center ${
                             product.isActive
                               ? "bg-red-600 hover:bg-red-700"
                               : "bg-green-600 hover:bg-green-700"
@@ -516,7 +516,7 @@ export default function AdminProductsPage() {
                         <button
                           onClick={() => handleDeleteProduct(product.id)}
                           disabled={deleteProductMutation.isPending}
-                          className="p-2 bg-red-600 hover:bg-red-700 disabled:bg-red-600/50 rounded-lg transition-colors"
+                          className="p-2 bg-red-600 hover:bg-red-700 disabled:bg-red-600/50 rounded-lg transition-colors flex-shrink-0 w-10 h-10 flex items-center justify-center"
                           title="Delete Product"
                         >
                           <Trash2 className="h-4 w-4 text-white" />
@@ -749,10 +749,10 @@ function CategoriesTab({
               <div className="text-gray-400 text-xs">
                 {new Date(category.createdAt).toLocaleDateString()}
               </div>
-              <div className="flex space-x-2">
+              <div className="flex space-x-2 flex-shrink-0">
                 <button
                   onClick={() => handleEditCategory(category)}
-                  className="p-2 bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors"
+                  className="p-2 bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors flex-shrink-0 w-10 h-10 flex items-center justify-center"
                   title="Edit Category"
                 >
                   <Edit className="h-4 w-4 text-white" />
@@ -760,7 +760,7 @@ function CategoriesTab({
                 <button
                   onClick={() => handleToggleStatus(category.id)}
                   disabled={toggleCategoryStatusMutation.isPending}
-                  className={`p-2 rounded-lg transition-colors ${
+                  className={`p-2 rounded-lg transition-colors flex-shrink-0 w-10 h-10 flex items-center justify-center ${
                     category.isActive
                       ? "bg-red-600 hover:bg-red-700"
                       : "bg-green-600 hover:bg-green-700"
@@ -778,7 +778,7 @@ function CategoriesTab({
                   disabled={
                     deleteCategoryMutation.isPending || category.count > 0
                   }
-                  className="p-2 bg-red-600 hover:bg-red-700 disabled:bg-red-600/50 rounded-lg transition-colors"
+                  className="p-2 bg-red-600 hover:bg-red-700 disabled:bg-red-600/50 rounded-lg transition-colors flex-shrink-0 w-10 h-10 flex items-center justify-center"
                   title={
                     category.count > 0
                       ? "Cannot delete category with products"

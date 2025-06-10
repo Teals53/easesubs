@@ -265,12 +265,13 @@ export class Cryptomus {
   private readonly merchantId: string;
   private readonly paymentApiKey: string;
   private readonly payoutApiKey?: string;
-  private readonly baseUrl = "https://api.cryptomus.com";
+  private readonly baseUrl: string;
 
   constructor(config: CryptomusConfig) {
     this.merchantId = config.merchantId;
     this.paymentApiKey = config.paymentApiKey;
     this.payoutApiKey = config.payoutApiKey;
+    this.baseUrl = process.env.CRYPTOMUS_BASE_URL || "https://api.cryptomus.com";
   }
 
   // Signature generation
@@ -314,9 +315,28 @@ export class Cryptomus {
     });
 
     if (!response.ok) {
-      throw new Error(
-        `Cryptomus API error: ${response.status} ${response.statusText}`,
-      );
+      let errorMessage = `Cryptomus API error: ${response.status} ${response.statusText}`;
+      
+      try {
+        const errorBody = await response.text();
+        console.error("Cryptomus API error details:", errorBody);
+        
+        // Try to parse error body for more details
+        const errorData = JSON.parse(errorBody);
+        if (errorData.message) {
+          errorMessage += ` - ${errorData.message}`;
+        }
+        if (errorData.errors) {
+          const errorDetails = Object.entries(errorData.errors)
+            .map(([field, messages]) => `${field}: ${Array.isArray(messages) ? messages.join(", ") : messages}`)
+            .join("; ");
+          errorMessage += ` - Validation errors: ${errorDetails}`;
+        }
+      } catch {
+        // If we can't parse the error body, just use the basic error
+      }
+      
+      throw new Error(errorMessage);
     }
 
     return response.json();
@@ -326,53 +346,53 @@ export class Cryptomus {
   async createPayment(
     data: CreatePaymentRequest,
   ): Promise<CryptomusResponse<PaymentResult>> {
-    return this.makeRequest<PaymentResult>("/v1/payment", data);
+    return this.makeRequest<PaymentResult>("/payment", data);
   }
 
   async getPaymentInfo(
     data: PaymentInfoRequest,
   ): Promise<CryptomusResponse<PaymentResult>> {
-    return this.makeRequest<PaymentResult>("/v1/payment/info", data);
+    return this.makeRequest<PaymentResult>("/payment/info", data);
   }
 
   async getPaymentHistory(
     data: PaymentHistoryRequest = {},
   ): Promise<CryptomusResponse<PaymentHistoryResult>> {
-    return this.makeRequest<PaymentHistoryResult>("/v1/payment/list", data);
+    return this.makeRequest<PaymentHistoryResult>("/payment/list", data);
   }
 
   async getPaymentServices(): Promise<CryptomusResponse<PaymentService[]>> {
-    return this.makeRequest<PaymentService[]>("/v1/payment/services", {});
+    return this.makeRequest<PaymentService[]>("/payment/services", {});
   }
 
   async refundPayment(data: RefundRequest): Promise<CryptomusResponse<null>> {
-    return this.makeRequest<null>("/v1/payment/refund", data);
+    return this.makeRequest<null>("/payment/refund", data);
   }
 
   async resendWebhook(
     data: ResendWebhookRequest,
   ): Promise<CryptomusResponse<null>> {
-    return this.makeRequest<null>("/v1/payment/resend", data);
+    return this.makeRequest<null>("/payment/resend", data);
   }
 
   async testWebhook(
     data: ResendWebhookRequest,
   ): Promise<CryptomusResponse<null>> {
-    return this.makeRequest<null>("/v1/test-webhook/payment", data);
+    return this.makeRequest<null>("/test-webhook/payment", data);
   }
 
   // Wallet methods
   async createWallet(
     data: CreateWalletRequest,
   ): Promise<CryptomusResponse<WalletResult>> {
-    return this.makeRequest<WalletResult>("/v1/wallet", data);
+    return this.makeRequest<WalletResult>("/wallet", data);
   }
 
   async blockWallet(
     data: BlockWalletRequest,
   ): Promise<CryptomusResponse<BlockWalletResult>> {
     return this.makeRequest<BlockWalletResult>(
-      "/v1/wallet/block-address",
+      "/wallet/block-address",
       data,
     );
   }
@@ -381,28 +401,28 @@ export class Cryptomus {
   async createPayout(
     data: CreatePayoutRequest,
   ): Promise<CryptomusResponse<PayoutResult>> {
-    return this.makeRequest<PayoutResult>("/v1/payout", data, true);
+    return this.makeRequest<PayoutResult>("/payout", data, true);
   }
 
   async getPayoutInfo(
     data: PayoutInfoRequest,
   ): Promise<CryptomusResponse<PayoutResult>> {
-    return this.makeRequest<PayoutResult>("/v1/payout/info", data, true);
+    return this.makeRequest<PayoutResult>("/payout/info", data, true);
   }
 
   async getPayoutHistory(
     data: PayoutHistoryRequest = {},
   ): Promise<CryptomusResponse<PayoutHistoryResult>> {
-    return this.makeRequest<PayoutHistoryResult>("/v1/payout/list", data, true);
+    return this.makeRequest<PayoutHistoryResult>("/payout/list", data, true);
   }
 
   async getPayoutServices(): Promise<CryptomusResponse<PayoutService[]>> {
-    return this.makeRequest<PayoutService[]>("/v1/payout/services", {}, true);
+    return this.makeRequest<PayoutService[]>("/payout/services", {}, true);
   }
 
   // Balance method
   async getBalance(): Promise<CryptomusResponse<BalanceResult[]>> {
-    return this.makeRequest<BalanceResult[]>("/v1/balance", {});
+    return this.makeRequest<BalanceResult[]>("/balance", {});
   }
 
   // Webhook validation
@@ -464,7 +484,7 @@ export class Cryptomus {
     amount?: string,
   ): Promise<CryptomusResponse<ExchangeRateResult>> {
     const data = amount ? { from, to, amount } : { from, to };
-    return this.makeRequest("/v1/exchange-rate/calculate", data);
+    return this.makeRequest("/exchange-rate/calculate", data);
   }
 }
 
