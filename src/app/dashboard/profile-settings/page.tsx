@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
+import { sanitizeText } from "@/lib/input-sanitizer";
 
 export default function ProfileSettingsPage() {
   const { data: session, status, update } = useSession();
@@ -138,38 +139,46 @@ export default function ProfileSettingsPage() {
   }
 
   const handleSave = async () => {
-    // Validate form data
-    if (!formData.name || formData.name.trim().length < 2) {
-      toast.error("Name must be at least 2 characters long");
-      return;
-    }
-
-    if (formData.name.trim().length > 50) {
-      toast.error("Name must be less than 50 characters");
-      return;
-    }
-
-    // Validate name format (same as registration)
-    if (!/^[a-zA-Z\s'-]+$/.test(formData.name.trim())) {
-      toast.error("Name can only contain letters, spaces, hyphens, and apostrophes");
-      return;
-    }
-
-    // Check if name actually changed (prioritize database data)
-    const profileData = dbUserProfile || userProfile;
-    if (formData.name.trim() === profileData?.name?.trim()) {
-      toast.info("No changes detected");
-      setIsEditing(false);
-      return;
-    }
-
     try {
-      await updateProfileMutation.mutateAsync({
-        name: formData.name.trim(),
-      });
-    } catch (error) {
-      console.error("Save error:", error);
-      // Error is handled by mutation onError callback
+      // Sanitize the input first
+      const sanitizedName = sanitizeText(formData.name, 50);
+      
+      // Validate form data
+      if (!sanitizedName || sanitizedName.trim().length < 2) {
+        toast.error("Name must be at least 2 characters long");
+        return;
+      }
+
+      if (sanitizedName.trim().length > 50) {
+        toast.error("Name must be less than 50 characters");
+        return;
+      }
+
+      // Validate name format (same as registration)
+      if (!/^[a-zA-Z\s'-]+$/.test(sanitizedName.trim())) {
+        toast.error("Name can only contain letters, spaces, hyphens, and apostrophes");
+        return;
+      }
+
+          // Check if name actually changed (prioritize database data)
+      const profileData = dbUserProfile || userProfile;
+      if (sanitizedName.trim() === profileData?.name?.trim()) {
+        toast.info("No changes detected");
+        setIsEditing(false);
+        return;
+      }
+
+      try {
+        await updateProfileMutation.mutateAsync({
+          name: sanitizedName.trim(),
+        });
+      } catch (error) {
+        console.error("Save error:", error);
+        // Error is handled by mutation onError callback
+      }
+    } catch (sanitizationError) {
+      console.error("Input sanitization error:", sanitizationError);
+      toast.error("Invalid input detected");
     }
   };
 
@@ -373,11 +382,16 @@ export default function ProfileSettingsPage() {
               type="text"
               value={formData.name}
               onChange={(e) => {
-                const value = e.target.value;
-                // Allow only valid characters (letters, spaces, hyphens, apostrophes)
-                const validValue = value.replace(/[^a-zA-Z\s\-']/g, '');
-                if (validValue.length <= 50) {
+                try {
+                  // First sanitize to remove dangerous content (HTML, scripts, etc.)
+                  const sanitized = sanitizeText(e.target.value, 50);
+                  // Then filter to allow only valid name characters (letters, spaces, hyphens, apostrophes)
+                  const validValue = sanitized.replace(/[^a-zA-Z\s\-']/g, '');
                   setFormData({ ...formData, name: validValue });
+                } catch (error) {
+                  // If sanitization fails (e.g., too long), show error
+                  console.error("Input sanitization error:", error);
+                  toast.error("Invalid input detected");
                 }
               }}
               disabled={!isEditing}
