@@ -487,10 +487,10 @@ export default function OrderDetailPage() {
                 </div>
                 <div className="text-right">
                   <div className="text-white font-semibold">
-                    {formatCurrency(Number(item.price))}
+                    {formatCurrency(Number(item.price) * item.quantity)}
                   </div>
                   <div className="text-gray-400 text-sm">
-                    {formatCurrency(Number(item.price) / item.quantity)} each
+                    {formatCurrency(Number(item.price))} each
                   </div>
                 </div>
               </div>
