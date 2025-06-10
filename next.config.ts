@@ -155,10 +155,6 @@ const nextConfig: NextConfig = {
     optimisticClientCache: true,
     // Security-related experimental features
     strictNextHead: true,
-    // Enable memory optimization
-    memoryBasedWorkersCount: true,
-    // Better tree shaking
-    esmExternals: true,
   },
 
   // Enhanced compiler optimizations
@@ -258,41 +254,20 @@ const nextConfig: NextConfig = {
     output: "standalone",
     // Security: disable source maps in production
     productionBrowserSourceMaps: false,
-    // Enable modern JavaScript
-    modularizeImports: {
-      "lucide-react": {
-        transform: "lucide-react/dist/esm/icons/{{member}}",
-      },
-    },
   }),
 
   // Enhanced webpack configuration for better optimization
   webpack: (config, { dev }) => {
     // Only optimize in production
     if (!dev) {
-      // Optimize bundle splitting
+      // Optimize bundle splitting for better caching
       config.optimization = {
         ...config.optimization,
         splitChunks: {
           ...config.optimization.splitChunks,
           cacheGroups: {
             ...config.optimization.splitChunks.cacheGroups,
-            // Separate vendor chunks for better caching
-            vendor: {
-              test: /[\\/]node_modules[\\/]/,
-              name: "vendors",
-              chunks: "all",
-              priority: 10,
-            },
-            // Separate common chunks
-            common: {
-              name: "common",
-              minChunks: 2,
-              chunks: "all",
-              priority: 5,
-              reuseExistingChunk: true,
-            },
-            // UI library chunks
+            // UI library chunks for better caching
             ui: {
               test: /[\\/]node_modules[\\/](@radix-ui|lucide-react)[\\/]/,
               name: "ui-libs",
@@ -302,11 +277,6 @@ const nextConfig: NextConfig = {
           },
         },
       };
-
-      // Enable better tree shaking
-      config.optimization.usedExports = true;
-      config.optimization.providedExports = true;
-      config.optimization.sideEffects = false;
     }
 
     return config;

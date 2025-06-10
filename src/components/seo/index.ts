@@ -9,11 +9,6 @@ export {
   generateMetadata,
   generateTitle,
   generateDescription,
-  generateFAQStructuredData,
-  generateProductRichSnippet,
-  AnalyticsScripts,
-  CriticalCSS,
-  PerformanceMonitoring,
   SEO_CONFIG
 } from './seo-utils';
 
@@ -58,7 +53,7 @@ export interface ArticleSEO {
   readingTime?: number;
 }
 
-// Enhanced SEO Components
+// Enhanced SEO Components - using only from advanced-seo to avoid duplicates
 export {
   generateFAQSchema,
   generateArticleSchema,

@@ -4,59 +4,20 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Plus, Minus, Package, Save } from "lucide-react";
 import { trpc } from "@/lib/trpc";
+import { modalBackdrop, modalContent } from "@/lib/animations";
 import type { BillingPeriod } from "@prisma/client";
-
-interface Product {
-  id?: string;
-  name?: string;
-  slug?: string;
-  description?: string;
-  category?: string;
-  logoUrl?: string | null;
-
-  borderColor?: string | null;
-  isActive?: boolean;
-  isFeatured?: boolean;
-  displayOrder?: number | null;
-  seoTitle?: string | null;
-  seoDescription?: string | null;
-  plans?: ProductPlan[] | unknown;
-}
-
-interface ProductPlan {
-  name: string;
-  planType: string;
-  price: number | string;
-  originalPrice?: number | string;
-  billingPeriod: string;
-  duration: number;
-  features: string | string[];
-  isPopular: boolean;
-  isAvailable: boolean;
-  maxSubscriptions?: number;
-  deliveryType: "MANUAL" | "AUTOMATIC";
-}
+import type { Product, ProductPlan } from "@/types/product";
 
 interface ProductModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
-  product?: Product | null;
+  product?: Partial<Product> | null;
 }
 
-interface PlanData {
-  id?: string;
-  name: string;
-  planType: string;
-  price: number;
-  originalPrice?: number;
+interface PlanData extends Omit<ProductPlan, 'billingPeriod' | 'features'> {
   billingPeriod: BillingPeriod;
-  duration: number;
   features: string[];
-  isPopular: boolean;
-  isAvailable: boolean;
-  maxSubscriptions?: number;
-  deliveryType: "MANUAL" | "AUTOMATIC";
 }
 
 export function ProductModal({
@@ -346,18 +307,14 @@ export function ProductModal({
       <div className="fixed inset-0 z-50 flex items-center justify-center">
         {/* Backdrop */}
         <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
+          {...modalBackdrop}
           onClick={onClose}
           className="absolute inset-0 bg-black/50 backdrop-blur-sm"
         />
 
         {/* Modal */}
         <motion.div
-          initial={{ opacity: 0, scale: 0.95, y: 20 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.95, y: 20 }}
+          {...modalContent}
           className="relative w-full max-w-4xl max-h-[90vh] mx-4 bg-gray-800 rounded-2xl border border-gray-700 overflow-hidden"
         >
           {/* Header */}

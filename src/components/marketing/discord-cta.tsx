@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+// React import not needed for modern React
 import { MessageSquare } from "lucide-react";
 
 export function DiscordCTA() {

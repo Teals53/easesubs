@@ -104,21 +104,7 @@ export function generateProductSchema(product: {
   };
 }
 
-// FAQ schema generator
-export function generateFAQSchema(faqs: Array<{ question: string; answer: string }>) {
-  return {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    mainEntity: faqs.map(faq => ({
-      "@type": "Question",
-      name: faq.question,
-      acceptedAnswer: {
-        "@type": "Answer",
-        text: faq.answer
-      }
-    }))
-  };
-}
+// FAQ schema generator removed - use the one from advanced-seo to avoid duplication
 
 // Service schema for EaseSubs
 export const serviceSchema = {

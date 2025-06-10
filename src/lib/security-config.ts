@@ -1,5 +1,3 @@
-import crypto from 'crypto';
-
 /**
  * Security Configuration
  * Centralized security settings for CSP, HTTPS enforcement, etc.
@@ -17,10 +15,23 @@ export interface SecurityConfig {
 }
 
 /**
- * Generate a random nonce for CSP
+ * Generate a random nonce for CSP using Web Crypto API (Edge Runtime compatible)
  */
 export function generateNonce(): string {
-  return Buffer.from(crypto.randomUUID()).toString('base64');
+  // Generate 16 random bytes
+  const array = new Uint8Array(16);
+  if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+    crypto.getRandomValues(array);
+  } else {
+    // Fallback for environments without crypto
+    for (let i = 0; i < array.length; i++) {
+      array[i] = Math.floor(Math.random() * 256);
+    }
+  }
+  
+  // Convert to base64
+  const binary = String.fromCharCode(...array);
+  return btoa(binary);
 }
 
 /**

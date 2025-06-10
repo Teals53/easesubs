@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Menu, X, User, ShoppingCart, Home, Package, LifeBuoy, Settings, BarChart3, LogOut } from "lucide-react";
 import Link from "next/link";
 import { signOut } from "next-auth/react";
@@ -8,6 +8,7 @@ import { useSessionContext } from "@/lib/session-context";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCartStore } from "@/components/cart/cart-provider";
 import { useCart } from "@/components/cart/use-cart";
+import { iconHover } from "@/lib/animations";
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -118,8 +119,7 @@ export function Header() {
           <nav className="hidden md:flex items-center space-x-8" role="navigation" aria-label="Main navigation">
             {/* Cart Button */}
             <motion.button
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.95 }}
+              {...iconHover}
               onClick={handleCartClick}
               className="relative p-2 text-white hover:text-purple-300 transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-gray-900 rounded-lg"
               aria-label={`Shopping cart with ${isHydrated ? totalItems : 0} items`}
@@ -138,8 +138,7 @@ export function Header() {
             {session?.user ? (
               <div className="relative" ref={userMenuRef}>
                 <motion.button
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.95 }}
+                  {...iconHover}
                   onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
                   className="flex items-center space-x-2 text-white hover:text-purple-300 transition-colors p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-gray-900"
                   aria-expanded={isUserMenuOpen}

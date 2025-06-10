@@ -1,5 +1,4 @@
 import { Metadata } from 'next';
-import Script from 'next/script';
 
 // SEO Configuration Constants
 export const SEO_CONFIG = {
@@ -49,21 +48,7 @@ export function generateCanonicalUrl(path: string): string {
   return `${SEO_CONFIG.siteUrl}${cleanPath}`;
 }
 
-// Generate structured data for FAQ sections
-export function generateFAQStructuredData(faqs: Array<{ question: string; answer: string }>) {
-  return {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    "mainEntity": faqs.map(faq => ({
-      "@type": "Question",
-      "name": faq.question,
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": faq.answer
-      }
-    }))
-  };
-}
+// FAQ structured data moved to advanced-seo to avoid duplication
 
 // Performance optimization utilities
 export function preloadCriticalResources() {
@@ -204,113 +189,7 @@ export function generateMetadata({
   };
 }
 
-// Component for adding Google Analytics and other tracking
-interface AnalyticsScriptsProps {
-  googleAnalyticsId?: string;
-  gtmId?: string;
-  nonce?: string;
-}
-
-export function AnalyticsScripts({ googleAnalyticsId, gtmId, nonce }: AnalyticsScriptsProps) {
-  return (
-    <>
-      {/* Google Analytics */}
-      {googleAnalyticsId && (
-        <>
-          <Script
-            src={`https://www.googletagmanager.com/gtag/js?id=${googleAnalyticsId}`}
-            strategy="afterInteractive"
-            nonce={nonce}
-          />
-          <Script id="google-analytics" strategy="afterInteractive" nonce={nonce}>
-            {`
-              window.dataLayer = window.dataLayer || [];
-              function gtag(){dataLayer.push(arguments);}
-              gtag('js', new Date());
-              gtag('config', '${googleAnalyticsId}', {
-                page_title: document.title,
-                page_location: window.location.href,
-                anonymize_ip: true,
-                cookie_flags: 'SameSite=None;Secure'
-              });
-            `}
-          </Script>
-        </>
-      )}
-
-      {/* Google Tag Manager */}
-      {gtmId && (
-        <>
-          <Script id="google-tag-manager" strategy="afterInteractive" nonce={nonce}>
-            {`
-              (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-              new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-              j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-              'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-              })(window,document,'script','dataLayer','${gtmId}');
-            `}
-          </Script>
-          <noscript>
-            <iframe
-              src={`https://www.googletagmanager.com/ns.html?id=${gtmId}`}
-              height="0"
-              width="0"
-              style={{ display: 'none', visibility: 'hidden' }}
-            />
-          </noscript>
-        </>
-      )}
-    </>
-  );
-}
-
-// Component for critical CSS inlining
-interface CriticalCSSProps {
-  css: string;
-  nonce?: string;
-}
-
-export function CriticalCSS({ css, nonce }: CriticalCSSProps) {
-  return (
-    <style
-      nonce={nonce}
-      dangerouslySetInnerHTML={{
-        __html: css,
-      }}
-    />
-  );
-}
-
-// Performance monitoring script
-export function PerformanceMonitoring({ nonce }: { nonce?: string }) {
-  return (
-    <Script id="performance-monitoring" strategy="afterInteractive" nonce={nonce}>
-      {`
-        // Core Web Vitals monitoring
-        function sendToAnalytics(metric) {
-          if (typeof gtag !== 'undefined') {
-            gtag('event', metric.name, {
-              event_category: 'Web Vitals',
-              event_label: metric.id,
-              value: Math.round(metric.name === 'CLS' ? metric.value * 1000 : metric.value),
-              non_interaction: true,
-            });
-          }
-        }
-
-        // Load web-vitals library and measure
-        if ('web-vitals' in window) {
-          const { getCLS, getFID, getFCP, getLCP, getTTFB } = window['web-vitals'];
-          getCLS(sendToAnalytics);
-          getFID(sendToAnalytics);
-          getFCP(sendToAnalytics);
-          getLCP(sendToAnalytics);
-          getTTFB(sendToAnalytics);
-        }
-      `}
-    </Script>
-  );
-}
+// Analytics, CriticalCSS, and PerformanceMonitoring functions removed - not being used
 
 // Utility to extract text content for meta descriptions from rich content
 export function extractTextContent(htmlString: string, maxLength = 160): string {
@@ -332,50 +211,4 @@ export function generateOGImageUrl(title: string, subtitle?: string): string {
   return `/api/og?${params.toString()}`;
 }
 
-// Helper to generate rich snippets for products
-export function generateProductRichSnippet(product: {
-  name: string;
-  description: string;
-  price: number;
-  originalPrice?: number;
-  currency: string;
-  image?: string;
-  rating?: number;
-  reviewCount?: number;
-  availability?: 'InStock' | 'OutOfStock' | 'PreOrder';
-}) {
-  return {
-    "@context": "https://schema.org",
-    "@type": "Product",
-    "name": product.name,
-    "description": product.description,
-    "image": product.image || `${SEO_CONFIG.siteUrl}/og-image.jpg`,
-    "offers": {
-      "@type": "Offer",
-      "price": product.price,
-      "priceCurrency": product.currency,
-      "availability": `https://schema.org/${product.availability || 'InStock'}`,
-      "url": window.location.href,
-      "seller": {
-        "@type": "Organization",
-        "name": SEO_CONFIG.siteName
-      },
-      ...(product.originalPrice && {
-        "priceSpecification": {
-          "@type": "PriceSpecification",
-          "price": product.originalPrice,
-          "priceCurrency": product.currency
-        }
-      })
-    },
-    ...(product.rating && product.reviewCount && {
-      "aggregateRating": {
-        "@type": "AggregateRating",
-        "ratingValue": product.rating,
-        "reviewCount": product.reviewCount,
-        "bestRating": 5,
-        "worstRating": 1
-      }
-    })
-  };
-} 
+// Product rich snippet function removed - not being used 

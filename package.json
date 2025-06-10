@@ -16,14 +16,7 @@
     "db:seed": "tsx prisma/seed.ts",
     "type-check": "tsc --noEmit",
     "perf:lighthouse": "lighthouse http://localhost:3000 --output-path=./lighthouse-report.html --save-assets --view",
-    "perf:build-size": "npx bundle-analyzer .next/static/chunks/*.js",
-    "seo:audit": "node scripts/seo-report.mjs",
-    "seo:report": "node scripts/seo-report.mjs",
-    "a11y:test": "node scripts/test-accessibility.js",
-    "a11y:test:ci": "BASE_URL=http://localhost:3000 node scripts/test-accessibility.js",
-    "a11y:install": "npm install --save-dev @axe-core/playwright playwright",
-    "test:accessibility": "npm run a11y:test",
-    "test:a11y": "npm run a11y:test"
+    "perf:build-size": "npx bundle-analyzer .next/static/chunks/*.js"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
@@ -84,7 +77,6 @@
     "prisma": "^6.8.2",
     "tailwindcss": "^4",
     "tsx": "^4.19.4",
-    "tw-animate-css": "^1.3.2",
     "typescript": "^5",
     "web-vitals": "^5.0.2"
   }

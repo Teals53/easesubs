@@ -1,113 +1,17 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
 import { Loader2, Package, ChevronRight, Star } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import Link from "next/link";
 import Image from "next/image";
 import ProductRating from "./ProductRating";
-import * as LucideIcons from "lucide-react";
+import { fadeIn, slideIn } from "@/lib/animations";
+import type { Product, ExtendedCategory } from "@/types/product";
+import { DynamicIcon } from "@/components/ui/dynamic-icon";
 
-// Internal types for display
-interface ProductPlan {
-  id: string;
-  name: string;
-  planType: string;
-  price: number;
-  originalPrice?: number;
-  billingPeriod: string;
-  duration: number;
-  features?: string[];
-  isPopular?: boolean;
-  isAvailable: boolean;
-}
-
-interface Product {
-  id: string;
-  name: string;
-  description?: string | null;
-  category: {
-    id: string;
-    name: string;
-    slug: string;
-  };
-  borderColor?: string | null;
-  logoUrl?: string | null;
-
-  plans: ProductPlan[];
-  isFeatured?: boolean;
-  slug: string;
-  displayOrder?: number | null;
-}
-
-interface Category {
-  key: string;
-  label: string;
-  count: number;
-  color?: string;
-  icon?: string;
-  description?: string;
-}
-
-interface ExtendedCategory extends Category {
-  color: string;
-  icon: string;
-  description: string;
-}
-
-// Dynamic icon component
-const DynamicIcon = ({
-  name,
-  className = "",
-  size = 20,
-}: {
-  name: string;
-  className?: string;
-  size?: number;
-}) => {
-  const IconComponent = LucideIcons[
-    name as keyof typeof LucideIcons
-  ] as React.ComponentType<{ className?: string; size?: number }>;
-  if (!IconComponent) {
-    return <Package className={className} size={size} />;
-  }
-  return <IconComponent className={className} size={size} />;
-};
-
-const fadeIn = (direction: string, delay = 0) => ({
-  hidden: {
-    opacity: 0,
-    y: direction === "up" ? 20 : direction === "down" ? -20 : 0,
-    x: direction === "left" ? 20 : direction === "right" ? -20 : 0,
-  },
-  show: {
-    opacity: 1,
-    y: 0,
-    x: 0,
-    transition: {
-      duration: 0.4,
-      delay,
-      ease: "easeOut",
-    },
-  },
-});
-
-const slideIn = (direction: string, delay = 0) => ({
-  hidden: {
-    opacity: 0,
-    x: direction === "left" ? -30 : direction === "right" ? 30 : 0,
-  },
-  show: {
-    opacity: 1,
-    x: 0,
-    transition: {
-      duration: 0.4,
-      delay,
-      ease: "easeOut",
-    },
-  },
-});
+// Animation utilities moved to @/lib/animations
 
 export function Products() {
   const [activeCategory, setActiveCategory] = useState<string>("");
