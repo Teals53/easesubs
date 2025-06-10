@@ -21,9 +21,13 @@ export interface CartItem {
 interface CartStore {
   items: CartItem[];
   isOpen: boolean;
+  isAnimating: boolean;
   isHydrated: boolean;
   // Remove local state management - let server be source of truth
   toggleCart: () => void;
+  closeCart: () => void;
+  openCart: () => void;
+  setAnimating: (animating: boolean) => void;
   setItems: (items: CartItem[]) => void;
   setHydrated: (hydrated: boolean) => void;
   getTotalItems: () => number;
@@ -35,10 +39,31 @@ export const useCartStore = create<CartStore>()(
     (set, get) => ({
       items: [],
       isOpen: false,
+      isAnimating: false,
       isHydrated: false,
 
       toggleCart: () => {
+        // Prevent toggling while animating
+        if (get().isAnimating) return;
         set({ isOpen: !get().isOpen });
+      },
+
+      closeCart: () => {
+        // Only close if open and not animating
+        if (get().isOpen && !get().isAnimating) {
+          set({ isOpen: false });
+        }
+      },
+
+      openCart: () => {
+        // Only open if closed and not animating
+        if (!get().isOpen && !get().isAnimating) {
+          set({ isOpen: true });
+        }
+      },
+
+      setAnimating: (animating) => {
+        set({ isAnimating: animating });
       },
 
       setItems: (items) => {

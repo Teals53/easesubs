@@ -9,7 +9,7 @@ import Link from "next/link";
 import Image from "next/image";
 
 export function CartSidebar() {
-  const { isOpen, toggleCart } = useCartStore();
+  const { isOpen, closeCart, setAnimating } = useCartStore();
   const {
     items,
     totalItems,
@@ -40,7 +40,7 @@ export function CartSidebar() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40"
-            onClick={toggleCart}
+            onClick={closeCart}
           />
 
           {/* Cart Sidebar */}
@@ -50,6 +50,8 @@ export function CartSidebar() {
             exit={{ x: "100%" }}
             transition={{ type: "spring", damping: 25, stiffness: 200 }}
             className="fixed right-0 top-0 h-full w-full max-w-md bg-gray-900 border-l border-gray-700 z-50 flex flex-col"
+            onAnimationStart={() => setAnimating(true)}
+            onAnimationComplete={() => setAnimating(false)}
           >
             {/* Header */}
             <div className="flex items-center justify-between p-6 border-b border-gray-700">
@@ -58,7 +60,7 @@ export function CartSidebar() {
                 Shopping Cart ({totalItems})
               </h2>
               <button
-                onClick={toggleCart}
+                onClick={closeCart}
                 className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
               >
                 <X className="h-5 w-5 text-gray-400" />
@@ -77,7 +79,7 @@ export function CartSidebar() {
                     Add some products to get started!
                   </p>
                   <button
-                    onClick={toggleCart}
+                    onClick={closeCart}
                     className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-lg transition-colors"
                   >
                     Continue Shopping
@@ -206,7 +208,7 @@ export function CartSidebar() {
                 </div>
                 <Link
                   href="/checkout"
-                  onClick={toggleCart}
+                  onClick={closeCart}
                   className="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors shadow-lg shadow-purple-600/30 text-center block"
                 >
                   Proceed to Checkout
