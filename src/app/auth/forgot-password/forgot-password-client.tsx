@@ -180,4 +180,4 @@ export default function ForgotPasswordClient() {
       </motion.div>
     </div>
   );
-} 
+}

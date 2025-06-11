@@ -67,7 +67,7 @@ export const userRouter = createTRPCRouter({
         // Update the user's name
         const updatedUser = await ctx.db.user.update({
           where: { id: userId },
-          data: { 
+          data: {
             name: input.name,
             updatedAt: new Date(),
           },
@@ -89,7 +89,7 @@ export const userRouter = createTRPCRouter({
         if (error instanceof TRPCError) {
           throw error;
         }
-        
+
         console.error("Profile update error:", error);
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
@@ -443,7 +443,8 @@ export const userRouter = createTRPCRouter({
 
         return {
           success: true,
-          message: "Account and all associated data have been permanently deleted",
+          message:
+            "Account and all associated data have been permanently deleted",
         };
       } catch {
         throw new TRPCError({

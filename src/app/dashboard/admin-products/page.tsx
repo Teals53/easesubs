@@ -449,12 +449,11 @@ export default function AdminProductsPage() {
                         {product.name}
                       </h3>
                       <p className="text-gray-400 text-sm leading-relaxed min-h-[3rem] line-clamp-3">
-                        {product.description ? 
-                          product.description.length > 150 
-                            ? `${product.description.substring(0, 150)}...` 
-                            : product.description 
-                          : "No description available"
-                        }
+                        {product.description
+                          ? product.description.length > 150
+                            ? `${product.description.substring(0, 150)}...`
+                            : product.description
+                          : "No description available"}
                       </p>
                       <div className="flex items-center space-x-2">
                         <span

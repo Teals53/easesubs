@@ -11,19 +11,20 @@ export const metadata: Metadata = {
 export default async function ResetPasswordPage({
   searchParams,
 }: {
-  searchParams: { token?: string; callbackUrl?: string };
+  searchParams: Promise<{ token?: string; callbackUrl?: string }>;
 }) {
   // Server-side authentication check
   const session = await auth();
-  
+
   if (session?.user) {
     // User is already authenticated, redirect to dashboard or callback URL
-    const callbackUrl = searchParams.callbackUrl;
-    const redirectUrl = callbackUrl && callbackUrl.startsWith("/") 
-      ? callbackUrl 
-      : "/dashboard";
+    const params = await searchParams;
+    const callbackUrl = params.callbackUrl;
+    const redirectUrl =
+      callbackUrl && callbackUrl.startsWith("/") ? callbackUrl : "/dashboard";
     redirect(redirectUrl);
   }
 
-  return <ResetPasswordClient token={searchParams.token} />;
+  const params = await searchParams;
+  return <ResetPasswordClient token={params.token} />;
 }

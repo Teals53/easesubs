@@ -15,7 +15,7 @@ interface PageProps {
 export default async function TicketDetailPage({ params }: PageProps) {
   // Server-side authentication check
   const session = await auth();
-  
+
   if (!session?.user) {
     redirect("/auth/signin");
   }

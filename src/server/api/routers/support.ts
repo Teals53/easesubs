@@ -29,12 +29,12 @@ export const supportRouter = createTRPCRouter({
           take: limit,
           orderBy: { createdAt: "desc" },
           include: {
-            user: { 
-              select: { 
+            user: {
+              select: {
                 id: true,
-                name: true, 
-                email: true 
-              } 
+                name: true,
+                email: true,
+              },
             },
             _count: {
               select: {
@@ -82,7 +82,10 @@ export const supportRouter = createTRPCRouter({
         });
       }
 
-      if (ticket.assignedAgentId && ticket.assignedAgentId !== ctx.session.user.id) {
+      if (
+        ticket.assignedAgentId &&
+        ticket.assignedAgentId !== ctx.session.user.id
+      ) {
         throw new TRPCError({
           code: "CONFLICT",
           message: "Ticket is already assigned to another agent",
@@ -168,7 +171,8 @@ export const supportRouter = createTRPCRouter({
       if (ctx.session.user.role === "SUPPORT_AGENT") {
         throw new TRPCError({
           code: "FORBIDDEN",
-          message: "Only administrators and managers can assign tickets to other agents",
+          message:
+            "Only administrators and managers can assign tickets to other agents",
         });
       }
 
@@ -225,10 +229,8 @@ export const supportRouter = createTRPCRouter({
     const userRole = ctx.session.user.role;
 
     // Base where clause for assigned tickets
-    const assignedWhere: Prisma.SupportTicketWhereInput = 
-      userRole === "SUPPORT_AGENT" 
-        ? { assignedAgentId: userId }
-        : {}; // ADMIN and MANAGER can see all tickets
+    const assignedWhere: Prisma.SupportTicketWhereInput =
+      userRole === "SUPPORT_AGENT" ? { assignedAgentId: userId } : {}; // ADMIN and MANAGER can see all tickets
 
     const [
       myOpenTickets,
@@ -279,4 +281,4 @@ export const supportRouter = createTRPCRouter({
       },
     };
   }),
-}); 
+});

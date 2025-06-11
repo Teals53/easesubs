@@ -18,7 +18,9 @@ interface ResetPasswordClientProps {
   token?: string;
 }
 
-export default function ResetPasswordClient({ token }: ResetPasswordClientProps) {
+export default function ResetPasswordClient({
+  token,
+}: ResetPasswordClientProps) {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -210,7 +212,8 @@ export default function ResetPasswordClient({ token }: ResetPasswordClientProps)
               </h1>
 
               <p className="text-gray-400 mb-6">
-                Your password has been updated. You can now sign in with your new password.
+                Your password has been updated. You can now sign in with your
+                new password.
               </p>
 
               <Link
@@ -248,9 +251,7 @@ export default function ResetPasswordClient({ token }: ResetPasswordClientProps)
               Reset Your Password
             </h1>
 
-            <p className="text-gray-400">
-              Enter your new password below.
-            </p>
+            <p className="text-gray-400">Enter your new password below.</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -287,10 +288,14 @@ export default function ResetPasswordClient({ token }: ResetPasswordClientProps)
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white focus:outline-none"
                 >
-                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  {showPassword ? (
+                    <EyeOff className="w-5 h-5" />
+                  ) : (
+                    <Eye className="w-5 h-5" />
+                  )}
                 </button>
               </div>
-              
+
               {password && (
                 <div className="mt-2">
                   <div className="flex items-center justify-between text-sm">
@@ -305,12 +310,14 @@ export default function ResetPasswordClient({ token }: ResetPasswordClientProps)
                         passwordStrength.score < 2
                           ? "bg-red-500"
                           : passwordStrength.score < 3
-                          ? "bg-yellow-500"
-                          : passwordStrength.score < 4
-                          ? "bg-blue-500"
-                          : "bg-green-500"
+                            ? "bg-yellow-500"
+                            : passwordStrength.score < 4
+                              ? "bg-blue-500"
+                              : "bg-green-500"
                       }`}
-                      style={{ width: `${(passwordStrength.score / 4) * 100}%` }}
+                      style={{
+                        width: `${(passwordStrength.score / 4) * 100}%`,
+                      }}
                     ></div>
                   </div>
                   {passwordStrength.errors.length > 0 && (
@@ -349,10 +356,14 @@ export default function ResetPasswordClient({ token }: ResetPasswordClientProps)
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                   className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white focus:outline-none"
                 >
-                  {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  {showConfirmPassword ? (
+                    <EyeOff className="w-5 h-5" />
+                  ) : (
+                    <Eye className="w-5 h-5" />
+                  )}
                 </button>
               </div>
-              
+
               {confirmPassword && password !== confirmPassword && (
                 <p className="mt-2 text-sm text-red-400">
                   Passwords do not match
@@ -364,7 +375,11 @@ export default function ResetPasswordClient({ token }: ResetPasswordClientProps)
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               type="submit"
-              disabled={resetPassword.isPending || !passwordStrength.isValid || password !== confirmPassword}
+              disabled={
+                resetPassword.isPending ||
+                !passwordStrength.isValid ||
+                password !== confirmPassword
+              }
               className="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 rounded-lg shadow-lg shadow-purple-600/30 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {resetPassword.isPending ? (
@@ -391,4 +406,4 @@ export default function ResetPasswordClient({ token }: ResetPasswordClientProps)
       </motion.div>
     </div>
   );
-} 
+}

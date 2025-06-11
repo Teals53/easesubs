@@ -1,5 +1,9 @@
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure, actionProcedure } from "@/server/api/trpc";
+import {
+  createTRPCRouter,
+  protectedProcedure,
+  actionProcedure,
+} from "@/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 
 function generateTicketNumber(): string {

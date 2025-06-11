@@ -50,7 +50,10 @@ export default function AdminTicketDetailPage() {
 
   // Properly typed user with role
   const user = session?.user as ExtendedUser | undefined;
-  const hasAccess = user?.role === "ADMIN" || user?.role === "MANAGER" || user?.role === "SUPPORT_AGENT";
+  const hasAccess =
+    user?.role === "ADMIN" ||
+    user?.role === "MANAGER" ||
+    user?.role === "SUPPORT_AGENT";
 
   // Get tRPC utils for cache invalidation
   const utils = trpc.useUtils();

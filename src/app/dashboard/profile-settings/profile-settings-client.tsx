@@ -74,7 +74,7 @@ export default function ProfileSettingsClient() {
 
       // Invalidate and refetch user profile data
       await utils.user.getProfile.invalidate();
-      
+
       // Update local form data to reflect the change immediately
       setFormData({
         name: data.user?.name || formData.name,
@@ -138,7 +138,7 @@ export default function ProfileSettingsClient() {
     try {
       // Sanitize the input first
       const sanitizedName = sanitizeText(formData.name, 50);
-      
+
       // Validate form data
       if (!sanitizedName || sanitizedName.trim().length < 2) {
         toast.error("Name must be at least 2 characters long");
@@ -152,7 +152,9 @@ export default function ProfileSettingsClient() {
 
       // Validate name format (same as registration)
       if (!/^[a-zA-Z\s'-]+$/.test(sanitizedName.trim())) {
-        toast.error("Name can only contain letters, spaces, hyphens, and apostrophes");
+        toast.error(
+          "Name can only contain letters, spaces, hyphens, and apostrophes",
+        );
         return;
       }
 
@@ -355,7 +357,11 @@ export default function ProfileSettingsClient() {
               </button>
               <button
                 onClick={handleSave}
-                disabled={updateProfileMutation.isPending || !formData.name.trim() || formData.name.trim().length < 2}
+                disabled={
+                  updateProfileMutation.isPending ||
+                  !formData.name.trim() ||
+                  formData.name.trim().length < 2
+                }
                 className="flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-green-600/50 disabled:cursor-not-allowed rounded-lg text-white text-sm transition-colors"
               >
                 <Save className="w-4 h-4 mr-2" />
@@ -378,7 +384,7 @@ export default function ProfileSettingsClient() {
                   // First sanitize to remove dangerous content (HTML, scripts, etc.)
                   const sanitized = sanitizeText(e.target.value, 50);
                   // Then filter to allow only valid name characters (letters, spaces, hyphens, apostrophes)
-                  const validValue = sanitized.replace(/[^a-zA-Z\s\-']/g, '');
+                  const validValue = sanitized.replace(/[^a-zA-Z\s\-']/g, "");
                   setFormData({ ...formData, name: validValue });
                 } catch (error) {
                   // If sanitization fails (e.g., too long), show error
@@ -434,16 +440,23 @@ export default function ProfileSettingsClient() {
               </label>
               <div className="flex items-center space-x-2 w-full px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-lg">
                 {(() => {
-                  const isActive = dbUserProfile && 'isActive' in dbUserProfile ? dbUserProfile.isActive : true;
+                  const isActive =
+                    dbUserProfile && "isActive" in dbUserProfile
+                      ? dbUserProfile.isActive
+                      : true;
                   return (
                     <>
-                      <div className={`w-2 h-2 rounded-full ${
-                        isActive ? 'bg-green-400' : 'bg-red-400'
-                      }`}></div>
-                      <span className={`font-medium ${
-                        isActive ? 'text-green-400' : 'text-red-400'
-                      }`}>
-                        {isActive ? 'Active' : 'Inactive'}
+                      <div
+                        className={`w-2 h-2 rounded-full ${
+                          isActive ? "bg-green-400" : "bg-red-400"
+                        }`}
+                      ></div>
+                      <span
+                        className={`font-medium ${
+                          isActive ? "text-green-400" : "text-red-400"
+                        }`}
+                      >
+                        {isActive ? "Active" : "Inactive"}
                       </span>
                     </>
                   );
@@ -554,7 +567,10 @@ export default function ProfileSettingsClient() {
                       type={showPasswords.current ? "text" : "password"}
                       value={passwordData.currentPassword}
                       onChange={(e) =>
-                        setPasswordData({ ...passwordData, currentPassword: e.target.value })
+                        setPasswordData({
+                          ...passwordData,
+                          currentPassword: e.target.value,
+                        })
                       }
                       className="w-full px-4 py-3 pr-12 bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
                       placeholder="Enter your current password"
@@ -562,7 +578,10 @@ export default function ProfileSettingsClient() {
                     <button
                       type="button"
                       onClick={() =>
-                        setShowPasswords({ ...showPasswords, current: !showPasswords.current })
+                        setShowPasswords({
+                          ...showPasswords,
+                          current: !showPasswords.current,
+                        })
                       }
                       className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-300"
                     >
@@ -584,7 +603,10 @@ export default function ProfileSettingsClient() {
                       type={showPasswords.new ? "text" : "password"}
                       value={passwordData.newPassword}
                       onChange={(e) =>
-                        setPasswordData({ ...passwordData, newPassword: e.target.value })
+                        setPasswordData({
+                          ...passwordData,
+                          newPassword: e.target.value,
+                        })
                       }
                       className="w-full px-4 py-3 pr-12 bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
                       placeholder="Enter your new password"
@@ -592,7 +614,10 @@ export default function ProfileSettingsClient() {
                     <button
                       type="button"
                       onClick={() =>
-                        setShowPasswords({ ...showPasswords, new: !showPasswords.new })
+                        setShowPasswords({
+                          ...showPasswords,
+                          new: !showPasswords.new,
+                        })
                       }
                       className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-300"
                     >
@@ -617,7 +642,10 @@ export default function ProfileSettingsClient() {
                       type={showPasswords.confirm ? "text" : "password"}
                       value={passwordData.confirmPassword}
                       onChange={(e) =>
-                        setPasswordData({ ...passwordData, confirmPassword: e.target.value })
+                        setPasswordData({
+                          ...passwordData,
+                          confirmPassword: e.target.value,
+                        })
                       }
                       className="w-full px-4 py-3 pr-12 bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
                       placeholder="Confirm your new password"
@@ -625,7 +653,10 @@ export default function ProfileSettingsClient() {
                     <button
                       type="button"
                       onClick={() =>
-                        setShowPasswords({ ...showPasswords, confirm: !showPasswords.confirm })
+                        setShowPasswords({
+                          ...showPasswords,
+                          confirm: !showPasswords.confirm,
+                        })
                       }
                       className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-300"
                     >
@@ -649,7 +680,12 @@ export default function ProfileSettingsClient() {
                 </button>
                 <button
                   onClick={handlePasswordChange}
-                  disabled={changePasswordMutation.isPending || !passwordData.currentPassword || !passwordData.newPassword || !passwordData.confirmPassword}
+                  disabled={
+                    changePasswordMutation.isPending ||
+                    !passwordData.currentPassword ||
+                    !passwordData.newPassword ||
+                    !passwordData.confirmPassword
+                  }
                   className="flex items-center px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-purple-600/50 disabled:cursor-not-allowed rounded-lg text-white transition-colors"
                 >
                   {changePasswordMutation.isPending ? (
@@ -704,7 +740,9 @@ export default function ProfileSettingsClient() {
                 <div className="bg-red-900/20 border border-red-500/30 rounded-lg p-4">
                   <h3 className="text-red-400 font-medium mb-2">⚠️ Warning</h3>
                   <p className="text-red-300 text-sm">
-                    This action is irreversible. All your data including orders, subscriptions, and support tickets will be permanently deleted.
+                    This action is irreversible. All your data including orders,
+                    subscriptions, and support tickets will be permanently
+                    deleted.
                   </p>
                 </div>
 
@@ -729,7 +767,7 @@ export default function ProfileSettingsClient() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
-                                         Type &quot;DELETE MY ACCOUNT&quot; to confirm
+                    Type &quot;DELETE MY ACCOUNT&quot; to confirm
                   </label>
                   <input
                     type="text"
@@ -751,7 +789,11 @@ export default function ProfileSettingsClient() {
                 </button>
                 <button
                   onClick={handleDeleteAccount}
-                  disabled={deleteAccountMutation.isPending || !deletePassword || deleteConfirmation !== "DELETE MY ACCOUNT"}
+                  disabled={
+                    deleteAccountMutation.isPending ||
+                    !deletePassword ||
+                    deleteConfirmation !== "DELETE MY ACCOUNT"
+                  }
                   className="flex items-center px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-red-600/50 disabled:cursor-not-allowed rounded-lg text-white transition-colors"
                 >
                   {deleteAccountMutation.isPending ? (
@@ -768,4 +810,4 @@ export default function ProfileSettingsClient() {
       </AnimatePresence>
     </div>
   );
-} 
+}

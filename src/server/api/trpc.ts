@@ -271,7 +271,7 @@ const enforceUserIsSupport = t.middleware(({ ctx, next }) => {
   // Check if user has support role (ADMIN, MANAGER, or SUPPORT_AGENT)
   const userRole = ctx.session.user.role;
   const allowedRoles = ["ADMIN", "MANAGER", "SUPPORT_AGENT"];
-  
+
   if (!allowedRoles.includes(userRole)) {
     // Log privilege escalation attempt
     securityMonitor.analyzeEvent({
@@ -352,7 +352,8 @@ const enforceUserCanPerformActions = t.middleware(async ({ ctx, next }) => {
 
       throw new TRPCError({
         code: "FORBIDDEN",
-        message: "Account is inactive. You can view content but cannot perform actions.",
+        message:
+          "Account is inactive. You can view content but cannot perform actions.",
       });
     }
 

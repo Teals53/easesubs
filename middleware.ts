@@ -66,20 +66,20 @@ export default async function middleware(request: NextRequest) {
   }
 
   // Check route types with exact matching for better reliability
-  const isProtectedRoute = protectedRoutes.some((route) =>
-    pathname === route || pathname.startsWith(route + "/"),
+  const isProtectedRoute = protectedRoutes.some(
+    (route) => pathname === route || pathname.startsWith(route + "/"),
   );
 
-  const isAuthRoute = authRoutes.some((route) =>
-    pathname === route || pathname.startsWith(route + "/"),
+  const isAuthRoute = authRoutes.some(
+    (route) => pathname === route || pathname.startsWith(route + "/"),
   );
 
-  const isAdminRoute = adminRoutes.some((route) =>
-    pathname === route || pathname.startsWith(route + "/"),
+  const isAdminRoute = adminRoutes.some(
+    (route) => pathname === route || pathname.startsWith(route + "/"),
   );
 
-  const isSupportRoute = supportRoutes.some((route) =>
-    pathname === route || pathname.startsWith(route + "/"),
+  const isSupportRoute = supportRoutes.some(
+    (route) => pathname === route || pathname.startsWith(route + "/"),
   );
 
   // RULE 1: Non-authenticated users must not access protected routes (dashboard, checkout)
@@ -93,7 +93,8 @@ export default async function middleware(request: NextRequest) {
   if (isAuthRoute && session?.user) {
     // Check if there's a callbackUrl to redirect to after signin
     const callbackUrl = request.nextUrl.searchParams.get("callbackUrl");
-    const redirectUrl = callbackUrl && callbackUrl.startsWith("/") ? callbackUrl : "/dashboard";
+    const redirectUrl =
+      callbackUrl && callbackUrl.startsWith("/") ? callbackUrl : "/dashboard";
     return NextResponse.redirect(new URL(redirectUrl, request.url));
   }
 

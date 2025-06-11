@@ -430,11 +430,16 @@ export default function AdminUsersPage() {
                             onChange={(e) =>
                               handleRoleChange(user.id, e.target.value)
                             }
-                            disabled={updateUserRoleMutation.isPending || !canChangeRole(user.id, user.role)}
+                            disabled={
+                              updateUserRoleMutation.isPending ||
+                              !canChangeRole(user.id, user.role)
+                            }
                             className="bg-gray-700 border border-gray-600 rounded px-2 py-1 text-white text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             <option value="USER">User</option>
-                            {isFullAdmin && <option value="ADMIN">Admin</option>}
+                            {isFullAdmin && (
+                              <option value="ADMIN">Admin</option>
+                            )}
                             <option value="SUPPORT_AGENT">Support Agent</option>
                             <option value="MANAGER">Manager</option>
                           </select>
@@ -465,20 +470,25 @@ export default function AdminUsersPage() {
                             onClick={() => handleEditUser(user)}
                             disabled={!canModifyUser(user.id, user.role)}
                             className="p-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-600/50 disabled:cursor-not-allowed rounded-lg transition-colors"
-                            title={canModifyUser(user.id, user.role) ? "Edit User" : "Cannot edit this user"}
+                            title={
+                              canModifyUser(user.id, user.role)
+                                ? "Edit User"
+                                : "Cannot edit this user"
+                            }
                           >
                             <Edit className="h-4 w-4 text-white" />
                           </button>
-                          {session?.user?.id !== user.id && canModifyUser(user.id, user.role) && (
-                            <button
-                              onClick={() => handleDeleteUser(user.id)}
-                              disabled={deleteUserMutation.isPending}
-                              className="p-2 bg-red-600 hover:bg-red-700 disabled:bg-red-600/50 rounded-lg transition-colors"
-                              title="Delete User"
-                            >
-                              <Trash2 className="h-4 w-4 text-white" />
-                            </button>
-                          )}
+                          {session?.user?.id !== user.id &&
+                            canModifyUser(user.id, user.role) && (
+                              <button
+                                onClick={() => handleDeleteUser(user.id)}
+                                disabled={deleteUserMutation.isPending}
+                                className="p-2 bg-red-600 hover:bg-red-700 disabled:bg-red-600/50 rounded-lg transition-colors"
+                                title="Delete User"
+                              >
+                                <Trash2 className="h-4 w-4 text-white" />
+                              </button>
+                            )}
                         </div>
                       </td>
                     </tr>
@@ -557,7 +567,10 @@ export default function AdminUsersPage() {
                       onChange={(e) =>
                         handleRoleChange(user.id, e.target.value)
                       }
-                      disabled={updateUserRoleMutation.isPending || !canChangeRole(user.id, user.role)}
+                      disabled={
+                        updateUserRoleMutation.isPending ||
+                        !canChangeRole(user.id, user.role)
+                      }
                       className="bg-gray-700 border border-gray-600 rounded px-3 py-1 text-white text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <option value="USER">User</option>
@@ -578,20 +591,25 @@ export default function AdminUsersPage() {
                         onClick={() => handleEditUser(user)}
                         disabled={!canModifyUser(user.id, user.role)}
                         className="p-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-600/50 disabled:cursor-not-allowed rounded-lg transition-colors"
-                        title={canModifyUser(user.id, user.role) ? "Edit User" : "Cannot edit this user"}
+                        title={
+                          canModifyUser(user.id, user.role)
+                            ? "Edit User"
+                            : "Cannot edit this user"
+                        }
                       >
                         <Edit className="h-4 w-4 text-white" />
                       </button>
-                      {session?.user?.id !== user.id && canModifyUser(user.id, user.role) && (
-                        <button
-                          onClick={() => handleDeleteUser(user.id)}
-                          disabled={deleteUserMutation.isPending}
-                          className="p-2 bg-red-600 hover:bg-red-700 disabled:bg-red-600/50 rounded-lg transition-colors"
-                          title="Delete User"
-                        >
-                          <Trash2 className="h-4 w-4 text-white" />
-                        </button>
-                      )}
+                      {session?.user?.id !== user.id &&
+                        canModifyUser(user.id, user.role) && (
+                          <button
+                            onClick={() => handleDeleteUser(user.id)}
+                            disabled={deleteUserMutation.isPending}
+                            className="p-2 bg-red-600 hover:bg-red-700 disabled:bg-red-600/50 rounded-lg transition-colors"
+                            title="Delete User"
+                          >
+                            <Trash2 className="h-4 w-4 text-white" />
+                          </button>
+                        )}
                     </div>
                   </div>
                 </div>
@@ -677,8 +695,6 @@ export default function AdminUsersPage() {
                   className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white"
                 />
               </div>
-
-
 
               <label className="flex items-center space-x-2">
                 <input

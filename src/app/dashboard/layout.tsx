@@ -24,7 +24,9 @@ export default function DashboardLayout({
 
               {/* Main Content */}
               <div className="flex-1 min-w-0 overflow-hidden">
-                <div className="h-full overflow-y-auto dashboard-content">{children}</div>
+                <div className="h-full overflow-y-auto dashboard-content">
+                  {children}
+                </div>
               </div>
             </div>
           </div>

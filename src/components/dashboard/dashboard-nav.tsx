@@ -162,8 +162,8 @@ export default function DashboardNav() {
       {/* Navigation Menu */}
       <div
         className={`bg-gray-900/50 backdrop-blur-lg rounded-2xl border border-gray-700/50 lg:sticky lg:top-8 flex flex-col transition-all duration-200 ease-in-out mobile-nav-menu ${
-          isMobileMenuOpen 
-            ? "block opacity-100 transform translate-y-0" 
+          isMobileMenuOpen
+            ? "block opacity-100 transform translate-y-0"
             : "hidden lg:block opacity-100"
         }`}
       >
@@ -188,7 +188,9 @@ export default function DashboardNav() {
                 </p>
               )}
               {isSupportAgent && (
-                <p className="text-xs text-yellow-400 font-medium">Support Agent</p>
+                <p className="text-xs text-yellow-400 font-medium">
+                  Support Agent
+                </p>
               )}
             </div>
           </div>

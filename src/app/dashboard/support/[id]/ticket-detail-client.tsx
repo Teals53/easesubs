@@ -33,7 +33,9 @@ interface TicketDetailClientProps {
   ticketId: string;
 }
 
-export default function TicketDetailClient({ ticketId }: TicketDetailClientProps) {
+export default function TicketDetailClient({
+  ticketId,
+}: TicketDetailClientProps) {
   const [newMessage, setNewMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -436,4 +438,4 @@ export default function TicketDetailClient({ ticketId }: TicketDetailClientProps
       </motion.div>
     </div>
   );
-} 
+}

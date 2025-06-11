@@ -37,7 +37,10 @@ export default function AdminSupportPage() {
 
   // Properly typed user with role
   const user = session?.user as ExtendedUser | undefined;
-  const hasAccess = user?.role === "ADMIN" || user?.role === "MANAGER" || user?.role === "SUPPORT_AGENT";
+  const hasAccess =
+    user?.role === "ADMIN" ||
+    user?.role === "MANAGER" ||
+    user?.role === "SUPPORT_AGENT";
 
   // Get tRPC utils for cache invalidation
   const utils = trpc.useUtils();
@@ -328,8 +331,8 @@ export default function AdminSupportPage() {
                           <MessageCircle className="h-5 w-5 text-purple-400 flex-shrink-0" />
                           <div className="min-w-0">
                             <p className="text-white font-medium truncate">
-                              {ticket.title && ticket.title.length > 50 
-                                ? `${ticket.title.substring(0, 50)}...` 
+                              {ticket.title && ticket.title.length > 50
+                                ? `${ticket.title.substring(0, 50)}...`
                                 : ticket.title}
                             </p>
                             <p className="text-gray-400 text-sm">
@@ -415,8 +418,8 @@ export default function AdminSupportPage() {
                       <MessageCircle className="h-5 w-5 text-purple-400 flex-shrink-0" />
                       <div className="min-w-0 flex-1">
                         <p className="text-white font-medium truncate">
-                          {ticket.title && ticket.title.length > 40 
-                            ? `${ticket.title.substring(0, 40)}...` 
+                          {ticket.title && ticket.title.length > 40
+                            ? `${ticket.title.substring(0, 40)}...`
                             : ticket.title}
                         </p>
                         <p className="text-gray-400 text-sm">

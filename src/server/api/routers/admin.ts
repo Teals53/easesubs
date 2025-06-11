@@ -450,7 +450,6 @@ export const adminRouter = createTRPCRouter({
   toggleUserStatus: adminProcedure
     .input(z.object({ userId: z.string() }))
     .mutation(async ({ ctx, input }) => {
-
       const user = await ctx.db.user.findUnique({
         where: { id: input.userId },
       });
@@ -498,7 +497,6 @@ export const adminRouter = createTRPCRouter({
   deleteUser: adminProcedure
     .input(z.object({ userId: z.string() }))
     .mutation(async ({ ctx, input }) => {
-
       // Prevent admins from deleting themselves
       if (ctx.session.user.id === input.userId) {
         throw new TRPCError({
@@ -514,7 +512,10 @@ export const adminRouter = createTRPCRouter({
       });
 
       // Only ADMIN can delete ADMIN users
-      if (ctx.session.user.role === "MANAGER" && userToDelete?.role === "ADMIN") {
+      if (
+        ctx.session.user.role === "MANAGER" &&
+        userToDelete?.role === "ADMIN"
+      ) {
         throw new TRPCError({
           code: "FORBIDDEN",
           message: "Managers cannot delete admin accounts",
@@ -633,7 +634,6 @@ export const adminRouter = createTRPCRouter({
       }),
     )
     .query(async ({ ctx, input }) => {
-
       const { page, limit, search, categoryId } = input;
       const skip = (page - 1) * limit;
 
@@ -737,7 +737,6 @@ export const adminRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-
       // Check if slug is unique
       const existingProduct = await ctx.db.product.findUnique({
         where: { slug: input.slug },
@@ -812,7 +811,6 @@ export const adminRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-
       const { id, slug, plans, ...updateData } = input;
 
       // Check if product exists
@@ -931,7 +929,6 @@ export const adminRouter = createTRPCRouter({
   getProductById: adminProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
-
       const product = await ctx.db.product.findUnique({
         where: { id: input.id },
         include: {
@@ -952,7 +949,6 @@ export const adminRouter = createTRPCRouter({
     }),
 
   getCategories: adminProcedure.query(async ({ ctx }) => {
-
     const categories = await ctx.db.category.findMany({
       orderBy: [{ displayOrder: "asc" }, { name: "asc" }],
       include: {
@@ -991,7 +987,6 @@ export const adminRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-
       // Check if category with this name or slug already exists
       const existingCategory = await ctx.db.category.findFirst({
         where: {
@@ -1027,7 +1022,6 @@ export const adminRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-
       const { id, ...updateData } = input;
 
       // Check if category exists
@@ -1072,7 +1066,6 @@ export const adminRouter = createTRPCRouter({
   deleteCategory: adminProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
-
       // Check if category exists
       const category = await ctx.db.category.findUnique({
         where: { id: input.id },
@@ -1110,7 +1103,6 @@ export const adminRouter = createTRPCRouter({
   toggleCategoryStatus: adminProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
-
       const category = await ctx.db.category.findUnique({
         where: { id: input.id },
       });
@@ -1133,7 +1125,6 @@ export const adminRouter = createTRPCRouter({
   toggleProductStatus: adminProcedure
     .input(z.object({ productId: z.string() }))
     .mutation(async ({ ctx, input }) => {
-
       const product = await ctx.db.product.findUnique({
         where: { id: input.productId },
       });
@@ -1156,7 +1147,6 @@ export const adminRouter = createTRPCRouter({
   deleteProduct: adminProcedure
     .input(z.object({ productId: z.string() }))
     .mutation(async ({ ctx, input }) => {
-
       // Check if product has active subscriptions
       const activeSubscriptions = await ctx.db.userSubscription.count({
         where: {
@@ -1217,7 +1207,6 @@ export const adminRouter = createTRPCRouter({
       }),
     )
     .query(async ({ ctx, input }) => {
-
       const { page, limit, search, status } = input;
       const skip = (page - 1) * limit;
 
@@ -1273,7 +1262,6 @@ export const adminRouter = createTRPCRouter({
       }),
     )
     .query(async ({ ctx, input }) => {
-
       const { page, limit, search, status } = input;
       const skip = (page - 1) * limit;
 
@@ -1321,7 +1309,6 @@ export const adminRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-
       const ticket = await ctx.db.supportTicket.update({
         where: { id: input.ticketId },
         data: {
@@ -1348,7 +1335,6 @@ export const adminRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-
       const order = await ctx.db.order.update({
         where: { id: input.orderId },
         data: {
@@ -1363,7 +1349,6 @@ export const adminRouter = createTRPCRouter({
   getTicketById: supportProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
-
       const ticket = await ctx.db.supportTicket.findFirst({
         where: {
           id: input.id,
@@ -1424,7 +1409,6 @@ export const adminRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-
       // Verify ticket exists
       const ticket = await ctx.db.supportTicket.findFirst({
         where: {
@@ -1474,7 +1458,6 @@ export const adminRouter = createTRPCRouter({
   deleteTicket: supportProcedure
     .input(z.object({ ticketId: z.string() }))
     .mutation(async ({ ctx, input }) => {
-
       // Delete ticket and related data
       await ctx.db.$transaction(async (tx) => {
         // Delete ticket messages first
@@ -1499,7 +1482,6 @@ export const adminRouter = createTRPCRouter({
   getOrderById: adminProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
-
       const order = await ctx.db.order.findFirst({
         where: {
           id: input.id,
@@ -1570,7 +1552,6 @@ export const adminRouter = createTRPCRouter({
       }),
     )
     .query(async ({ ctx, input }) => {
-
       const where: Prisma.StockItemWhereInput = {};
       if (input.planId) {
         where.planId = input.planId;
@@ -1605,7 +1586,6 @@ export const adminRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-
       return await ctx.db.stockItem.create({
         data: {
           planId: input.planId,
@@ -1617,7 +1597,6 @@ export const adminRouter = createTRPCRouter({
   deleteStockItem: adminProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
-
       const stockItem = await ctx.db.stockItem.findUnique({
         where: { id: input.id },
       });

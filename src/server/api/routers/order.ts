@@ -1,5 +1,9 @@
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure, actionProcedure } from "@/server/api/trpc";
+import {
+  createTRPCRouter,
+  protectedProcedure,
+  actionProcedure,
+} from "@/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 
 export const orderRouter = createTRPCRouter({
@@ -30,7 +34,8 @@ export const orderRouter = createTRPCRouter({
       ) {
         throw new TRPCError({
           code: "FORBIDDEN",
-          message: "Admin bypass payment method requires admin or manager privileges",
+          message:
+            "Admin bypass payment method requires admin or manager privileges",
         });
       }
 

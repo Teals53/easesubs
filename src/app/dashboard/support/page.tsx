@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 export default async function SupportPage() {
   // Server-side authentication check
   const session = await auth();
-  
+
   if (!session?.user) {
     redirect("/auth/signin");
   }
