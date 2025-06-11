@@ -122,9 +122,9 @@ export default function DashboardClient() {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 pb-8 dashboard-page">
       {/* Header */}
-      <div>
+      <div className="flex-shrink-0">
         <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-600 bg-clip-text text-transparent mb-2">
           Welcome back, {session?.user?.name || "User"}!
         </h1>
@@ -134,7 +134,7 @@ export default function DashboardClient() {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 flex-shrink-0 dashboard-stats-grid">
         {statsLoading ? (
           Array.from({ length: 4 }).map((_, i) => <LoadingCard key={i} />)
         ) : (
@@ -182,7 +182,7 @@ export default function DashboardClient() {
       </div>
 
       {/* Charts and Activity Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-8 flex-1 min-h-0">
         {/* Quick Actions */}
         <motion.div
           initial={{ opacity: 0, x: -20 }}

@@ -2,13 +2,14 @@ import { z } from "zod";
 import {
   createTRPCRouter,
   protectedProcedure,
+  actionProcedure,
   publicProcedure,
 } from "@/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 
 export const reviewRouter = createTRPCRouter({
   // Create a review for a purchased product
-  create: protectedProcedure
+  create: actionProcedure
     .input(
       z.object({
         orderItemId: z.string(),
@@ -81,7 +82,7 @@ export const reviewRouter = createTRPCRouter({
     }),
 
   // Update an existing review
-  update: protectedProcedure
+  update: actionProcedure
     .input(
       z.object({
         reviewId: z.string(),
@@ -134,7 +135,7 @@ export const reviewRouter = createTRPCRouter({
     }),
 
   // Delete a review
-  delete: protectedProcedure
+  delete: actionProcedure
     .input(z.object({ reviewId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       // Verify the user owns this review

@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { useSession } from "next-auth/react";
+import { redirect } from "next/navigation";
 import { trpc } from "@/lib/trpc";
 import { motion } from "framer-motion";
 import {
@@ -12,7 +14,15 @@ import {
   Clock,
 } from "lucide-react";
 
+interface ExtendedUser {
+  id: string;
+  name?: string | null;
+  email?: string | null;
+  role: string;
+}
+
 export default function AdminStockPage() {
+  const { data: session, status } = useSession();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedPlan, setSelectedPlan] = useState<string>("");
   const [newStockContent, setNewStockContent] = useState("");
@@ -44,6 +54,22 @@ export default function AdminStockPage() {
       refetchStock();
     },
   });
+
+  // Properly typed user with role
+  const user = session?.user as ExtendedUser | undefined;
+  const hasAccess = user?.role === "ADMIN" || user?.role === "MANAGER";
+
+  if (status === "loading") {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-purple-500"></div>
+      </div>
+    );
+  }
+
+  if (!session || !hasAccess) {
+    redirect("/dashboard");
+  }
 
   const handleAddStock = async () => {
     if (!selectedPlan || !newStockContent.trim()) return;

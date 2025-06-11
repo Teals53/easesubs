@@ -4,6 +4,7 @@ import {
   createTRPCRouter,
   publicProcedure,
   protectedProcedure,
+  actionProcedure,
 } from "@/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import crypto from "crypto";
@@ -226,7 +227,7 @@ export const authRouter = createTRPCRouter({
       }
     }),
 
-  changePassword: protectedProcedure
+  changePassword: actionProcedure
     .input(
       z.object({
         currentPassword: z.string().min(1, "Current password is required"),

@@ -107,7 +107,7 @@ export default function AdminDashboardPage() {
 
   // Properly typed user with role
   const user = session?.user as ExtendedUser | undefined;
-  const isAdmin = user?.role === "ADMIN";
+  const isAdmin = user?.role === "ADMIN" || user?.role === "MANAGER";
 
   const {
     data: adminStats,
@@ -173,7 +173,7 @@ export default function AdminDashboardPage() {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 pb-8 dashboard-page">
       {/* Header with Refresh Button */}
       <div className="flex items-center justify-between">
         <div>
@@ -197,7 +197,7 @@ export default function AdminDashboardPage() {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 flex-shrink-0 dashboard-stats-grid">
         {statsLoading ? (
           Array.from({ length: 4 }).map((_, i) => <LoadingCard key={i} />)
         ) : (

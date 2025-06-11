@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure } from "../trpc";
+import { createTRPCRouter, protectedProcedure, actionProcedure } from "../trpc";
 import { TRPCError } from "@trpc/server";
 import bcrypt from "bcryptjs";
 
@@ -26,7 +26,7 @@ export const userRouter = createTRPCRouter({
     };
   }),
 
-  updateProfile: protectedProcedure
+  updateProfile: actionProcedure
     .input(
       z.object({
         name: z
@@ -299,7 +299,7 @@ export const userRouter = createTRPCRouter({
     };
   }),
 
-  updateNotificationSettings: protectedProcedure
+  updateNotificationSettings: actionProcedure
     .input(
       z.object({
         emailNotifications: z.boolean().optional(),
@@ -318,7 +318,7 @@ export const userRouter = createTRPCRouter({
       };
     }),
 
-  deleteAccount: protectedProcedure
+  deleteAccount: actionProcedure
     .input(
       z.object({
         password: z.string().min(1, "Password is required"),
@@ -353,19 +353,97 @@ export const userRouter = createTRPCRouter({
       }
 
       try {
-        // Soft delete: deactivate account instead of hard delete
-        await ctx.db.user.update({
-          where: { id: userId },
-          data: {
-            isActive: false,
-            email: `deleted_${Date.now()}_${user.email}`, // Anonymize email
-            name: "Deleted User",
-          },
+        // Hard delete: completely remove user and all related data
+        await ctx.db.$transaction(async (tx) => {
+          // Delete user subscriptions first
+          await tx.userSubscription.deleteMany({
+            where: { userId: userId },
+          });
+
+          // Delete cart items
+          await tx.cartItem.deleteMany({
+            where: { userId: userId },
+          });
+
+          // Delete support ticket messages directly by userId (important: this must come before deleting tickets)
+          await tx.supportTicketMessage.deleteMany({
+            where: { userId: userId },
+          });
+
+          // Delete support ticket attachments
+          await tx.supportTicketAttachment.deleteMany({
+            where: {
+              ticket: {
+                userId: userId,
+              },
+            },
+          });
+
+          // Update support tickets where this user is assigned as agent (set to null)
+          await tx.supportTicket.updateMany({
+            where: { assignedAgentId: userId },
+            data: { assignedAgentId: null },
+          });
+
+          // Delete support tickets where this user is the creator
+          await tx.supportTicket.deleteMany({
+            where: { userId: userId },
+          });
+
+          // Delete reviews
+          await tx.review.deleteMany({
+            where: { userId: userId },
+          });
+
+          // Get all orders for this user
+          const userOrders = await tx.order.findMany({
+            where: { userId: userId },
+            select: { id: true },
+          });
+
+          if (userOrders.length > 0) {
+            const orderIds = userOrders.map((order) => order.id);
+
+            // Delete payments for these orders
+            await tx.payment.deleteMany({
+              where: { orderId: { in: orderIds } },
+            });
+
+            // Delete order items
+            await tx.orderItem.deleteMany({
+              where: { orderId: { in: orderIds } },
+            });
+
+            // Delete orders
+            await tx.order.deleteMany({
+              where: { userId: userId },
+            });
+          }
+
+          // Delete accounts (OAuth accounts)
+          await tx.account.deleteMany({
+            where: { userId: userId },
+          });
+
+          // Delete sessions
+          await tx.session.deleteMany({
+            where: { userId: userId },
+          });
+
+          // Delete security events
+          await tx.securityEvent.deleteMany({
+            where: { userId: userId },
+          });
+
+          // Finally delete the user
+          await tx.user.delete({
+            where: { id: userId },
+          });
         });
 
         return {
           success: true,
-          message: "Account has been deactivated successfully",
+          message: "Account and all associated data have been permanently deleted",
         };
       } catch {
         throw new TRPCError({

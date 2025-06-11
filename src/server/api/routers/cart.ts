@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
+import { createTRPCRouter, protectedProcedure, actionProcedure } from "@/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 
 export const cartRouter = createTRPCRouter({
@@ -140,7 +140,7 @@ export const cartRouter = createTRPCRouter({
       };
     }),
 
-  add: protectedProcedure
+  add: actionProcedure
     .input(
       z.object({
         planId: z.string(),
@@ -265,7 +265,7 @@ export const cartRouter = createTRPCRouter({
       };
     }),
 
-  updateQuantity: protectedProcedure
+  updateQuantity: actionProcedure
     .input(
       z.object({
         planId: z.string(),
@@ -354,7 +354,7 @@ export const cartRouter = createTRPCRouter({
       };
     }),
 
-  remove: protectedProcedure
+  remove: actionProcedure
     .input(z.object({ planId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       if (!ctx.session?.user?.id || ctx.session.user.id === "") {
@@ -383,7 +383,7 @@ export const cartRouter = createTRPCRouter({
       return deletedItem;
     }),
 
-  clear: protectedProcedure.mutation(async ({ ctx }) => {
+  clear: actionProcedure.mutation(async ({ ctx }) => {
     if (!ctx.session?.user?.id || ctx.session.user.id === "") {
       throw new TRPCError({
         code: "UNAUTHORIZED",

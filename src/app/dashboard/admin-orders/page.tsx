@@ -43,7 +43,7 @@ export default function AdminOrdersPage() {
 
   // Properly typed user with role
   const user = session?.user as ExtendedUser | undefined;
-  const isAdmin = user?.role === "ADMIN";
+  const isAdmin = user?.role === "ADMIN" || user?.role === "MANAGER";
 
   const {
     data: orders,

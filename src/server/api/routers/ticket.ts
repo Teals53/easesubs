@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
+import { createTRPCRouter, protectedProcedure, actionProcedure } from "@/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 
 function generateTicketNumber(): string {
@@ -9,7 +9,7 @@ function generateTicketNumber(): string {
 }
 
 export const ticketRouter = createTRPCRouter({
-  create: protectedProcedure
+  create: actionProcedure
     .input(
       z.object({
         title: z
@@ -179,7 +179,7 @@ export const ticketRouter = createTRPCRouter({
       return ticket;
     }),
 
-  addMessage: protectedProcedure
+  addMessage: actionProcedure
     .input(
       z.object({
         ticketId: z.string(),
@@ -237,7 +237,7 @@ export const ticketRouter = createTRPCRouter({
       return message;
     }),
 
-  close: protectedProcedure
+  close: actionProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
       const ticket = await ctx.db.supportTicket.findFirst({
@@ -267,7 +267,7 @@ export const ticketRouter = createTRPCRouter({
       return updatedTicket;
     }),
 
-  reopen: protectedProcedure
+  reopen: actionProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
       const ticket = await ctx.db.supportTicket.findFirst({

@@ -216,8 +216,9 @@ const enforceUserIsAdmin = t.middleware(({ ctx, next }) => {
     throw new TRPCError({ code: "UNAUTHORIZED" });
   }
 
-  // Check if user has admin role
-  if (ctx.session.user.role !== "ADMIN") {
+  // Check if user has admin or manager role
+  const userRole = ctx.session.user.role;
+  if (userRole !== "ADMIN" && userRole !== "MANAGER") {
     // Log privilege escalation attempt
     securityMonitor.analyzeEvent({
       type: "PRIVILEGE_ESCALATION",
@@ -227,7 +228,7 @@ const enforceUserIsAdmin = t.middleware(({ ctx, next }) => {
       details: {
         reason: "insufficient_privileges",
         userRole: ctx.session.user.role,
-        requiredRole: "ADMIN",
+        requiredRole: "ADMIN or MANAGER",
         userId: ctx.session.user.id,
         userEmail: ctx.session.user.email,
         timestamp: new Date().toISOString(),
@@ -236,7 +237,61 @@ const enforceUserIsAdmin = t.middleware(({ ctx, next }) => {
 
     throw new TRPCError({
       code: "FORBIDDEN",
-      message: "Admin access required",
+      message: "Admin or Manager access required",
+    });
+  }
+
+  return next({
+    ctx: {
+      session: { ...ctx.session, user: ctx.session.user },
+    },
+  });
+});
+
+/**
+ * Reusable middleware that enforces users are support staff before running the procedure.
+ * Allows ADMIN, MANAGER, and SUPPORT_AGENT roles.
+ */
+const enforceUserIsSupport = t.middleware(({ ctx, next }) => {
+  if (!ctx.session || !ctx.session.user) {
+    // Log unauthorized access attempt
+    securityMonitor.analyzeEvent({
+      type: "UNAUTHORIZED_ACCESS",
+      severity: "HIGH",
+      source: "tRPC - Support Access Required",
+      details: {
+        reason: "no_session_support_required",
+        timestamp: new Date().toISOString(),
+      },
+    });
+
+    throw new TRPCError({ code: "UNAUTHORIZED" });
+  }
+
+  // Check if user has support role (ADMIN, MANAGER, or SUPPORT_AGENT)
+  const userRole = ctx.session.user.role;
+  const allowedRoles = ["ADMIN", "MANAGER", "SUPPORT_AGENT"];
+  
+  if (!allowedRoles.includes(userRole)) {
+    // Log privilege escalation attempt
+    securityMonitor.analyzeEvent({
+      type: "PRIVILEGE_ESCALATION",
+      severity: "HIGH",
+      source: "tRPC - Support Access Denied",
+      userId: ctx.session.user.id,
+      details: {
+        reason: "insufficient_privileges",
+        userRole: ctx.session.user.role,
+        requiredRole: "ADMIN, MANAGER, or SUPPORT_AGENT",
+        userId: ctx.session.user.id,
+        userEmail: ctx.session.user.email,
+        timestamp: new Date().toISOString(),
+      },
+    });
+
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "Support staff access required",
     });
   }
 
@@ -258,10 +313,76 @@ const enforceUserIsAdmin = t.middleware(({ ctx, next }) => {
 export const protectedProcedure = t.procedure.use(enforceUserIsAuthed);
 
 /**
+ * Middleware that allows inactive users to be authenticated but blocks them from performing actions
+ * Use this for procedures that inactive users should be able to view but not modify
+ */
+const enforceUserCanPerformActions = t.middleware(async ({ ctx, next }) => {
+  if (!ctx.session || !ctx.session.user) {
+    throw new TRPCError({ code: "UNAUTHORIZED" });
+  }
+
+  const userId = ctx.session.user.id;
+
+  try {
+    const user = await ctx.db.user.findUnique({
+      where: { id: userId },
+      select: { id: true, isActive: true },
+    });
+
+    if (!user) {
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: "User not found",
+      });
+    }
+
+    if (!user.isActive) {
+      // Log action attempt by inactive user
+      await securityMonitor.analyzeEvent({
+        type: "UNAUTHORIZED_ACCESS",
+        severity: "MEDIUM",
+        source: "tRPC - Inactive User Action Blocked",
+        userId,
+        details: {
+          reason: "inactive_user_action_blocked",
+          userId,
+          timestamp: new Date().toISOString(),
+        },
+      });
+
+      throw new TRPCError({
+        code: "FORBIDDEN",
+        message: "Account is inactive. You can view content but cannot perform actions.",
+      });
+    }
+
+    return next({
+      ctx: {
+        session: { ...ctx.session, user: ctx.session.user },
+      },
+    });
+  } catch (error) {
+    if (error instanceof TRPCError) {
+      throw error;
+    }
+    throw new TRPCError({
+      code: "INTERNAL_SERVER_ERROR",
+      message: "Failed to validate user status",
+    });
+  }
+});
+
+/**
  * Protected procedure with user active status validation
  * Use this for critical operations that require active user validation
  */
 export const activeUserProcedure = t.procedure.use(enforceUserIsActive);
+
+/**
+ * Protected procedure that blocks actions for inactive users but allows viewing
+ * Use this for actions like checkout, messaging, reviews, etc.
+ */
+export const actionProcedure = t.procedure.use(enforceUserCanPerformActions);
 
 /**
  * Response sanitization middleware
@@ -363,9 +484,14 @@ const sanitizeResponse = t.middleware(async ({ ctx, next, path }) => {
 });
 
 /**
- * Admin-only procedure
+ * Admin-only procedure (ADMIN and MANAGER roles)
  */
 export const adminProcedure = t.procedure.use(enforceUserIsAdmin);
+
+/**
+ * Support staff procedure (ADMIN, MANAGER, and SUPPORT_AGENT roles)
+ */
+export const supportProcedure = t.procedure.use(enforceUserIsSupport);
 
 /**
  * Sanitized procedures - automatically sanitize response data
@@ -379,4 +505,7 @@ export const sanitizedActiveUserProcedure = t.procedure
   .use(sanitizeResponse);
 export const sanitizedAdminProcedure = t.procedure
   .use(enforceUserIsAdmin)
+  .use(sanitizeResponse);
+export const sanitizedSupportProcedure = t.procedure
+  .use(enforceUserIsSupport)
   .use(sanitizeResponse);

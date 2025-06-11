@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
+import { redirect } from "next/navigation";
 import { motion } from "framer-motion";
 import { trpc } from "@/lib/trpc";
 import {
@@ -16,6 +18,13 @@ import {
   TrendingUp,
   Zap,
 } from "lucide-react";
+
+interface ExtendedUser {
+  id: string;
+  name?: string | null;
+  email?: string | null;
+  role: string;
+}
 
 interface SecurityEvent {
   type: string;
@@ -41,6 +50,7 @@ interface BlockedIP {
 }
 
 export default function SecurityDashboardPage() {
+  const { data: session, status } = useSession();
   const [securityEvents, setSecurityEvents] = useState<SecurityEvent[]>([]);
   const [blockedIPs, setBlockedIPs] = useState<BlockedIP[]>([]);
   const [stats, setStats] = useState<SecurityStats | null>(null);
@@ -86,6 +96,22 @@ export default function SecurityDashboardPage() {
       setStats(securityStats);
     }
   }, [securityStats]);
+
+  // Properly typed user with role
+  const user = session?.user as ExtendedUser | undefined;
+  const hasAccess = user?.role === "ADMIN" || user?.role === "MANAGER";
+
+  if (status === "loading") {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-purple-500"></div>
+      </div>
+    );
+  }
+
+  if (!session || !hasAccess) {
+    redirect("/dashboard");
+  }
 
   const handleRefreshAll = () => {
     // The tRPC queries will automatically refetch due to their configuration

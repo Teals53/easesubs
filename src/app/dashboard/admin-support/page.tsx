@@ -37,7 +37,7 @@ export default function AdminSupportPage() {
 
   // Properly typed user with role
   const user = session?.user as ExtendedUser | undefined;
-  const isAdmin = user?.role === "ADMIN";
+  const hasAccess = user?.role === "ADMIN" || user?.role === "MANAGER" || user?.role === "SUPPORT_AGENT";
 
   // Get tRPC utils for cache invalidation
   const utils = trpc.useUtils();
@@ -56,7 +56,7 @@ export default function AdminSupportPage() {
       limit: itemsPerPage,
     },
     {
-      enabled: isAdmin,
+      enabled: hasAccess,
       // Refetch every 30 seconds for real-time updates
       refetchInterval: 30000,
     },
@@ -84,7 +84,7 @@ export default function AdminSupportPage() {
     );
   }
 
-  if (!session || !isAdmin) {
+  if (!session || !hasAccess) {
     redirect("/dashboard");
   }
 
@@ -328,7 +328,9 @@ export default function AdminSupportPage() {
                           <MessageCircle className="h-5 w-5 text-purple-400 flex-shrink-0" />
                           <div className="min-w-0">
                             <p className="text-white font-medium truncate">
-                              {ticket.title}
+                              {ticket.title && ticket.title.length > 50 
+                                ? `${ticket.title.substring(0, 50)}...` 
+                                : ticket.title}
                             </p>
                             <p className="text-gray-400 text-sm">
                               #{ticket.id.slice(-8)}
@@ -413,7 +415,9 @@ export default function AdminSupportPage() {
                       <MessageCircle className="h-5 w-5 text-purple-400 flex-shrink-0" />
                       <div className="min-w-0 flex-1">
                         <p className="text-white font-medium truncate">
-                          {ticket.title}
+                          {ticket.title && ticket.title.length > 40 
+                            ? `${ticket.title.substring(0, 40)}...` 
+                            : ticket.title}
                         </p>
                         <p className="text-gray-400 text-sm">
                           #{ticket.id.slice(-8)}

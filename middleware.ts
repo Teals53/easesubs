@@ -56,20 +56,30 @@ export default async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Get session using NextAuth
-  const session = await auth();
+  // Get session using NextAuth - with better error handling
+  let session;
+  try {
+    session = await auth();
+  } catch (error) {
+    console.error("Auth session error in middleware:", error);
+    session = null;
+  }
 
-  // Check route types
+  // Check route types with exact matching for better reliability
   const isProtectedRoute = protectedRoutes.some((route) =>
-    pathname.startsWith(route),
+    pathname === route || pathname.startsWith(route + "/"),
   );
 
-  const isAuthRoute = authRoutes.some((route) => pathname.startsWith(route));
+  const isAuthRoute = authRoutes.some((route) =>
+    pathname === route || pathname.startsWith(route + "/"),
+  );
 
-  const isAdminRoute = adminRoutes.some((route) => pathname.startsWith(route));
+  const isAdminRoute = adminRoutes.some((route) =>
+    pathname === route || pathname.startsWith(route + "/"),
+  );
 
   const isSupportRoute = supportRoutes.some((route) =>
-    pathname.startsWith(route),
+    pathname === route || pathname.startsWith(route + "/"),
   );
 
   // RULE 1: Non-authenticated users must not access protected routes (dashboard, checkout)
@@ -81,7 +91,10 @@ export default async function middleware(request: NextRequest) {
 
   // RULE 2: Authenticated users must not access auth pages
   if (isAuthRoute && session?.user) {
-    return NextResponse.redirect(new URL("/dashboard", request.url));
+    // Check if there's a callbackUrl to redirect to after signin
+    const callbackUrl = request.nextUrl.searchParams.get("callbackUrl");
+    const redirectUrl = callbackUrl && callbackUrl.startsWith("/") ? callbackUrl : "/dashboard";
+    return NextResponse.redirect(new URL(redirectUrl, request.url));
   }
 
   // RULE 3: Non-admin users must not access admin pages

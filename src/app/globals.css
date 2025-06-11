@@ -144,3 +144,38 @@ html {
     --foreground: #1f2937;
   }
 }
+
+/* Dashboard specific layout improvements */
+.dashboard-container {
+  contain: layout style;
+  will-change: auto;
+}
+
+/* Prevent layout shifts on hydration */
+.dashboard-stats-grid {
+  contain: layout;
+}
+
+/* Smooth mobile menu transitions */
+.mobile-nav-menu {
+  transform-origin: top;
+  backface-visibility: hidden;
+  perspective: 1000px;
+}
+
+/* Prevent unnecessary scrollbars */
+.dashboard-content {
+  overflow-anchor: none;
+}
+
+/* Fix for CLS (Cumulative Layout Shift) */
+.dashboard-layout {
+  contain: layout style;
+}
+
+/* Prevent flash of unstyled content */
+@supports (contain: layout) {
+  .dashboard-page {
+    contain: layout style;
+  }
+}

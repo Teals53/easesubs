@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef } from "react";
 import {
   Menu,
-  X,
   User,
   ShoppingCart,
   Home,
@@ -12,6 +11,7 @@ import {
   Settings,
   BarChart3,
   LogOut,
+  X,
 } from "lucide-react";
 import Link from "next/link";
 import { signOut } from "next-auth/react";
@@ -22,7 +22,6 @@ import { useCart } from "@/components/cart/use-cart";
 import { iconHover } from "@/lib/animations";
 
 export function Header() {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const { session } = useSessionContext();
@@ -60,6 +59,12 @@ export function Header() {
     };
   }, [isUserMenuOpen]);
 
+  const handleUserMenuToggle = (event: React.MouseEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setIsUserMenuOpen(!isUserMenuOpen);
+  };
+
   const handleSignOut = async () => {
     try {
       await signOut({ callbackUrl: "/" });
@@ -71,7 +76,7 @@ export function Header() {
 
   const handleCartClick = () => {
     toggleCart();
-    setIsMenuOpen(false); // Close mobile menu if open
+    setIsUserMenuOpen(false); // Close user menu if open
   };
 
   return (
@@ -154,7 +159,7 @@ export function Header() {
               <div className="relative" ref={userMenuRef}>
                 <motion.button
                   {...iconHover}
-                  onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                  onClick={handleUserMenuToggle}
                   className="flex items-center space-x-2 text-white hover:text-purple-300 transition-colors p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-gray-900"
                   aria-expanded={isUserMenuOpen}
                   aria-haspopup="true"
@@ -223,9 +228,15 @@ export function Header() {
                           />
                           Support
                         </Link>
-                        {session?.user?.role === "ADMIN" && (
+                        {(session?.user?.role === "ADMIN" || 
+                          session?.user?.role === "MANAGER" || 
+                          session?.user?.role === "SUPPORT_AGENT") && (
                           <Link
-                            href="/dashboard/admin-dashboard"
+                            href={
+                              session?.user?.role === "SUPPORT_AGENT" 
+                                ? "/dashboard/admin-support"
+                                : "/dashboard/admin-dashboard"
+                            }
                             className="flex items-center px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-gray-700 transition-colors focus:outline-none focus:bg-gray-700"
                             onClick={() => setIsUserMenuOpen(false)}
                             role="menuitem"
@@ -234,13 +245,13 @@ export function Header() {
                               className="w-4 h-4 mr-2"
                               aria-hidden="true"
                             />
-                            Admin
+                            {session?.user?.role === "SUPPORT_AGENT" ? "Support" : "Admin"}
                           </Link>
                         )}
                         <hr className="my-1 border-gray-700" role="separator" />
                         <button
                           onClick={handleSignOut}
-                          className="flex items-center w-full px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-gray-700 transition-colors text-left focus:outline-none focus:bg-gray-700"
+                          className="flex items-center w-full px-4 py-2 text-sm text-red-400 hover:text-red-300 hover:bg-gray-700 transition-colors"
                           role="menuitem"
                         >
                           <LogOut className="w-4 h-4 mr-2" aria-hidden="true" />
@@ -285,162 +296,183 @@ export function Header() {
           <div className="md:hidden flex items-center space-x-2">
             {/* Mobile Cart Button */}
             <motion.button
+              {...iconHover}
               onClick={handleCartClick}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="flex items-center justify-center text-gray-400 hover:text-white p-2 rounded-lg hover:bg-gray-800 transition-all relative"
+              className="relative p-2 text-white hover:text-purple-300 transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-gray-900 rounded-lg"
+              aria-label={`Shopping cart with ${isHydrated ? totalItems : 0} items`}
             >
-              <motion.div
-                animate={
-                  totalItems > 0
-                    ? {
-                        scale: [1, 1.1, 1],
-                        rotate: [0, 5, -5, 0],
-                      }
-                    : {}
-                }
-                transition={{ duration: 0.5 }}
-              >
-                <ShoppingCart className="w-5 h-5" />
-              </motion.div>
+              <ShoppingCart className="w-5 h-5" aria-hidden="true" />
               {isHydrated && totalItems > 0 && (
-                <motion.span
-                  key={totalItems}
-                  initial={{ scale: 0, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  exit={{ scale: 0, opacity: 0 }}
-                  transition={{
-                    type: "spring",
-                    stiffness: 500,
-                    damping: 15,
-                    duration: 0.3,
-                  }}
-                  className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold"
+                <span
+                  className="absolute -top-1 -right-1 bg-purple-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center"
+                  aria-label={`${totalItems} items in cart`}
                 >
                   {totalItems > 99 ? "99+" : totalItems}
-                </motion.span>
+                </span>
               )}
             </motion.button>
 
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="text-white p-2 rounded-lg hover:bg-gray-800 transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-gray-900"
-              aria-expanded={isMenuOpen}
-              aria-label="Toggle mobile menu"
-            >
-              {isMenuOpen ? (
-                <X className="w-6 h-6" aria-hidden="true" />
-              ) : (
-                <Menu className="w-6 h-6" aria-hidden="true" />
-              )}
-            </motion.button>
+            {/* Mobile User Menu/Hamburger - Combined */}
+            <div className="relative" ref={userMenuRef}>
+              <motion.button
+                {...iconHover}
+                onClick={handleUserMenuToggle}
+                className="flex items-center space-x-1 text-white hover:text-purple-300 transition-colors p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-gray-900"
+                aria-expanded={isUserMenuOpen}
+                aria-haspopup="true"
+                aria-label="Open menu"
+              >
+                {isUserMenuOpen ? (
+                  <X className="w-6 h-6" aria-hidden="true" />
+                ) : (
+                  <Menu className="w-6 h-6" aria-hidden="true" />
+                )}
+              </motion.button>
+
+              {/* Mobile Menu Dropdown - Enhanced */}
+              <AnimatePresence>
+                {isUserMenuOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    className="absolute right-0 mt-2 w-80 bg-gray-800 rounded-xl shadow-2xl border border-gray-700 z-50"
+                    role="menu"
+                    aria-label="Mobile menu"
+                  >
+                    <div className="py-2">
+                      {session?.user ? (
+                        <>
+                          {/* User Info */}
+                          <div className="px-6 py-2 border-b border-gray-700">
+                            <p className="text-sm text-gray-400 mb-1">Signed in as</p>
+                            <p className="text-base font-bold text-white truncate">
+                              {session.user.email}
+                            </p>
+                          </div>
+
+                          {/* Join Discord Button */}
+                          <div className="px-6 py-3">
+                            <a
+                              href="https://discord.gg/QWbHNAq9Dw"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center justify-center gap-3 w-full px-4 py-3 text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition-all font-medium"
+                              onClick={() => setIsUserMenuOpen(false)}
+                            >
+                              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z" />
+                              </svg>
+                              Join Discord
+                            </a>
+                          </div>
+
+                          {/* User Navigation */}
+                          <div className="px-3">
+                            <Link
+                              href="/dashboard"
+                              className="flex items-center px-4 py-3 text-base text-gray-300 hover:text-white hover:bg-gray-700 transition-colors rounded-lg"
+                              onClick={() => setIsUserMenuOpen(false)}
+                              role="menuitem"
+                            >
+                              <Home className="w-5 h-5 mr-4" aria-hidden="true" />
+                              Dashboard
+                            </Link>
+                            {(session?.user?.role === "ADMIN" || 
+                              session?.user?.role === "MANAGER" || 
+                              session?.user?.role === "SUPPORT_AGENT") && (
+                              <Link
+                                href={
+                                  session?.user?.role === "SUPPORT_AGENT" 
+                                    ? "/dashboard/admin-support"
+                                    : "/dashboard/admin-dashboard"
+                                }
+                                className="flex items-center px-4 py-3 text-base text-gray-300 hover:text-white hover:bg-gray-700 transition-colors rounded-lg"
+                                onClick={() => setIsUserMenuOpen(false)}
+                                role="menuitem"
+                              >
+                                <BarChart3 className="w-5 h-5 mr-4" aria-hidden="true" />
+                                {session?.user?.role === "SUPPORT_AGENT" ? "Support Dashboard" : "Admin Dashboard"}
+                              </Link>
+                            )}
+                            <Link
+                              href="/dashboard/orders"
+                              className="flex items-center px-4 py-3 text-base text-gray-300 hover:text-white hover:bg-gray-700 transition-colors rounded-lg"
+                              onClick={() => setIsUserMenuOpen(false)}
+                              role="menuitem"
+                            >
+                              <Package className="w-5 h-5 mr-4" aria-hidden="true" />
+                              My Orders
+                            </Link>
+                            <Link
+                              href="/dashboard/profile-settings"
+                              className="flex items-center px-4 py-3 text-base text-gray-300 hover:text-white hover:bg-gray-700 transition-colors rounded-lg"
+                              onClick={() => setIsUserMenuOpen(false)}
+                              role="menuitem"
+                            >
+                              <Settings className="w-5 h-5 mr-4" aria-hidden="true" />
+                              Profile Settings
+                            </Link>
+                            <Link
+                              href="/dashboard/support"
+                              className="flex items-center px-4 py-3 text-base text-gray-300 hover:text-white hover:bg-gray-700 transition-colors rounded-lg"
+                              onClick={() => setIsUserMenuOpen(false)}
+                              role="menuitem"
+                            >
+                              <LifeBuoy className="w-5 h-5 mr-4" aria-hidden="true" />
+                              Support
+                            </Link>
+                          </div>
+
+                          {/* Sign Out */}
+                          <div className="px-3 pt-3 border-t border-gray-700 mt-3">
+                            <button
+                              onClick={handleSignOut}
+                              className="flex items-center w-full px-4 py-3 text-base text-red-400 hover:text-red-300 hover:bg-gray-700 transition-colors rounded-lg"
+                              role="menuitem"
+                            >
+                              <LogOut className="w-5 h-5 mr-4" aria-hidden="true" />
+                              Sign Out
+                            </button>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          {/* Join Discord Button for non-authenticated users */}
+                          <div className="px-6 py-4">
+                            <a
+                              href="https://discord.gg/QWbHNAq9Dw"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center justify-center gap-3 w-full px-4 py-3 text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition-all font-medium mb-4"
+                              onClick={() => setIsUserMenuOpen(false)}
+                            >
+                              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z" />
+                              </svg>
+                              Join Discord
+                            </a>
+                            
+                            {/* Sign In Button */}
+                            <Link
+                              href="/auth/signin"
+                              className="block w-full text-center bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 rounded-xl transition-all text-base"
+                              onClick={() => setIsUserMenuOpen(false)}
+                            >
+                              Sign In
+                            </Link>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           </div>
         </div>
 
-        {/* Mobile Navigation */}
-        <AnimatePresence>
-          {isMenuOpen && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.3 }}
-              className="md:hidden mt-4 pb-4 border-t border-gray-700 bg-gray-900/95 backdrop-blur-md"
-              role="navigation"
-              aria-label="Mobile navigation"
-            >
-              <div className="flex flex-col space-y-3 pt-4">
-                {/* Discord Button for Mobile */}
-                <a
-                  href="https://discord.gg/QWbHNAq9Dw"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-2 mx-4 px-4 py-2 text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-all font-medium"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  <svg
-                    className="w-4 h-4"
-                    viewBox="0 0 24 24"
-                    fill="currentColor"
-                  >
-                    <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z" />
-                  </svg>
-                  Join Discord
-                </a>
 
-                {session?.user ? (
-                  <>
-                    <div className="px-4 py-2 border-b border-gray-700">
-                      <p className="text-sm text-gray-400">Signed in as</p>
-                      <p className="text-sm font-bold text-white">
-                        {session.user.email}
-                      </p>
-                    </div>
-                    <Link
-                      href="/dashboard"
-                      className="flex items-center px-4 py-2 text-gray-300 hover:text-white"
-                      onClick={() => setIsMenuOpen(false)}
-                    >
-                      <Home className="w-4 h-4 mr-2" />
-                      Dashboard
-                    </Link>
-                    {session.user.role === "ADMIN" && (
-                      <Link
-                        href="/dashboard/admin-dashboard"
-                        className="flex items-center px-4 py-2 text-gray-300 hover:text-white"
-                        onClick={() => setIsMenuOpen(false)}
-                      >
-                        <BarChart3 className="w-4 h-4 mr-2" />
-                        Admin Dashboard
-                      </Link>
-                    )}
-                    <Link
-                      href="/dashboard/orders"
-                      className="flex items-center px-4 py-2 text-gray-300 hover:text-white"
-                      onClick={() => setIsMenuOpen(false)}
-                    >
-                      <Package className="w-4 h-4 mr-2" />
-                      My Orders
-                    </Link>
-                    <Link
-                      href="/dashboard/profile-settings"
-                      className="flex items-center px-4 py-2 text-gray-300 hover:text-white"
-                      onClick={() => setIsMenuOpen(false)}
-                    >
-                      <Settings className="w-4 h-4 mr-2" />
-                      Profile Settings
-                    </Link>
-                    <Link
-                      href="/dashboard/support"
-                      className="flex items-center px-4 py-2 text-gray-300 hover:text-white"
-                      onClick={() => setIsMenuOpen(false)}
-                    >
-                      <LifeBuoy className="w-4 h-4 mr-2" />
-                      Support
-                    </Link>
-                    <button
-                      onClick={handleSignOut}
-                      className="flex items-center w-full text-left px-4 py-2 text-red-400 hover:text-red-300"
-                    >
-                      <LogOut className="w-4 h-4 mr-2" />
-                      Sign Out
-                    </button>
-                  </>
-                ) : (
-                  <Link
-                    href="/auth/signin"
-                    className="block px-4 py-2 text-gray-300 hover:text-white"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    Sign In
-                  </Link>
-                )}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
       </div>
     </motion.header>
   );

@@ -47,7 +47,8 @@ export default function AdminUsersPage() {
 
   // Properly typed user with role
   const user = session?.user as ExtendedUser | undefined;
-  const isAdmin = user?.role === "ADMIN";
+  const isAdmin = user?.role === "ADMIN" || user?.role === "MANAGER";
+  const isFullAdmin = user?.role === "ADMIN";
 
   // Get tRPC utils for cache invalidation
   const utils = trpc.useUtils();
@@ -149,8 +150,8 @@ export default function AdminUsersPage() {
         userId: editingUser.id,
         name: editForm.name || undefined,
         email: editForm.email || undefined,
-        role: editForm.role,
         isActive: editForm.isActive,
+        // Role is not updated here - use the dropdown in the table instead
       });
     } catch {
       // Error is handled by mutation onError callback
@@ -190,6 +191,32 @@ export default function AdminUsersPage() {
       default:
         return <User className="h-4 w-4 text-gray-400" />;
     }
+  };
+
+  // Helper function to check if current user can modify target user
+  const canModifyUser = (targetUserId: string, targetUserRole: string) => {
+    // Cannot modify yourself
+    if (session?.user?.id === targetUserId) {
+      return false;
+    }
+    // Only ADMIN can modify ADMIN users
+    if (!isFullAdmin && targetUserRole === "ADMIN") {
+      return false;
+    }
+    return true;
+  };
+
+  // Helper function to check if current user can change target user's role
+  const canChangeRole = (targetUserId: string, targetUserRole: string) => {
+    // Cannot change your own role
+    if (session?.user?.id === targetUserId) {
+      return false;
+    }
+    // Only ADMIN can modify ADMIN users
+    if (!isFullAdmin && targetUserRole === "ADMIN") {
+      return false;
+    }
+    return true;
   };
 
   const totalPages = usersData ? Math.ceil(usersData.total / itemsPerPage) : 0;
@@ -403,11 +430,11 @@ export default function AdminUsersPage() {
                             onChange={(e) =>
                               handleRoleChange(user.id, e.target.value)
                             }
-                            disabled={updateUserRoleMutation.isPending}
-                            className="bg-gray-700 border border-gray-600 rounded px-2 py-1 text-white text-sm"
+                            disabled={updateUserRoleMutation.isPending || !canChangeRole(user.id, user.role)}
+                            className="bg-gray-700 border border-gray-600 rounded px-2 py-1 text-white text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             <option value="USER">User</option>
-                            <option value="ADMIN">Admin</option>
+                            {isFullAdmin && <option value="ADMIN">Admin</option>}
                             <option value="SUPPORT_AGENT">Support Agent</option>
                             <option value="MANAGER">Manager</option>
                           </select>
@@ -436,12 +463,13 @@ export default function AdminUsersPage() {
                         <div className="flex space-x-2">
                           <button
                             onClick={() => handleEditUser(user)}
-                            className="p-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
-                            title="Edit User"
+                            disabled={!canModifyUser(user.id, user.role)}
+                            className="p-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-600/50 disabled:cursor-not-allowed rounded-lg transition-colors"
+                            title={canModifyUser(user.id, user.role) ? "Edit User" : "Cannot edit this user"}
                           >
                             <Edit className="h-4 w-4 text-white" />
                           </button>
-                          {session?.user?.id !== user.id && (
+                          {session?.user?.id !== user.id && canModifyUser(user.id, user.role) && (
                             <button
                               onClick={() => handleDeleteUser(user.id)}
                               disabled={deleteUserMutation.isPending}
@@ -529,11 +557,11 @@ export default function AdminUsersPage() {
                       onChange={(e) =>
                         handleRoleChange(user.id, e.target.value)
                       }
-                      disabled={updateUserRoleMutation.isPending}
-                      className="bg-gray-700 border border-gray-600 rounded px-3 py-1 text-white text-sm"
+                      disabled={updateUserRoleMutation.isPending || !canChangeRole(user.id, user.role)}
+                      className="bg-gray-700 border border-gray-600 rounded px-3 py-1 text-white text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <option value="USER">User</option>
-                      <option value="ADMIN">Admin</option>
+                      {isFullAdmin && <option value="ADMIN">Admin</option>}
                       <option value="SUPPORT_AGENT">Support Agent</option>
                       <option value="MANAGER">Manager</option>
                     </select>
@@ -548,12 +576,13 @@ export default function AdminUsersPage() {
                     <div className="flex space-x-2">
                       <button
                         onClick={() => handleEditUser(user)}
-                        className="p-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
-                        title="Edit User"
+                        disabled={!canModifyUser(user.id, user.role)}
+                        className="p-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-600/50 disabled:cursor-not-allowed rounded-lg transition-colors"
+                        title={canModifyUser(user.id, user.role) ? "Edit User" : "Cannot edit this user"}
                       >
                         <Edit className="h-4 w-4 text-white" />
                       </button>
-                      {session?.user?.id !== user.id && (
+                      {session?.user?.id !== user.id && canModifyUser(user.id, user.role) && (
                         <button
                           onClick={() => handleDeleteUser(user.id)}
                           disabled={deleteUserMutation.isPending}
@@ -649,26 +678,7 @@ export default function AdminUsersPage() {
                 />
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Role
-                </label>
-                <select
-                  value={editForm.role}
-                  onChange={(e) =>
-                    setEditForm({
-                      ...editForm,
-                      role: e.target.value as UserRole,
-                    })
-                  }
-                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white"
-                >
-                  <option value="USER">User</option>
-                  <option value="ADMIN">Admin</option>
-                  <option value="SUPPORT_AGENT">Support Agent</option>
-                  <option value="MANAGER">Manager</option>
-                </select>
-              </div>
+
 
               <label className="flex items-center space-x-2">
                 <input

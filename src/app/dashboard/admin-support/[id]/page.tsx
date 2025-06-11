@@ -50,7 +50,7 @@ export default function AdminTicketDetailPage() {
 
   // Properly typed user with role
   const user = session?.user as ExtendedUser | undefined;
-  const isAdmin = user?.role === "ADMIN";
+  const hasAccess = user?.role === "ADMIN" || user?.role === "MANAGER" || user?.role === "SUPPORT_AGENT";
 
   // Get tRPC utils for cache invalidation
   const utils = trpc.useUtils();
@@ -64,7 +64,7 @@ export default function AdminTicketDetailPage() {
   } = trpc.admin.getTicketById.useQuery(
     { id: ticketId },
     {
-      enabled: !!ticketId && isAdmin,
+      enabled: !!ticketId && hasAccess,
       // Refetch every 30 seconds for real-time updates
       refetchInterval: 30000,
     },
@@ -125,7 +125,7 @@ export default function AdminTicketDetailPage() {
     );
   }
 
-  if (!session || !isAdmin) {
+  if (!session || !hasAccess) {
     redirect("/dashboard");
   }
 

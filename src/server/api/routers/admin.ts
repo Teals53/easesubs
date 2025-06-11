@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure, adminProcedure } from "../trpc";
+import { createTRPCRouter, adminProcedure, supportProcedure } from "../trpc";
 import { TRPCError } from "@trpc/server";
 import type { Prisma } from "@prisma/client";
 import { securityMonitor } from "@/lib/security-monitor";
@@ -290,11 +290,35 @@ export const adminRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      // Prevent users from changing their own role
+      if (ctx.session.user.id === input.userId) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Cannot change your own role",
+        });
+      }
+
       // Get current user data for logging
       const currentUser = await ctx.db.user.findUnique({
         where: { id: input.userId },
         select: { role: true, email: true },
       });
+
+      // Only ADMIN can modify ADMIN users or promote to ADMIN
+      if (ctx.session.user.role === "MANAGER") {
+        if (currentUser?.role === "ADMIN") {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "Managers cannot modify admin accounts",
+          });
+        }
+        if (input.role === "ADMIN") {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "Managers cannot promote users to admin",
+          });
+        }
+      }
 
       const user = await ctx.db.user.update({
         where: { id: input.userId },
@@ -352,11 +376,35 @@ export const adminRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const { userId, ...updateData } = input;
 
+      // Prevent users from changing their own role
+      if (ctx.session.user.id === userId && updateData.role !== undefined) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Cannot change your own role",
+        });
+      }
+
       // Get current user data for logging
       const currentUser = await ctx.db.user.findUnique({
         where: { id: userId },
         select: { role: true, email: true, name: true, isActive: true },
       });
+
+      // Only ADMIN can modify ADMIN users or promote to ADMIN
+      if (ctx.session.user.role === "MANAGER") {
+        if (currentUser?.role === "ADMIN") {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "Managers cannot modify admin accounts",
+          });
+        }
+        if (updateData.role === "ADMIN") {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "Managers cannot promote users to admin",
+          });
+        }
+      }
 
       // Check if email is already taken by another user
       if (updateData.email) {
@@ -399,16 +447,9 @@ export const adminRouter = createTRPCRouter({
       return user;
     }),
 
-  toggleUserStatus: protectedProcedure
+  toggleUserStatus: adminProcedure
     .input(z.object({ userId: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      // Check if user is admin
-      if (ctx.session.user.role !== "ADMIN") {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "Admin access required",
-        });
-      }
 
       const user = await ctx.db.user.findUnique({
         where: { id: input.userId },
@@ -418,6 +459,14 @@ export const adminRouter = createTRPCRouter({
         throw new TRPCError({
           code: "NOT_FOUND",
           message: "User not found",
+        });
+      }
+
+      // Only ADMIN can modify ADMIN user status
+      if (ctx.session.user.role === "MANAGER" && user.role === "ADMIN") {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Managers cannot modify admin account status",
         });
       }
 
@@ -446,16 +495,9 @@ export const adminRouter = createTRPCRouter({
       return updatedUser;
     }),
 
-  deleteUser: protectedProcedure
+  deleteUser: adminProcedure
     .input(z.object({ userId: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      // Check if user is admin
-      if (ctx.session.user.role !== "ADMIN") {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "Admin access required",
-        });
-      }
 
       // Prevent admins from deleting themselves
       if (ctx.session.user.id === input.userId) {
@@ -470,6 +512,14 @@ export const adminRouter = createTRPCRouter({
         where: { id: input.userId },
         select: { email: true, role: true, name: true },
       });
+
+      // Only ADMIN can delete ADMIN users
+      if (ctx.session.user.role === "MANAGER" && userToDelete?.role === "ADMIN") {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Managers cannot delete admin accounts",
+        });
+      }
 
       // Delete user and related data
       await ctx.db.$transaction(async (tx) => {
@@ -573,7 +623,7 @@ export const adminRouter = createTRPCRouter({
       return { success: true };
     }),
 
-  getProducts: protectedProcedure
+  getProducts: adminProcedure
     .input(
       z.object({
         search: z.string().optional(),
@@ -583,13 +633,6 @@ export const adminRouter = createTRPCRouter({
       }),
     )
     .query(async ({ ctx, input }) => {
-      // Check if user is admin
-      if (ctx.session.user.role !== "ADMIN") {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "Admin access required",
-        });
-      }
 
       const { page, limit, search, categoryId } = input;
       const skip = (page - 1) * limit;
@@ -655,7 +698,7 @@ export const adminRouter = createTRPCRouter({
       };
     }),
 
-  createProduct: protectedProcedure
+  createProduct: adminProcedure
     .input(
       z.object({
         name: z.string().min(1, "Product name is required"),
@@ -694,13 +737,6 @@ export const adminRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      // Check if user is admin
-      if (ctx.session.user.role !== "ADMIN") {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "Admin access required",
-        });
-      }
 
       // Check if slug is unique
       const existingProduct = await ctx.db.product.findUnique({
@@ -735,7 +771,7 @@ export const adminRouter = createTRPCRouter({
       return product;
     }),
 
-  updateProduct: protectedProcedure
+  updateProduct: adminProcedure
     .input(
       z.object({
         id: z.string(),
@@ -776,13 +812,6 @@ export const adminRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      // Check if user is admin
-      if (ctx.session.user.role !== "ADMIN") {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "Admin access required",
-        });
-      }
 
       const { id, slug, plans, ...updateData } = input;
 
@@ -899,16 +928,9 @@ export const adminRouter = createTRPCRouter({
       return product;
     }),
 
-  getProductById: protectedProcedure
+  getProductById: adminProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
-      // Check if user is admin
-      if (ctx.session.user.role !== "ADMIN") {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "Admin access required",
-        });
-      }
 
       const product = await ctx.db.product.findUnique({
         where: { id: input.id },
@@ -929,14 +951,7 @@ export const adminRouter = createTRPCRouter({
       return product;
     }),
 
-  getCategories: protectedProcedure.query(async ({ ctx }) => {
-    // Check if user is admin
-    if (ctx.session.user.role !== "ADMIN") {
-      throw new TRPCError({
-        code: "FORBIDDEN",
-        message: "Admin access required",
-      });
-    }
+  getCategories: adminProcedure.query(async ({ ctx }) => {
 
     const categories = await ctx.db.category.findMany({
       orderBy: [{ displayOrder: "asc" }, { name: "asc" }],
@@ -964,7 +979,7 @@ export const adminRouter = createTRPCRouter({
     }));
   }),
 
-  createCategory: protectedProcedure
+  createCategory: adminProcedure
     .input(
       z.object({
         name: z.string().min(1, "Category name is required"),
@@ -976,13 +991,6 @@ export const adminRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      // Check if user is admin
-      if (ctx.session.user.role !== "ADMIN") {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "Admin access required",
-        });
-      }
 
       // Check if category with this name or slug already exists
       const existingCategory = await ctx.db.category.findFirst({
@@ -1005,7 +1013,7 @@ export const adminRouter = createTRPCRouter({
       return category;
     }),
 
-  updateCategory: protectedProcedure
+  updateCategory: adminProcedure
     .input(
       z.object({
         id: z.string(),
@@ -1019,13 +1027,6 @@ export const adminRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      // Check if user is admin
-      if (ctx.session.user.role !== "ADMIN") {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "Admin access required",
-        });
-      }
 
       const { id, ...updateData } = input;
 
@@ -1068,16 +1069,9 @@ export const adminRouter = createTRPCRouter({
       return updatedCategory;
     }),
 
-  deleteCategory: protectedProcedure
+  deleteCategory: adminProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      // Check if user is admin
-      if (ctx.session.user.role !== "ADMIN") {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "Admin access required",
-        });
-      }
 
       // Check if category exists
       const category = await ctx.db.category.findUnique({
@@ -1113,16 +1107,9 @@ export const adminRouter = createTRPCRouter({
       return { success: true };
     }),
 
-  toggleCategoryStatus: protectedProcedure
+  toggleCategoryStatus: adminProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      // Check if user is admin
-      if (ctx.session.user.role !== "ADMIN") {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "Admin access required",
-        });
-      }
 
       const category = await ctx.db.category.findUnique({
         where: { id: input.id },
@@ -1143,16 +1130,9 @@ export const adminRouter = createTRPCRouter({
       return updatedCategory;
     }),
 
-  toggleProductStatus: protectedProcedure
+  toggleProductStatus: adminProcedure
     .input(z.object({ productId: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      // Check if user is admin
-      if (ctx.session.user.role !== "ADMIN") {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "Admin access required",
-        });
-      }
 
       const product = await ctx.db.product.findUnique({
         where: { id: input.productId },
@@ -1173,16 +1153,9 @@ export const adminRouter = createTRPCRouter({
       return updatedProduct;
     }),
 
-  deleteProduct: protectedProcedure
+  deleteProduct: adminProcedure
     .input(z.object({ productId: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      // Check if user is admin
-      if (ctx.session.user.role !== "ADMIN") {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "Admin access required",
-        });
-      }
 
       // Check if product has active subscriptions
       const activeSubscriptions = await ctx.db.userSubscription.count({
@@ -1232,7 +1205,7 @@ export const adminRouter = createTRPCRouter({
       return { success: true };
     }),
 
-  getOrders: protectedProcedure
+  getOrders: adminProcedure
     .input(
       z.object({
         search: z.string().optional(),
@@ -1244,13 +1217,6 @@ export const adminRouter = createTRPCRouter({
       }),
     )
     .query(async ({ ctx, input }) => {
-      // Check if user is admin
-      if (ctx.session.user.role !== "ADMIN") {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "Admin access required",
-        });
-      }
 
       const { page, limit, search, status } = input;
       const skip = (page - 1) * limit;
@@ -1297,7 +1263,7 @@ export const adminRouter = createTRPCRouter({
       };
     }),
 
-  getSupportTickets: protectedProcedure
+  getSupportTickets: supportProcedure
     .input(
       z.object({
         search: z.string().optional(),
@@ -1307,13 +1273,6 @@ export const adminRouter = createTRPCRouter({
       }),
     )
     .query(async ({ ctx, input }) => {
-      // Check if user is admin
-      if (ctx.session.user.role !== "ADMIN") {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "Admin access required",
-        });
-      }
 
       const { page, limit, search, status } = input;
       const skip = (page - 1) * limit;
@@ -1354,7 +1313,7 @@ export const adminRouter = createTRPCRouter({
       };
     }),
 
-  updateTicketStatus: protectedProcedure
+  updateTicketStatus: supportProcedure
     .input(
       z.object({
         ticketId: z.string(),
@@ -1362,13 +1321,6 @@ export const adminRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      // Check if user is admin
-      if (ctx.session.user.role !== "ADMIN") {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "Admin access required",
-        });
-      }
 
       const ticket = await ctx.db.supportTicket.update({
         where: { id: input.ticketId },
@@ -1382,7 +1334,7 @@ export const adminRouter = createTRPCRouter({
       return ticket;
     }),
 
-  updateOrderStatus: protectedProcedure
+  updateOrderStatus: adminProcedure
     .input(
       z.object({
         orderId: z.string(),
@@ -1396,13 +1348,6 @@ export const adminRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      // Check if user is admin
-      if (ctx.session.user.role !== "ADMIN") {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "Admin access required",
-        });
-      }
 
       const order = await ctx.db.order.update({
         where: { id: input.orderId },
@@ -1415,16 +1360,9 @@ export const adminRouter = createTRPCRouter({
       return order;
     }),
 
-  getTicketById: protectedProcedure
+  getTicketById: supportProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
-      // Check if user is admin
-      if (ctx.session.user.role !== "ADMIN") {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "Admin access required",
-        });
-      }
 
       const ticket = await ctx.db.supportTicket.findFirst({
         where: {
@@ -1474,7 +1412,7 @@ export const adminRouter = createTRPCRouter({
       return ticket;
     }),
 
-  addTicketMessage: protectedProcedure
+  addTicketMessage: supportProcedure
     .input(
       z.object({
         ticketId: z.string(),
@@ -1486,13 +1424,6 @@ export const adminRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      // Check if user is admin
-      if (ctx.session.user.role !== "ADMIN") {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "Admin access required",
-        });
-      }
 
       // Verify ticket exists
       const ticket = await ctx.db.supportTicket.findFirst({
@@ -1540,16 +1471,9 @@ export const adminRouter = createTRPCRouter({
       return message;
     }),
 
-  deleteTicket: protectedProcedure
+  deleteTicket: supportProcedure
     .input(z.object({ ticketId: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      // Check if user is admin
-      if (ctx.session.user.role !== "ADMIN") {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "Admin access required",
-        });
-      }
 
       // Delete ticket and related data
       await ctx.db.$transaction(async (tx) => {
@@ -1572,16 +1496,9 @@ export const adminRouter = createTRPCRouter({
       return { success: true };
     }),
 
-  getOrderById: protectedProcedure
+  getOrderById: adminProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
-      // Check if user is admin
-      if (ctx.session.user.role !== "ADMIN") {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "Admin access required",
-        });
-      }
 
       const order = await ctx.db.order.findFirst({
         where: {
@@ -1645,7 +1562,7 @@ export const adminRouter = createTRPCRouter({
     }),
 
   // Stock management routes
-  getStockItems: protectedProcedure
+  getStockItems: adminProcedure
     .input(
       z.object({
         planId: z.string().optional(),
@@ -1653,12 +1570,6 @@ export const adminRouter = createTRPCRouter({
       }),
     )
     .query(async ({ ctx, input }) => {
-      if (ctx.session.user.role !== "ADMIN") {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "Admin access required",
-        });
-      }
 
       const where: Prisma.StockItemWhereInput = {};
       if (input.planId) {
@@ -1686,7 +1597,7 @@ export const adminRouter = createTRPCRouter({
       });
     }),
 
-  addStockItem: protectedProcedure
+  addStockItem: adminProcedure
     .input(
       z.object({
         planId: z.string(),
@@ -1694,12 +1605,6 @@ export const adminRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      if (ctx.session.user.role !== "ADMIN") {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "Admin access required",
-        });
-      }
 
       return await ctx.db.stockItem.create({
         data: {
@@ -1709,15 +1614,9 @@ export const adminRouter = createTRPCRouter({
       });
     }),
 
-  deleteStockItem: protectedProcedure
+  deleteStockItem: adminProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      if (ctx.session.user.role !== "ADMIN") {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "Admin access required",
-        });
-      }
 
       const stockItem = await ctx.db.stockItem.findUnique({
         where: { id: input.id },
@@ -1743,7 +1642,7 @@ export const adminRouter = createTRPCRouter({
     }),
 
   // Get delivery status for order items
-  getOrderItemDeliveryStatus: protectedProcedure
+  getOrderItemDeliveryStatus: adminProcedure
     .input(z.object({ orderItemId: z.string() }))
     .query(async ({ ctx, input }) => {
       const orderItem = await ctx.db.orderItem.findFirst({

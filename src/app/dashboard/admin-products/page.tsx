@@ -51,7 +51,7 @@ export default function AdminProductsPage() {
 
   // Properly typed user with role
   const user = session?.user as ExtendedUser | undefined;
-  const isAdmin = user?.role === "ADMIN";
+  const isAdmin = user?.role === "ADMIN" || user?.role === "MANAGER";
 
   const {
     data: productsData,
@@ -448,8 +448,13 @@ export default function AdminProductsPage() {
                       <h3 className="text-lg font-semibold text-white">
                         {product.name}
                       </h3>
-                      <p className="text-gray-400 text-sm leading-relaxed min-h-[3rem] whitespace-pre-wrap break-words">
-                        {product.description || "No description available"}
+                      <p className="text-gray-400 text-sm leading-relaxed min-h-[3rem] line-clamp-3">
+                        {product.description ? 
+                          product.description.length > 150 
+                            ? `${product.description.substring(0, 150)}...` 
+                            : product.description 
+                          : "No description available"
+                        }
                       </p>
                       <div className="flex items-center space-x-2">
                         <span

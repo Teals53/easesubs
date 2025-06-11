@@ -44,7 +44,8 @@ export default function DashboardNav() {
 
   // Properly typed user with role
   const user = session?.user as ExtendedUser | undefined;
-  const isAdmin = user?.role === "ADMIN";
+  const isAdmin = user?.role === "ADMIN" || user?.role === "MANAGER";
+  const isSupportAgent = user?.role === "SUPPORT_AGENT";
 
   const baseNavItems: NavItem[] = [
     { id: "dashboard", label: "Dashboard", icon: Home, href: "/dashboard" },
@@ -108,6 +109,15 @@ export default function DashboardNav() {
     },
   ];
 
+  const supportNavItems: NavItem[] = [
+    {
+      id: "admin-support",
+      label: "Support Tickets",
+      icon: Ticket,
+      href: "/dashboard/admin-support",
+    },
+  ];
+
   const handleSignOut = async () => {
     await signOut({ redirect: true, callbackUrl: "/" });
   };
@@ -151,7 +161,11 @@ export default function DashboardNav() {
 
       {/* Navigation Menu */}
       <div
-        className={`${isMobileMenuOpen ? "block" : "hidden"} lg:block bg-gray-900/50 backdrop-blur-lg rounded-2xl border border-gray-700/50 lg:sticky lg:top-8 flex flex-col`}
+        className={`bg-gray-900/50 backdrop-blur-lg rounded-2xl border border-gray-700/50 lg:sticky lg:top-8 flex flex-col transition-all duration-200 ease-in-out mobile-nav-menu ${
+          isMobileMenuOpen 
+            ? "block opacity-100 transform translate-y-0" 
+            : "hidden lg:block opacity-100"
+        }`}
       >
         {/* User Profile Section - Moved to Top */}
         <div className="p-4 border-b border-gray-700/50">
@@ -169,7 +183,12 @@ export default function DashboardNav() {
               </p>
               <p className="text-xs text-gray-400 truncate">{user?.email}</p>
               {isAdmin && (
-                <p className="text-xs text-purple-400 font-medium">Admin</p>
+                <p className="text-xs text-purple-400 font-medium">
+                  {user?.role === "ADMIN" ? "Admin" : "Manager"}
+                </p>
+              )}
+              {isSupportAgent && (
+                <p className="text-xs text-yellow-400 font-medium">Support Agent</p>
               )}
             </div>
           </div>
@@ -222,6 +241,39 @@ export default function DashboardNav() {
                         isActive
                           ? "bg-purple-600 text-white shadow-lg"
                           : "text-purple-400 hover:bg-purple-900/30 hover:text-white"
+                      }`}
+                    >
+                      <Icon className="h-5 w-5 mr-3 flex-shrink-0" />
+                      <span className="font-medium truncate">{item.label}</span>
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Support Agent Section */}
+          {isSupportAgent && (
+            <div className="pt-4 border-t border-gray-700/50">
+              <div className="flex items-center px-4 py-2 mb-2">
+                <Ticket className="h-4 w-4 text-yellow-400 mr-2 flex-shrink-0" />
+                <span className="text-xs font-semibold text-yellow-400 uppercase tracking-wider">
+                  Support Panel
+                </span>
+              </div>
+              <div className="space-y-1">
+                {supportNavItems.map((item) => {
+                  const Icon = item.icon;
+                  const isActive = isActiveRoute(item.href);
+                  return (
+                    <Link
+                      key={item.id}
+                      href={item.href}
+                      onClick={handleLinkClick}
+                      className={`flex items-center px-4 py-3 rounded-xl transition-all duration-200 group ${
+                        isActive
+                          ? "bg-yellow-600 text-white shadow-lg"
+                          : "text-yellow-400 hover:bg-yellow-900/30 hover:text-white"
                       }`}
                     >
                       <Icon className="h-5 w-5 mr-3 flex-shrink-0" />

@@ -1,9 +1,9 @@
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
+import { createTRPCRouter, protectedProcedure, actionProcedure } from "@/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 
 export const orderRouter = createTRPCRouter({
-  create: protectedProcedure
+  create: actionProcedure
     .input(
       z.object({
         items: z
@@ -22,14 +22,15 @@ export const orderRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.session.user.id;
 
-      // Check if user is admin for ADMIN_BYPASS
+      // Check if user is admin or manager for ADMIN_BYPASS
       if (
         input.paymentMethod === "ADMIN_BYPASS" &&
-        ctx.session.user.role !== "ADMIN"
+        ctx.session.user.role !== "ADMIN" &&
+        ctx.session.user.role !== "MANAGER"
       ) {
         throw new TRPCError({
           code: "FORBIDDEN",
-          message: "Admin bypass payment method requires admin privileges",
+          message: "Admin bypass payment method requires admin or manager privileges",
         });
       }
 
@@ -367,7 +368,7 @@ export const orderRouter = createTRPCRouter({
       return order;
     }),
 
-  cancel: protectedProcedure
+  cancel: actionProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
       const order = await ctx.db.order.findFirst({
