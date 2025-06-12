@@ -434,9 +434,9 @@ export default function AdminSupportPage() {
                   <button
                     onClick={() => setPage(page - 1)}
                     disabled={page === 1}
-                    className="p-2 text-gray-400 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="p-2 bg-gray-700 hover:bg-gray-600 disabled:bg-gray-700/50 rounded-lg transition-colors"
                   >
-                    <ChevronLeft className="h-4 w-4" />
+                    <ChevronLeft className="h-4 w-4 text-white" />
                   </button>
                   <span className="text-white text-sm">
                     Page {page} of {totalPages}
@@ -444,9 +444,9 @@ export default function AdminSupportPage() {
                   <button
                     onClick={() => setPage(page + 1)}
                     disabled={page === totalPages}
-                    className="p-2 text-gray-400 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="p-2 bg-gray-700 hover:bg-gray-600 disabled:bg-gray-700/50 rounded-lg transition-colors"
                   >
-                    <ChevronRight className="h-4 w-4" />
+                    <ChevronRight className="h-4 w-4 text-white" />
                   </button>
                 </div>
               </div>

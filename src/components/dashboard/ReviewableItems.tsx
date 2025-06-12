@@ -99,7 +99,7 @@ export default function ReviewableItems() {
               key={item.id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-gray-700/30 rounded-lg gap-4"
+              className="flex flex-col sm:flex-row sm:items-center p-4 bg-gray-700/30 rounded-lg gap-4"
             >
               <div className="flex items-center space-x-4 flex-1 min-w-0">
                 {item.plan.product.logoUrl ? (
@@ -138,13 +138,15 @@ export default function ReviewableItems() {
                   </div>
                 </div>
               </div>
-              <button
-                onClick={() => setShowReviewForm(item.id)}
-                className="flex items-center justify-center space-x-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-lg transition-colors w-full sm:w-auto"
-              >
-                <MessageSquare className="h-4 w-4" />
-                <span>Write Review</span>
-              </button>
+              <div className="flex sm:justify-end">
+                <button
+                  onClick={() => setShowReviewForm(item.id)}
+                  className="flex items-center justify-center space-x-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-lg transition-colors w-full sm:w-auto"
+                >
+                  <MessageSquare className="h-4 w-4" />
+                  <span>Write Review</span>
+                </button>
+              </div>
             </motion.div>
           ))}
         </div>
@@ -157,15 +159,15 @@ export default function ReviewableItems() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-start justify-center p-4 pt-8 overflow-y-auto"
             onClick={() => setShowReviewForm(null)}
           >
             <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
+              initial={{ scale: 0.95, opacity: 0, y: -20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: -20 }}
               onClick={(e) => e.stopPropagation()}
-              className="w-full max-w-2xl"
+              className="w-full max-w-2xl my-8"
             >
               <ReviewForm
                 orderItemId={showReviewForm}

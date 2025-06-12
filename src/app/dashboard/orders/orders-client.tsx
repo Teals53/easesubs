@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
   Package,
@@ -13,6 +13,8 @@ import {
   AlertTriangle,
   XCircle,
   Eye,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -52,11 +54,13 @@ interface Order {
 export default function OrdersClient() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const ORDERS_PER_PAGE = 10;
 
   // Fetch orders
   const { data: orders, isLoading: ordersLoading } = trpc.order.getAll.useQuery(
     {
-      limit: 50,
+      limit: 100, // Fetch more to handle client-side pagination
       status:
         statusFilter === ""
           ? undefined
@@ -128,6 +132,21 @@ export default function OrdersClient() {
             .includes(searchQuery.toLowerCase()),
         ),
     ) || [];
+
+  // Reset to first page when filters change
+  const resetPage = () => setCurrentPage(1);
+
+  // Pagination calculations
+  const totalOrders = filteredOrders.length;
+  const totalPages = Math.ceil(totalOrders / ORDERS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ORDERS_PER_PAGE;
+  const endIndex = startIndex + ORDERS_PER_PAGE;
+  const paginatedOrders = filteredOrders.slice(startIndex, endIndex);
+
+  // Reset page when search or filter changes
+  useEffect(() => {
+    resetPage();
+  }, [searchQuery, statusFilter]);
 
   return (
     <div className="space-y-6">
@@ -228,8 +247,8 @@ export default function OrdersClient() {
             </div>
           </div>
         ))
-      ) : filteredOrders.length > 0 ? (
-        filteredOrders.map((order: Order) => (
+      ) : paginatedOrders.length > 0 ? (
+        paginatedOrders.map((order: Order) => (
           <motion.div
             key={order.id}
             initial={{ opacity: 0, y: 20 }}
@@ -353,6 +372,64 @@ export default function OrdersClient() {
               <ArrowUpRight className="w-4 h-4 ml-2" />
             </Link>
           )}
+        </div>
+      )}
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between bg-gray-800/50 backdrop-blur-lg p-4 rounded-2xl border border-gray-700">
+          <div className="text-sm text-gray-400">
+            Showing {startIndex + 1} to {Math.min(endIndex, totalOrders)} of{" "}
+            {totalOrders} orders
+          </div>
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+              disabled={currentPage === 1}
+              className="flex items-center justify-center w-10 h-10 rounded-lg bg-gray-700 hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed text-white transition-colors"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+
+            <div className="flex items-center space-x-1">
+              {Array.from({ length: totalPages }, (_, i) => i + 1)
+                .filter((page) => {
+                  const distance = Math.abs(page - currentPage);
+                  return distance <= 2 || page === 1 || page === totalPages;
+                })
+                .map((page, index, array) => {
+                  const showEllipsis =
+                    index > 0 && array[index - 1] !== page - 1;
+                  return (
+                    <div key={page} className="flex items-center">
+                      {showEllipsis && (
+                        <span className="px-2 text-gray-400">...</span>
+                      )}
+                      <button
+                        onClick={() => setCurrentPage(page)}
+                        className={`w-10 h-10 rounded-lg text-sm font-medium transition-colors ${
+                          currentPage === page
+                            ? "bg-purple-600 text-white"
+                            : "bg-gray-700 hover:bg-gray-600 text-gray-300"
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    </div>
+                  );
+                })}
+            </div>
+
+            <button
+              onClick={() =>
+                setCurrentPage(Math.min(totalPages, currentPage + 1))
+              }
+              disabled={currentPage === totalPages}
+              className="flex items-center justify-center w-10 h-10 rounded-lg bg-gray-700 hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed text-white transition-colors"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       )}
     </div>

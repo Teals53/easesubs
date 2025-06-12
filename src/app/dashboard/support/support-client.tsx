@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
   MessageCircle,
@@ -13,6 +13,8 @@ import {
   X,
   Ticket,
   Book,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import Link from "next/link";
 import { trpc, invalidatePatterns } from "@/lib/trpc";
@@ -34,6 +36,8 @@ export default function SupportClient() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter] = useState<TicketStatus | "">("");
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const TICKETS_PER_PAGE = 10;
   const [errorMessage, setErrorMessage] = useState<{
     type: "error" | "success";
     title: string;
@@ -61,7 +65,7 @@ export default function SupportClient() {
     refetch: refetchTickets,
   } = trpc.ticket.getAll.useQuery(
     {
-      limit: 20,
+      limit: 100, // Fetch more for client-side pagination
       status: statusFilter || undefined,
     },
     {
@@ -70,7 +74,26 @@ export default function SupportClient() {
     },
   );
 
-  const tickets = ticketsData?.tickets || [];
+  const allTickets = ticketsData?.tickets || [];
+
+  // Filter tickets based on search query
+  const filteredTickets = allTickets.filter(
+    (ticket) =>
+      ticket.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      ticket.description.toLowerCase().includes(searchQuery.toLowerCase()),
+  );
+
+  // Pagination calculations
+  const totalTickets = filteredTickets.length;
+  const totalPages = Math.ceil(totalTickets / TICKETS_PER_PAGE);
+  const startIndex = (currentPage - 1) * TICKETS_PER_PAGE;
+  const endIndex = startIndex + TICKETS_PER_PAGE;
+  const paginatedTickets = filteredTickets.slice(startIndex, endIndex);
+
+  // Reset page when search changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, statusFilter]);
 
   // Fetch ticket stats
   const { data: stats, refetch: refetchStats } = trpc.ticket.getStats.useQuery(
@@ -502,7 +525,7 @@ export default function SupportClient() {
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500 mx-auto mb-4"></div>
             <p className="text-gray-400">Loading tickets...</p>
           </div>
-        ) : !tickets || tickets.length === 0 ? (
+        ) : !allTickets || allTickets.length === 0 ? (
           <div className="p-12 text-center">
             <Ticket className="h-16 w-16 text-gray-600 mx-auto mb-4" />
             <h3 className="text-xl font-semibold text-white mb-2">
@@ -520,19 +543,9 @@ export default function SupportClient() {
             </button>
           </div>
         ) : (
-          <div className="divide-y divide-gray-700">
-            {tickets
-              .filter(
-                (ticket) =>
-                  !searchQuery ||
-                  ticket.title
-                    .toLowerCase()
-                    .includes(searchQuery.toLowerCase()) ||
-                  ticket.description
-                    .toLowerCase()
-                    .includes(searchQuery.toLowerCase()),
-              )
-              .map((ticket) => (
+          <>
+            <div className="divide-y divide-gray-700">
+              {paginatedTickets.map((ticket) => (
                 <Link
                   key={ticket.id}
                   href={`/dashboard/support/${ticket.id}`}
@@ -569,7 +582,68 @@ export default function SupportClient() {
                   </div>
                 </Link>
               ))}
-          </div>
+            </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between bg-gray-800/50 backdrop-blur-lg p-4 rounded-2xl border border-gray-700 mt-6">
+                <div className="text-sm text-gray-400">
+                  Showing {startIndex + 1} to {Math.min(endIndex, totalTickets)}{" "}
+                  of {totalTickets} tickets
+                </div>
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                    disabled={currentPage === 1}
+                    className="flex items-center justify-center w-10 h-10 rounded-lg bg-gray-700 hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed text-white transition-colors"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+
+                  <div className="flex items-center space-x-1">
+                    {Array.from({ length: totalPages }, (_, i) => i + 1)
+                      .filter((page) => {
+                        const distance = Math.abs(page - currentPage);
+                        return (
+                          distance <= 2 || page === 1 || page === totalPages
+                        );
+                      })
+                      .map((page, index, array) => {
+                        const showEllipsis =
+                          index > 0 && array[index - 1] !== page - 1;
+                        return (
+                          <div key={page} className="flex items-center">
+                            {showEllipsis && (
+                              <span className="px-2 text-gray-400">...</span>
+                            )}
+                            <button
+                              onClick={() => setCurrentPage(page)}
+                              className={`w-10 h-10 rounded-lg text-sm font-medium transition-colors ${
+                                currentPage === page
+                                  ? "bg-purple-600 text-white"
+                                  : "bg-gray-700 hover:bg-gray-600 text-gray-300"
+                              }`}
+                            >
+                              {page}
+                            </button>
+                          </div>
+                        );
+                      })}
+                  </div>
+
+                  <button
+                    onClick={() =>
+                      setCurrentPage(Math.min(totalPages, currentPage + 1))
+                    }
+                    disabled={currentPage === totalPages}
+                    className="flex items-center justify-center w-10 h-10 rounded-lg bg-gray-700 hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed text-white transition-colors"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            )}
+          </>
         )}
       </motion.div>
 

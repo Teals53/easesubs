@@ -1594,6 +1594,40 @@ export const adminRouter = createTRPCRouter({
       });
     }),
 
+  updateStockItem: adminProcedure
+    .input(
+      z.object({
+        id: z.string(),
+        content: z.string(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const stockItem = await ctx.db.stockItem.findUnique({
+        where: { id: input.id },
+      });
+
+      if (!stockItem) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Stock item not found",
+        });
+      }
+
+      if (stockItem.isUsed) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Cannot update used stock item",
+        });
+      }
+
+      return await ctx.db.stockItem.update({
+        where: { id: input.id },
+        data: {
+          content: input.content,
+        },
+      });
+    }),
+
   deleteStockItem: adminProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {

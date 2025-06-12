@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useSession } from "next-auth/react";
 import { redirect } from "next/navigation";
 import { trpc } from "@/lib/trpc";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Package,
   Plus,
@@ -12,6 +12,8 @@ import {
   Trash2,
   CheckCircle,
   Clock,
+  Edit,
+  X,
 } from "lucide-react";
 
 interface ExtendedUser {
@@ -27,6 +29,10 @@ export default function AdminStockPage() {
   const [selectedPlan, setSelectedPlan] = useState<string>("");
   const [newStockContent, setNewStockContent] = useState("");
   const [isAddingStock, setIsAddingStock] = useState(false);
+  const [editingStock, setEditingStock] = useState<{
+    id: string;
+    content: string;
+  } | null>(null);
 
   // Fetch all products with plans for the dropdown
   const { data: products } = trpc.admin.getProducts.useQuery({
@@ -46,6 +52,13 @@ export default function AdminStockPage() {
       refetchStock();
       setNewStockContent("");
       setIsAddingStock(false);
+    },
+  });
+
+  const updateStockMutation = trpc.admin.updateStockItem.useMutation({
+    onSuccess: () => {
+      refetchStock();
+      setEditingStock(null);
     },
   });
 
@@ -78,6 +91,19 @@ export default function AdminStockPage() {
       await addStockMutation.mutateAsync({
         planId: selectedPlan,
         content: newStockContent.trim(),
+      });
+    } catch {
+      // Error is handled by mutation onError callback
+    }
+  };
+
+  const handleUpdateStock = async () => {
+    if (!editingStock || !editingStock.content.trim()) return;
+
+    try {
+      await updateStockMutation.mutateAsync({
+        id: editingStock.id,
+        content: editingStock.content.trim(),
       });
     } catch {
       // Error is handled by mutation onError callback
@@ -289,11 +315,33 @@ export default function AdminStockPage() {
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <div className="flex gap-2">
                         <button
+                          onClick={() =>
+                            setEditingStock({
+                              id: item.id,
+                              content: item.content,
+                            })
+                          }
+                          disabled={item.isUsed}
+                          className="text-blue-400 hover:text-blue-300 disabled:text-gray-500 disabled:cursor-not-allowed"
+                          title={
+                            item.isUsed
+                              ? "Cannot edit used stock items"
+                              : "Edit stock item"
+                          }
+                        >
+                          <Edit className="h-4 w-4" />
+                        </button>
+                        <button
                           onClick={() => handleDeleteStock(item.id)}
                           disabled={
                             item.isUsed || deleteStockMutation.isPending
                           }
                           className="text-red-400 hover:text-red-300 disabled:text-gray-500 disabled:cursor-not-allowed"
+                          title={
+                            item.isUsed
+                              ? "Cannot delete used stock items"
+                              : "Delete stock item"
+                          }
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>
@@ -306,6 +354,79 @@ export default function AdminStockPage() {
           </div>
         )}
       </div>
+
+      {/* Edit Stock Modal */}
+      <AnimatePresence>
+        {editingStock && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-start justify-center pt-16 pb-8 px-4 overflow-y-auto"
+            onClick={() => setEditingStock(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full max-w-2xl bg-gray-800 rounded-2xl border border-gray-700 p-6"
+            >
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-xl font-semibold text-white">
+                  Edit Stock Item
+                </h3>
+                <button
+                  onClick={() => setEditingStock(null)}
+                  className="p-2 text-gray-400 hover:text-gray-300 transition-colors"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Stock Content
+                  </label>
+                  <textarea
+                    value={editingStock.content}
+                    onChange={(e) =>
+                      setEditingStock({
+                        ...editingStock,
+                        content: e.target.value,
+                      })
+                    }
+                    rows={4}
+                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  />
+                </div>
+
+                <div className="flex gap-3 pt-4">
+                  <button
+                    onClick={handleUpdateStock}
+                    disabled={
+                      !editingStock.content.trim() ||
+                      updateStockMutation.isPending
+                    }
+                    className="flex-1 px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-lg transition-colors"
+                  >
+                    {updateStockMutation.isPending
+                      ? "Updating..."
+                      : "Update Stock"}
+                  </button>
+                  <button
+                    onClick={() => setEditingStock(null)}
+                    className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
