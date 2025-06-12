@@ -9,7 +9,7 @@ export const SEO_CONFIG = {
   siteName: "EaseSubs",
   twitterHandle: "@easesubs",
   defaultImage:
-    "https://easesubs.com/og-image.svg",
+    "https://easesubs.com/og-image.png",
   defaultKeywords: [
     "cheap subscriptions",
     "discount subscriptions",

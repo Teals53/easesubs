@@ -87,11 +87,11 @@ export const metadata: Metadata = {
     siteName: "EaseSubs",
     images: [
       {
-        url: "https://easesubs.com/og-image.svg",
+        url: "https://easesubs.com/og-image.png",
         width: 1200,
         height: 630,
         alt: "EaseSubs - Save up to 80% on Netflix, Spotify, Adobe and more",
-        type: "image/svg+xml",
+        type: "image/png",
       },
     ],
   },
@@ -102,7 +102,7 @@ export const metadata: Metadata = {
       "Save up to 80% on premium subscriptions like Netflix, Spotify, Adobe Creative Cloud, and more.",
     images: [
       {
-        url: "https://easesubs.com/og-image.svg",
+        url: "https://easesubs.com/og-image.png",
         alt: "EaseSubs - Save up to 80% on Netflix, Spotify, Adobe and more",
       },
     ],

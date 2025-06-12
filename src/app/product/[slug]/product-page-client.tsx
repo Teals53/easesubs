@@ -155,7 +155,7 @@ export default function ProductPageClient({ slug }: ProductPageClientProps) {
       `Premium ${product.name} subscription plans at discounted prices`,
     image:
       product.logoUrl ||
-              "https://easesubs.com/og-image.svg",
+              "https://easesubs.com/og-image.png",
     brand: {
       "@type": "Brand",
       name: "EaseSubs",
