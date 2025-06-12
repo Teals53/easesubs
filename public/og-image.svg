@@ -1,0 +1,90 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background gradient matching homepage exactly - much darker -->
+  <defs>
+    <linearGradient id="bg-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0f0a1a;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#1a0d2e;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#2d1b4e;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="title-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#ffffff;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#e9d5ff;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#ddd6fe;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="subtitle-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#a855f7;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#9333ea;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bg-gradient)"/>
+  
+  <!-- Lightning bolt icon and title group - centered as one unit -->
+  <g transform="translate(600, 315)">
+    <!-- Lightning bolt icon positioned before EaseSubs.com -->
+    <g transform="translate(-270, -185)">
+      <path d="M13 3L4 13H11L10 21L19 11H12L13 3Z" 
+            fill="#8E24AA" 
+            stroke="#8E24AA" 
+            stroke-width="1" 
+            stroke-linecap="round" 
+            stroke-linejoin="round" 
+            transform="scale(2.2)"/>
+    </g>
+    
+    <!-- Main title: EaseSubs.com (positioned after lightning bolt) -->
+    <text x="-200" y="-135" 
+          text-anchor="start" 
+          font-family="Inter, system-ui, sans-serif" 
+          font-size="68" 
+          font-weight="700" 
+          fill="url(#title-gradient)">
+      EaseSubs.com
+    </text>
+    
+    <!-- Subtitle: Same subscriptions, easier prices. -->
+    <text x="0" y="-55" 
+          text-anchor="middle" 
+          font-family="Inter, system-ui, sans-serif" 
+          font-size="36" 
+          font-weight="500" 
+          fill="white">
+      Same subscriptions, 
+      <tspan fill="url(#subtitle-gradient)">easier prices.</tspan>
+    </text>
+    
+    <!-- Description text -->
+    <text x="0" y="25" 
+          text-anchor="middle" 
+          font-family="Inter, system-ui, sans-serif" 
+          font-size="22" 
+          font-weight="400" 
+          fill="#d1d5db">
+      Get your favorite subscriptions at a fraction of the cost through our
+    </text>
+    <text x="0" y="55" 
+          text-anchor="middle" 
+          font-family="Inter, system-ui, sans-serif" 
+          font-size="22" 
+          font-weight="400" 
+          fill="#d1d5db">
+      legal regional pricing system. Save up to 80% on premium services.
+    </text>
+    
+    <!-- CTA Button matching homepage exactly - brighter purple -->
+    <g transform="translate(-150, 115)">
+      <rect x="0" y="0" width="300" height="55" rx="12" 
+            fill="#8E24AA" 
+            stroke="none"/>
+      <text x="150" y="33" 
+            text-anchor="middle" 
+            font-family="Inter, system-ui, sans-serif" 
+            font-size="18" 
+            font-weight="600" 
+            fill="white">
+        Browse Subscriptions →
+      </text>
+    </g>
+  </g>
+</svg> 

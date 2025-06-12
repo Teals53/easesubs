@@ -14,7 +14,7 @@ export function ECommerceSchema() {
       width: 512,
       height: 512,
     },
-    image: "https://via.placeholder.com/1200x630/8B5CF6/FFFFFF?text=EaseSubs",
+    image: "https://easesubs.com/og-image.svg",
     description:
       "Premium subscription services at discounted prices through legal regional pricing system. Save up to 80% on Netflix, Spotify, Adobe Creative Cloud, and more.",
     foundingDate: "2024",

@@ -87,11 +87,11 @@ export const metadata: Metadata = {
     siteName: "EaseSubs",
     images: [
       {
-        url: "https://via.placeholder.com/1200x630/8B5CF6/FFFFFF?text=EaseSubs",
+        url: "https://easesubs.com/og-image.svg",
         width: 1200,
         height: 630,
-        alt: "EaseSubs - Discount Subscriptions Platform",
-        type: "image/png",
+        alt: "EaseSubs - Save up to 80% on Netflix, Spotify, Adobe and more",
+        type: "image/svg+xml",
       },
     ],
   },
@@ -102,8 +102,8 @@ export const metadata: Metadata = {
       "Save up to 80% on premium subscriptions like Netflix, Spotify, Adobe Creative Cloud, and more.",
     images: [
       {
-        url: "https://via.placeholder.com/1200x630/8B5CF6/FFFFFF?text=EaseSubs",
-        alt: "EaseSubs - Discount Subscriptions Platform",
+        url: "https://easesubs.com/og-image.svg",
+        alt: "EaseSubs - Save up to 80% on Netflix, Spotify, Adobe and more",
       },
     ],
     creator: "@easesubs",
