@@ -7,7 +7,7 @@ import { trpc } from "@/lib/trpc";
 import Link from "next/link";
 import Image from "next/image";
 import ProductRating from "./ProductRating";
-import { fadeIn, slideIn } from "@/lib/animations";
+import { fadeIn } from "@/lib/animations";
 import type { Product, ExtendedCategory } from "@/types/product";
 import { DynamicIcon } from "@/components/ui/dynamic-icon";
 
@@ -190,7 +190,7 @@ export function Products() {
         <div className="flex flex-col lg:flex-row gap-8 overflow-x-hidden">
           {/* Categories Sidebar */}
           <motion.div
-            variants={slideIn("left")}
+            variants={fadeIn("up", 0.1)}
             initial="hidden"
             whileInView="show"
             viewport={{ once: true, amount: 0.1 }}
@@ -206,7 +206,7 @@ export function Products() {
                 {extendedCategories.map((category, index) => (
                   <motion.button
                     key={category.key}
-                    variants={fadeIn("up", 0.1 * index)}
+                    variants={fadeIn("up", 0.05 * index)}
                     initial="hidden"
                     animate="show"
                     whileHover={{ scale: 1.01 }}
@@ -224,7 +224,7 @@ export function Products() {
                           className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-300 ${
                             activeCategory === category.key
                               ? "shadow-lg"
-                              : "group-hover:scale-110"
+                              : "group-hover:scale-105"
                           }`}
                           style={{
                             backgroundColor: category.color,
@@ -262,10 +262,10 @@ export function Products() {
                         </div>
                       </div>
                       <ChevronRight
-                        className={`h-5 w-5 transition-all duration-300 ${
+                        className={`h-5 w-5 transition-all duration-200 ${
                           activeCategory === category.key
                             ? "text-purple-400 rotate-90"
-                            : "text-gray-500 group-hover:text-gray-300 group-hover:translate-x-1"
+                            : "text-gray-500 group-hover:text-gray-300"
                         }`}
                       />
                     </div>
@@ -277,7 +277,7 @@ export function Products() {
 
           {/* Products Content */}
           <motion.div
-            variants={slideIn("right")}
+            variants={fadeIn("up", 0.1)}
             initial="hidden"
             whileInView="show"
             viewport={{ once: true, amount: 0.1 }}
@@ -301,19 +301,16 @@ export function Products() {
                   return (
                     <motion.div
                       key={product.id}
-                      initial={{ opacity: 0, y: 20 }}
+                      initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{
-                        duration: 0.3,
-                        delay: Math.min(index * 0.05, 0.3),
+                        duration: 0.2,
+                        delay: Math.min(index * 0.02, 0.1),
                         ease: "easeOut",
                       }}
                       whileHover={{
-                        y: -8,
-                        boxShadow: product.borderColor
-                          ? `0 20px 40px -10px ${product.borderColor}30`
-                          : "0 20px 40px -10px rgba(139, 92, 246, 0.3)",
-                        transition: { duration: 0.2 },
+                        y: -2,
+                        transition: { duration: 0.1 },
                       }}
                       className={`bg-gray-800/60 backdrop-blur-lg border-2 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 relative cursor-pointer group ${
                         product.borderColor
@@ -341,7 +338,7 @@ export function Products() {
                           {/* Logo */}
                           <div className="flex items-center justify-center mb-6">
                             {product.logoUrl ? (
-                              <div className="w-20 h-20 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                              <div className="w-20 h-20 flex items-center justify-center group-hover:scale-105 transition-transform duration-200">
                                 <Image
                                   src={product.logoUrl}
                                   alt={product.name}
@@ -363,7 +360,7 @@ export function Products() {
                               </div>
                             ) : (
                               <div
-                                className="w-20 h-20 rounded-xl flex items-center justify-center text-white font-bold text-2xl shadow-lg group-hover:scale-110 transition-transform duration-300"
+                                className="w-20 h-20 rounded-xl flex items-center justify-center text-white font-bold text-2xl shadow-lg group-hover:scale-105 transition-transform duration-200"
                                 style={{
                                   backgroundColor:
                                     product.borderColor || "#9333EA",
@@ -438,7 +435,7 @@ export function Products() {
 
                           {/* View Details button */}
                           <div className="mt-auto">
-                            <button className="w-full font-semibold py-3 px-6 rounded-xl shadow-lg transition-all duration-300 text-center bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white shadow-purple-600/30 hover:shadow-purple-600/50 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-gray-900">
+                            <button className="w-full font-semibold py-3 px-6 rounded-xl shadow-lg transition-all duration-200 text-center bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white shadow-purple-600/30 hover:shadow-purple-600/50 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-gray-900">
                               View Details & Plans
                             </button>
                           </div>
