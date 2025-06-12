@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { redirect } from "next/navigation";
 import { motion } from "framer-motion";
 import {
@@ -47,6 +47,7 @@ export default function AdminTicketDetailPage() {
   const [isInternal, setIsInternal] = useState(false);
   const [editingStatus, setEditingStatus] = useState(false);
   const [newStatus, setNewStatus] = useState("");
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Properly typed user with role
   const user = session?.user as ExtendedUser | undefined;
@@ -64,14 +65,34 @@ export default function AdminTicketDetailPage() {
     data: ticket,
     isLoading,
     refetch,
+    isFetching,
   } = trpc.admin.getTicketById.useQuery(
     { id: ticketId },
     {
       enabled: !!ticketId && hasAccess,
-      // Refetch every 30 seconds for real-time updates
-      refetchInterval: 30000,
+      // Refetch every 3 seconds for real-time updates like user chat
+      refetchInterval: 3000,
+      refetchOnWindowFocus: true,
+      refetchOnReconnect: true,
     },
   );
+
+  // Auto-scroll to bottom only when new messages are added (not on every refresh)
+  const [previousMessageCount, setPreviousMessageCount] = useState(0);
+
+  useEffect(() => {
+    if (ticket?.messages) {
+      const currentMessageCount = ticket.messages.length;
+      // Only scroll if there are new messages (count increased)
+      if (
+        currentMessageCount > previousMessageCount &&
+        messagesEndRef.current
+      ) {
+        messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+      }
+      setPreviousMessageCount(currentMessageCount);
+    }
+  }, [ticket?.messages, previousMessageCount]);
 
   // Mutations
   const addMessageMutation = trpc.admin.addTicketMessage.useMutation({
@@ -400,10 +421,23 @@ export default function AdminTicketDetailPage() {
         className="bg-gray-800/50 backdrop-blur-lg rounded-2xl border border-gray-700 overflow-hidden"
       >
         <div className="p-4 md:p-6 border-b border-gray-700">
-          <h2 className="text-xl font-semibold text-white">Messages</h2>
+          <h2 className="text-xl font-semibold text-white flex items-center gap-2">
+            <MessageCircle className="h-5 w-5" />
+            Messages ({ticket.messages?.length || 0})
+            <button
+              onClick={() => refetch()}
+              disabled={isFetching}
+              className="ml-auto p-2 text-gray-400 hover:text-white transition-colors disabled:opacity-50"
+              title="Refresh conversation"
+            >
+              <Clock
+                className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`}
+              />
+            </button>
+          </h2>
         </div>
 
-        <div className="p-4 md:p-6 space-y-6">
+        <div className="max-h-96 overflow-y-auto p-4 md:p-6 space-y-6">
           {ticket.messages && ticket.messages.length > 0 ? (
             ticket.messages.map((message: TicketMessage) => {
               const isAdmin = message.user?.role === "ADMIN";
@@ -483,6 +517,7 @@ export default function AdminTicketDetailPage() {
               </p>
             </div>
           )}
+          <div ref={messagesEndRef} />
         </div>
 
         {/* Add Message Form */}

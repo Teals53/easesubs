@@ -178,52 +178,52 @@ export function Header() {
                       initial={{ opacity: 0, y: -10 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -10 }}
-                      className="absolute right-0 mt-2 w-48 bg-gray-800 rounded-lg shadow-lg border border-gray-700 z-50"
+                      className="absolute right-0 mt-2 w-64 bg-gray-900/95 backdrop-blur-md rounded-xl shadow-2xl border border-gray-700/50 z-50"
                       role="menu"
                       aria-label="User menu options"
                     >
-                      <div className="py-1">
+                      <div className="py-2">
                         <Link
                           href="/dashboard"
-                          className="flex items-center px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-gray-700 transition-colors focus:outline-none focus:bg-gray-700"
+                          className="flex items-center px-4 py-3 text-base text-gray-300 hover:text-white hover:bg-gray-700/50 transition-colors focus:outline-none focus:bg-gray-700/50 rounded-lg mx-2"
                           onClick={() => setIsUserMenuOpen(false)}
                           role="menuitem"
                         >
-                          <Home className="w-4 h-4 mr-2" aria-hidden="true" />
+                          <Home className="w-5 h-5 mr-4" aria-hidden="true" />
                           Dashboard
                         </Link>
                         <Link
                           href="/dashboard/orders"
-                          className="flex items-center px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-gray-700 transition-colors focus:outline-none focus:bg-gray-700"
+                          className="flex items-center px-4 py-3 text-base text-gray-300 hover:text-white hover:bg-gray-700/50 transition-colors focus:outline-none focus:bg-gray-700/50 rounded-lg mx-2"
                           onClick={() => setIsUserMenuOpen(false)}
                           role="menuitem"
                         >
                           <Package
-                            className="w-4 h-4 mr-2"
+                            className="w-5 h-5 mr-4"
                             aria-hidden="true"
                           />
                           Orders
                         </Link>
                         <Link
                           href="/dashboard/profile-settings"
-                          className="flex items-center px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-gray-700 transition-colors focus:outline-none focus:bg-gray-700"
+                          className="flex items-center px-4 py-3 text-base text-gray-300 hover:text-white hover:bg-gray-700/50 transition-colors focus:outline-none focus:bg-gray-700/50 rounded-lg mx-2"
                           onClick={() => setIsUserMenuOpen(false)}
                           role="menuitem"
                         >
                           <Settings
-                            className="w-4 h-4 mr-2"
+                            className="w-5 h-5 mr-4"
                             aria-hidden="true"
                           />
                           Settings
                         </Link>
                         <Link
                           href="/dashboard/support"
-                          className="flex items-center px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-gray-700 transition-colors focus:outline-none focus:bg-gray-700"
+                          className="flex items-center px-4 py-3 text-base text-gray-300 hover:text-white hover:bg-gray-700/50 transition-colors focus:outline-none focus:bg-gray-700/50 rounded-lg mx-2"
                           onClick={() => setIsUserMenuOpen(false)}
                           role="menuitem"
                         >
                           <LifeBuoy
-                            className="w-4 h-4 mr-2"
+                            className="w-5 h-5 mr-4"
                             aria-hidden="true"
                           />
                           Support
@@ -237,12 +237,12 @@ export function Header() {
                                 ? "/dashboard/admin-support"
                                 : "/dashboard/admin-dashboard"
                             }
-                            className="flex items-center px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-gray-700 transition-colors focus:outline-none focus:bg-gray-700"
+                            className="flex items-center px-4 py-3 text-base text-gray-300 hover:text-white hover:bg-gray-700/50 transition-colors focus:outline-none focus:bg-gray-700/50 rounded-lg mx-2"
                             onClick={() => setIsUserMenuOpen(false)}
                             role="menuitem"
                           >
                             <BarChart3
-                              className="w-4 h-4 mr-2"
+                              className="w-5 h-5 mr-4"
                               aria-hidden="true"
                             />
                             {session?.user?.role === "SUPPORT_AGENT"
@@ -250,13 +250,16 @@ export function Header() {
                               : "Admin"}
                           </Link>
                         )}
-                        <hr className="my-1 border-gray-700" role="separator" />
+                        <hr
+                          className="my-2 border-gray-700/50 mx-2"
+                          role="separator"
+                        />
                         <button
                           onClick={handleSignOut}
-                          className="flex items-center w-full px-4 py-2 text-sm text-red-400 hover:text-red-300 hover:bg-gray-700 transition-colors"
+                          className="flex items-center w-full px-4 py-3 text-base text-red-400 hover:text-red-300 hover:bg-gray-700/50 transition-colors rounded-lg mx-2"
                           role="menuitem"
                         >
-                          <LogOut className="w-4 h-4 mr-2" aria-hidden="true" />
+                          <LogOut className="w-5 h-5 mr-4" aria-hidden="true" />
                           Sign Out
                         </button>
                       </div>
@@ -338,7 +341,7 @@ export function Header() {
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
-                    className="absolute right-0 mt-2 w-80 bg-gray-800 rounded-xl shadow-2xl border border-gray-700 z-50"
+                    className="absolute right-0 mt-2 w-80 bg-gray-900/95 backdrop-blur-md rounded-xl shadow-2xl border border-gray-700/50 z-50"
                     role="menu"
                     aria-label="Mobile menu"
                   >
@@ -346,7 +349,7 @@ export function Header() {
                       {session?.user ? (
                         <>
                           {/* User Info */}
-                          <div className="px-6 py-2 border-b border-gray-700">
+                          <div className="px-6 py-2 border-b border-gray-700/50">
                             <p className="text-sm text-gray-400 mb-1">
                               Signed in as
                             </p>
@@ -379,7 +382,7 @@ export function Header() {
                           <div className="px-3">
                             <Link
                               href="/dashboard"
-                              className="flex items-center px-4 py-3 text-base text-gray-300 hover:text-white hover:bg-gray-700 transition-colors rounded-lg"
+                              className="flex items-center px-4 py-3 text-base text-gray-300 hover:text-white hover:bg-gray-700/50 transition-colors rounded-lg"
                               onClick={() => setIsUserMenuOpen(false)}
                               role="menuitem"
                             >
@@ -398,7 +401,7 @@ export function Header() {
                                     ? "/dashboard/admin-support"
                                     : "/dashboard/admin-dashboard"
                                 }
-                                className="flex items-center px-4 py-3 text-base text-gray-300 hover:text-white hover:bg-gray-700 transition-colors rounded-lg"
+                                className="flex items-center px-4 py-3 text-base text-gray-300 hover:text-white hover:bg-gray-700/50 transition-colors rounded-lg"
                                 onClick={() => setIsUserMenuOpen(false)}
                                 role="menuitem"
                               >
@@ -413,7 +416,7 @@ export function Header() {
                             )}
                             <Link
                               href="/dashboard/orders"
-                              className="flex items-center px-4 py-3 text-base text-gray-300 hover:text-white hover:bg-gray-700 transition-colors rounded-lg"
+                              className="flex items-center px-4 py-3 text-base text-gray-300 hover:text-white hover:bg-gray-700/50 transition-colors rounded-lg"
                               onClick={() => setIsUserMenuOpen(false)}
                               role="menuitem"
                             >
@@ -425,7 +428,7 @@ export function Header() {
                             </Link>
                             <Link
                               href="/dashboard/profile-settings"
-                              className="flex items-center px-4 py-3 text-base text-gray-300 hover:text-white hover:bg-gray-700 transition-colors rounded-lg"
+                              className="flex items-center px-4 py-3 text-base text-gray-300 hover:text-white hover:bg-gray-700/50 transition-colors rounded-lg"
                               onClick={() => setIsUserMenuOpen(false)}
                               role="menuitem"
                             >
@@ -437,7 +440,7 @@ export function Header() {
                             </Link>
                             <Link
                               href="/dashboard/support"
-                              className="flex items-center px-4 py-3 text-base text-gray-300 hover:text-white hover:bg-gray-700 transition-colors rounded-lg"
+                              className="flex items-center px-4 py-3 text-base text-gray-300 hover:text-white hover:bg-gray-700/50 transition-colors rounded-lg"
                               onClick={() => setIsUserMenuOpen(false)}
                               role="menuitem"
                             >
@@ -450,10 +453,10 @@ export function Header() {
                           </div>
 
                           {/* Sign Out */}
-                          <div className="px-3 pt-3 border-t border-gray-700 mt-3">
+                          <div className="px-3 pt-3 border-t border-gray-700/50 mt-3">
                             <button
                               onClick={handleSignOut}
-                              className="flex items-center w-full px-4 py-3 text-base text-red-400 hover:text-red-300 hover:bg-gray-700 transition-colors rounded-lg"
+                              className="flex items-center w-full px-4 py-3 text-base text-red-400 hover:text-red-300 hover:bg-gray-700/50 transition-colors rounded-lg"
                               role="menuitem"
                             >
                               <LogOut

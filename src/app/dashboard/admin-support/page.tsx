@@ -11,14 +11,12 @@ import {
   CheckCircle,
   ChevronLeft,
   ChevronRight,
-  Trash2,
-  Eye,
 } from "lucide-react";
-import { trpc, invalidatePatterns } from "@/lib/trpc";
+import { trpc } from "@/lib/trpc";
 import { useState } from "react";
 import { UserRole } from "@prisma/client";
 import Link from "next/link";
-import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 interface ExtendedUser {
   id: string;
@@ -30,6 +28,7 @@ interface ExtendedUser {
 
 export default function AdminSupportPage() {
   const { data: session, status } = useSession();
+  const router = useRouter();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [page, setPage] = useState(1);
@@ -42,42 +41,22 @@ export default function AdminSupportPage() {
     user?.role === "MANAGER" ||
     user?.role === "SUPPORT_AGENT";
 
-  // Get tRPC utils for cache invalidation
-  const utils = trpc.useUtils();
-
-  const {
-    data: ticketsData,
-    isLoading,
-    refetch,
-  } = trpc.admin.getSupportTickets.useQuery(
-    {
-      search: searchTerm,
-      status: statusFilter
-        ? (statusFilter as "OPEN" | "IN_PROGRESS" | "CLOSED")
-        : undefined,
-      page,
-      limit: itemsPerPage,
-    },
-    {
-      enabled: hasAccess,
-      // Refetch every 30 seconds for real-time updates
-      refetchInterval: 30000,
-    },
-  );
-
-  // Delete ticket mutation
-  const deleteTicketMutation = trpc.admin.deleteTicket.useMutation({
-    onSuccess: () => {
-      // Invalidate all ticket-related queries for immediate update
-      invalidatePatterns.tickets(utils);
-      invalidatePatterns.dashboard(utils);
-      // Refetch the tickets data to update the UI
-      refetch();
-    },
-    onError: () => {
-      toast.error("Failed to delete ticket. Please try again.");
-    },
-  });
+  const { data: ticketsData, isLoading } =
+    trpc.admin.getSupportTickets.useQuery(
+      {
+        search: searchTerm,
+        status: statusFilter
+          ? (statusFilter as "OPEN" | "IN_PROGRESS" | "CLOSED")
+          : undefined,
+        page,
+        limit: itemsPerPage,
+      },
+      {
+        enabled: hasAccess,
+        // Refetch every 30 seconds for real-time updates
+        refetchInterval: 30000,
+      },
+    );
 
   if (status === "loading") {
     return (
@@ -139,16 +118,6 @@ export default function AdminSupportPage() {
         return "bg-green-900/30 text-green-400 border-green-500/30";
       default:
         return "bg-gray-900/30 text-gray-400 border-gray-500/30";
-    }
-  };
-
-  const handleDeleteTicket = async (ticketId: string) => {
-    if (
-      confirm(
-        "Are you sure you want to delete this ticket? This action cannot be undone.",
-      )
-    ) {
-      await deleteTicketMutation.mutateAsync({ ticketId });
     }
   };
 
@@ -315,24 +284,24 @@ export default function AdminSupportPage() {
                     <th className="text-left py-4 px-6 text-gray-400 font-medium">
                       Created
                     </th>
-                    <th className="text-left py-4 px-6 text-gray-400 font-medium">
-                      Actions
-                    </th>
                   </tr>
                 </thead>
                 <tbody>
                   {ticketsData.tickets.map((ticket) => (
                     <tr
                       key={ticket.id}
-                      className="border-b border-gray-700 hover:bg-gray-700/30 transition-colors"
+                      onClick={() =>
+                        router.push(`/dashboard/admin-support/${ticket.id}`)
+                      }
+                      className="border-b border-gray-700 hover:bg-gray-700/30 transition-colors cursor-pointer"
                     >
                       <td className="py-4 px-6">
                         <div className="flex items-center space-x-3">
                           <MessageCircle className="h-5 w-5 text-purple-400 flex-shrink-0" />
                           <div className="min-w-0">
                             <p className="text-white font-medium truncate">
-                              {ticket.title && ticket.title.length > 50
-                                ? `${ticket.title.substring(0, 50)}...`
+                              {ticket.title && ticket.title.length > 30
+                                ? `${ticket.title.substring(0, 30)}...`
                                 : ticket.title}
                             </p>
                             <p className="text-gray-400 text-sm">
@@ -380,25 +349,6 @@ export default function AdminSupportPage() {
                           {formatDate(ticket.createdAt)}
                         </div>
                       </td>
-                      <td className="py-4 px-6">
-                        <div className="flex items-center space-x-2">
-                          <Link
-                            href={`/dashboard/admin-support/${ticket.id}`}
-                            className="p-2 text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 rounded-lg transition-colors"
-                            title="View Details"
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Link>
-                          <button
-                            onClick={() => handleDeleteTicket(ticket.id)}
-                            disabled={deleteTicketMutation.isPending}
-                            className="p-2 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-colors disabled:opacity-50"
-                            title="Delete Ticket"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        </div>
-                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -408,9 +358,10 @@ export default function AdminSupportPage() {
             {/* Mobile Card View */}
             <div className="lg:hidden space-y-4 p-4">
               {ticketsData.tickets.map((ticket) => (
-                <div
+                <Link
                   key={ticket.id}
-                  className="bg-gray-700/30 rounded-xl p-4 space-y-3"
+                  href={`/dashboard/admin-support/${ticket.id}`}
+                  className="block bg-gray-700/30 rounded-xl p-4 space-y-3 hover:bg-gray-700/50 transition-colors cursor-pointer"
                 >
                   {/* Header */}
                   <div className="flex items-start justify-between">
@@ -418,31 +369,14 @@ export default function AdminSupportPage() {
                       <MessageCircle className="h-5 w-5 text-purple-400 flex-shrink-0" />
                       <div className="min-w-0 flex-1">
                         <p className="text-white font-medium truncate">
-                          {ticket.title && ticket.title.length > 40
-                            ? `${ticket.title.substring(0, 40)}...`
+                          {ticket.title && ticket.title.length > 25
+                            ? `${ticket.title.substring(0, 25)}...`
                             : ticket.title}
                         </p>
                         <p className="text-gray-400 text-sm">
                           #{ticket.id.slice(-8)}
                         </p>
                       </div>
-                    </div>
-                    <div className="flex items-center space-x-2 ml-2">
-                      <Link
-                        href={`/dashboard/admin-support/${ticket.id}`}
-                        className="p-2 text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 rounded-lg transition-colors"
-                        title="View Details"
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Link>
-                      <button
-                        onClick={() => handleDeleteTicket(ticket.id)}
-                        disabled={deleteTicketMutation.isPending}
-                        className="p-2 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-colors disabled:opacity-50"
-                        title="Delete Ticket"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
                     </div>
                   </div>
 
@@ -484,7 +418,7 @@ export default function AdminSupportPage() {
                       {formatDate(ticket.createdAt)}
                     </div>
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
 

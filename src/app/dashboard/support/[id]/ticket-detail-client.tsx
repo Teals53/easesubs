@@ -292,7 +292,7 @@ export default function TicketDetailClient({
               className="ml-auto p-2 text-gray-400 hover:text-white transition-colors disabled:opacity-50"
               title="Refresh conversation"
             >
-              <RotateCcw
+              <Clock
                 className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`}
               />
             </button>
