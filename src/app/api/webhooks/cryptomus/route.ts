@@ -2,26 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { webhookRateLimit } from "@/lib/enhanced-rate-limit";
 import { emailService } from "@/lib/email";
-import { CryptomusWebhook } from "@/lib/cryptomus";
+import { CryptomusWebhook, Cryptomus } from "@/lib/cryptomus";
 import { DeliveryService } from "@/lib/delivery-service";
-
-async function verifyWebhookSignature(
-  body: string,
-  signature: string,
-): Promise<boolean> {
-  const cryptomusSecret = process.env.CRYPTOMUS_PAYMENT_API_KEY;
-  if (!cryptomusSecret) {
-    return false;
-  }
-
-  const crypto = await import("crypto");
-  const expectedSignature = crypto
-    .createHash("md5")
-    .update(body + cryptomusSecret)
-    .digest("hex");
-
-  return signature === expectedSignature;
-}
 
 export async function POST(request: NextRequest) {
   try {
@@ -35,21 +17,25 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.text();
-    const signature = request.headers.get("sign");
-
-    if (!signature) {
-      return NextResponse.json({ error: "Missing signature" }, { status: 400 });
-    }
 
     const apiKey = process.env.CRYPTOMUS_PAYMENT_API_KEY;
     if (!apiKey) {
+      console.error("Cryptomus webhook: API key not configured");
       return NextResponse.json(
         { error: "API key not configured" },
         { status: 500 },
       );
     }
 
-    if (!(await verifyWebhookSignature(body, signature))) {
+    // Log webhook data for debugging (remove in production)
+    console.log("Cryptomus webhook received:", {
+      body: body.substring(0, 200) + "...", // Log first 200 chars
+      headers: Object.fromEntries(request.headers.entries()),
+    });
+
+    // Validate webhook signature using Cryptomus library method
+    if (!Cryptomus.validateWebhook(body, "", apiKey)) {
+      console.error("Cryptomus webhook: Invalid signature");
       return NextResponse.json({ error: "Invalid signature" }, { status: 403 });
     }
 
@@ -57,7 +43,10 @@ export async function POST(request: NextRequest) {
     const webhookData: CryptomusWebhook = JSON.parse(body);
     const { order_id, status, uuid } = webhookData;
 
+    console.log("Cryptomus webhook data:", { order_id, status, uuid });
+
     if (!uuid || !order_id || !status) {
+      console.error("Cryptomus webhook: Missing required fields", { uuid, order_id, status });
       return NextResponse.json(
         { error: "Missing required fields" },
         { status: 400 },
@@ -93,8 +82,24 @@ export async function POST(request: NextRequest) {
     });
 
     if (!payment) {
+      console.error("Cryptomus webhook: Payment not found", { 
+        order_id, 
+        uuid,
+        searchCriteria: {
+          orderNumber: order_id,
+          providerPaymentId: uuid,
+          paymentId: order_id
+        }
+      });
       return NextResponse.json({ error: "Payment not found" }, { status: 404 });
     }
+
+    console.log("Cryptomus webhook: Payment found", { 
+      paymentId: payment.id, 
+      orderId: payment.orderId,
+      currentStatus: payment.status,
+      newStatus: status
+    });
 
     let paymentStatus: "COMPLETED" | "FAILED" | "PROCESSING" | "CANCELLED";
     let orderStatus: "COMPLETED" | "FAILED" | "PROCESSING" | "CANCELLED";
@@ -257,6 +262,14 @@ export async function POST(request: NextRequest) {
       }
 
       return { payment: updatedPaymentRecord, order: updatedOrderRecord };
+    });
+
+    console.log("Cryptomus webhook: Payment processed successfully", {
+      paymentId: updatedPayment.payment.id,
+      orderId: updatedPayment.order.id,
+      finalPaymentStatus: updatedPayment.payment.status,
+      finalOrderStatus: updatedPayment.order.status,
+      stockConflict: updatedPayment.stockConflict || false
     });
 
     // Send email notification for completed orders
